@@ -22,7 +22,7 @@ class ImageRequest(BaseModel):
 class FoodAnalysisResponse(BaseModel):
     description: str
     vector_info: dict
-    calories: str
+    calories: int
 
 @app.post("/analyze_food", response_model=FoodAnalysisResponse)
 async def analyze_food(request: ImageRequest):
@@ -46,7 +46,7 @@ def get_food_description(image_data: str) -> str:
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Describe this food item and classify it. Be specific about ingredients, cooking method, and food type."},
+                    {"type": "text", "text": "Analyze the food item in the image. Your analysis should include: 1. A description of the dish, its ingredients, and cooking style. 2. A classification of the food type (e.g., salad, soup, stir-fry). 3. An estimated breakdown of macronutrients (protein, carbohydrates, fats) in grams."},
                     {
                         "type": "image_url",
                         "image_url": {
@@ -63,7 +63,7 @@ def get_food_description(image_data: str) -> str:
 def get_vector_db_result(description: str) -> dict:
     return {"placeholder": "Vector DB integration coming soon", "query": description}
 
-def predict_calories(description: str, vector_info: dict) -> str:
+def predict_calories(description: str, vector_info: dict) -> int:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -78,7 +78,10 @@ def predict_calories(description: str, vector_info: dict) -> str:
         ],
         max_tokens=50
     )
-    return response.choices[0].message.content.strip()
+    try:
+        return int(response.choices[0].message.content.strip())
+    except ValueError:
+        return 0
 
 if __name__ == "__main__":
     import uvicorn
