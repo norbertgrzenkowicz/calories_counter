@@ -6,6 +6,7 @@ import glob
 from deepeval import evaluate
 from deepeval.metrics import GEval
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+from deepeval.evaluate import DisplayConfig
 
 def get_food_analysis(image_path):
     """Get food analysis from backend API"""
@@ -93,8 +94,18 @@ def run_test_directory(test_dir):
             # Create test cases
             calories_test = create_calories_test_case(image_path, result, expected_range)
             
-            # Evaluate calories
-            calories_result = evaluate([calories_test], [calories_metric])
+            # Evaluate calories with suppressed verbose output
+            display_config = DisplayConfig(
+                verbose_mode=False,
+                print_results=False,
+                show_indicator=False
+            )
+            
+            calories_result = evaluate(
+                test_cases=[calories_test], 
+                metrics=[calories_metric],
+                display_config=display_config
+            )
             
             # Show simplified result
             passed = calories_result.test_results[0].metrics_data[0].success
