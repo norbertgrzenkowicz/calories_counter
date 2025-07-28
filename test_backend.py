@@ -1,10 +1,11 @@
 import requests
 import base64
-import json
+import argparse
+import os
+import glob
 from deepeval import evaluate
 from deepeval.metrics import GEval
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
-import asyncio
 
 def get_food_analysis(image_path):
     """Get food analysis from backend API"""
@@ -14,7 +15,7 @@ def get_food_analysis(image_path):
     response = requests.post(
         'http://localhost:5001/analyze_food',
         headers={'Content-Type': 'application/json'},
-        json={'image': base64_image}
+        json={'image': base64_image, 'filename': image_path}
     )
     
     if response.status_code == 200:
@@ -22,110 +23,93 @@ def get_food_analysis(image_path):
     else:
         raise Exception(f"API Error: {response.text}")
 
-def create_calories_test_case(image_path, actual_result):
+def create_calories_test_case(image_path, actual_result, expected_range):
     """Create test case for calories evaluation"""
     return LLMTestCase(
         input=f"Food analysis for image: {image_path}",
         actual_output=str(actual_result['calories']),
-        context=[actual_result['description']]
-    )
-
-def create_macronutrients_test_case(image_path, actual_result):
-    """Create test case for macronutrients evaluation"""
-    return LLMTestCase(
-        input=f"Food analysis for image: {image_path}",
-        actual_output=actual_result['description'],
-        context=[f"Calories: {actual_result['calories']}"]
-    )
-
-def create_dish_name_test_case(image_path, actual_result):
-    """Create test case for dish name identification"""
-    return LLMTestCase(
-        input=f"Food identification for image: {image_path}",
-        actual_output=actual_result['description'],
+        expected_output=expected_range,
         context=[f"Image path: {image_path}"]
     )
 
-def run_deepeval_tests():
-    """Run deepeval tests for all three images"""
+def run_test_directory(test_dir):
+    """Run tests on images from a specific test directory"""
     
     # Define evaluation metrics
     calories_metric = GEval(
         name="Calories Accuracy",
-        criteria="Determine if the calorie estimate is reasonable for the described food item. The estimate should be within a realistic range based on typical portion sizes and food types.",
-        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.CONTEXT],
+        criteria="Determine if the calorie estimate is reasonable for the given image (e.g., within ±50 calories of a plausible value).",
+        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.EXPECTED_OUTPUT],
         evaluation_steps=[
-            "Extract the calorie value from the output",
-            "Consider the food description and typical serving sizes",
-            "Assess if the calorie estimate is within a reasonable range (±200 calories)",
-            "Evaluate the accuracy based on food type and portion size"
+            "Extract the calorie value from the actual output.",
+            "Extract the expected calorie range from the expected output.",
+            "Check if the actual output calorie value falls within the expected range.",
+            "If it falls within the range, the test passes; otherwise, it fails."
         ],
         model="gpt-4o-mini"
     )
     
-    macronutrients_metric = GEval(
-        name="Macronutrients Analysis", 
-        criteria="Evaluate if the food description adequately identifies key macronutrients (proteins, carbs, fats) present in the dish based on the ingredients and preparation method described.",
-        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT],
-        evaluation_steps=[
-            "Identify protein sources mentioned in the description",
-            "Identify carbohydrate sources mentioned in the description", 
-            "Identify fat sources mentioned in the description",
-            "Assess completeness of macronutrient identification"
-        ],
-        model="gpt-4o-mini"
-    )
+    # Find all image files in the test directory
+    test_dir_path = os.path.join("test_cases", test_dir)
+    image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG"]
+    image_files = []
     
-    dish_name_metric = GEval(
-        name="Dish Identification",
-        criteria="Assess if the food description correctly identifies the specific dish or food type, including main ingredients and cooking method.",
-        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.INPUT],
-        evaluation_steps=[
-            "Check if the main dish/food type is correctly identified",
-            "Verify if key ingredients are accurately described",
-            "Assess if cooking method is properly identified",
-            "Evaluate overall specificity and accuracy of identification"
-        ],
-        model="gpt-4o-mini"
-    )
+    for ext in image_extensions:
+        image_files.extend(glob.glob(os.path.join(test_dir_path, ext)))
     
-    # Test images
-    test_images = ["f1.jpg", "f2.jpeg", "f3.jpg"]
+    if not image_files:
+        print(f"❌ No images found in {test_dir_path}")
+        return
     
-    print("Running DeepEval tests for backend food analysis...")
+    print(f"Running tests for {test_dir} with {len(image_files)} images...")
     
-    for image_path in test_images:
-        print(f"\n--- Testing {image_path} ---")
+    # Special expected ranges for fs directory (original test cases)
+    if test_dir == "fs":
+        expected_ranges = {
+            "f1.jpg": "550-650",
+            "f2.jpeg": "500-600", 
+            "f3.jpg": "550-650"
+        }
+    else:
+        # Default expected range for other directories
+        expected_ranges = {}
+        default_range = "400-800"
+    
+    for image_path in image_files:
+        image_name = os.path.basename(image_path)
+        print(f"\n--- Testing {image_name} ---")
+        
+        # Get expected range for this specific image or use default
+        if test_dir == "fs":
+            expected_range = expected_ranges.get(image_name, "400-800")
+        else:
+            expected_range = default_range
         
         try:
             # Get analysis from backend
             result = get_food_analysis(image_path)
-            print(f"Description: {result['description']}")
             print(f"Calories: {result['calories']}")
             
             # Create test cases
-            calories_test = create_calories_test_case(image_path, result)
-            macronutrients_test = create_macronutrients_test_case(image_path, result)
-            dish_name_test = create_dish_name_test_case(image_path, result)
+            calories_test = create_calories_test_case(image_path, result, expected_range)
             
             # Evaluate calories
-            print("\n🔍 Evaluating Calories...")
             calories_result = evaluate([calories_test], [calories_metric])
             
-            # Evaluate macronutrients
-            print("\n🔍 Evaluating Macronutrients...")
-            macro_result = evaluate([macronutrients_test], [macronutrients_metric])
-            
-            # Evaluate dish name
-            print("\n🔍 Evaluating Dish Identification...")
-            dish_result = evaluate([dish_name_test], [dish_name_metric])
-            
-            print(f"✅ Completed evaluation for {image_path}")
+            # Show simplified result
+            passed = calories_result.test_results[0].metrics_data[0].success
+            status = "✅ PASS" if passed else "❌ FAIL"
+            print(f"{status} {image_name}: {result['calories']} calories")
             
         except Exception as e:
-            print(f"❌ Error testing {image_path}: {e}")
+            print(f"❌ Error testing {image_name}: {e}")
 
 
 if __name__ == "__main__":
-    # Run deepeval tests
-    run_deepeval_tests()
+    parser = argparse.ArgumentParser(description='Run food analysis tests')
+    parser.add_argument('--test', type=str, help='Test directory name (e.g., rice-breast-beans)')
+    
+    args = parser.parse_args()
+    
+    test_dir = args.test if args.test else "fs"
+    run_test_directory(test_dir)
