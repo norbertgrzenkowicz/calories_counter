@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'theme/app_theme.dart';
+
+class Meal {
+  final String name;
+  final int calories;
+  final double proteins;
+  final double fats;
+  final double carbs;
+  final String? photoPath;
+
+  Meal({
+    required this.name,
+    required this.calories,
+    required this.proteins,
+    required this.fats,
+    required this.carbs,
+    this.photoPath,
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +58,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  List<Meal> meals = [];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -51,8 +67,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _onMealTapped(int mealIndex) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Meal ${mealIndex + 1} tapped'))
+    if (mealIndex < meals.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${meals[mealIndex].name} was clicked'))
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Meal ${mealIndex + 1} was clicked'))
+      );
+    }
+  }
+
+  void _addMeal() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddMealScreen(
+          onMealAdded: (meal) {
+            setState(() {
+              meals.add(meal);
+            });
+          },
+        ),
+      ),
     );
   }
 
@@ -64,6 +100,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Today'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: _addMeal,
+                icon: const Icon(Icons.add_circle_outline),
+                tooltip: 'Add Meal',
+              ),
+              const CircleAvatar(
+                radius: 16,
+                backgroundColor: AppTheme.primaryGreen,
+                child: Icon(Icons.person, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 16),
+            ],
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -129,16 +182,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(child: _buildMealCard(0, 'Meal 1 Date')),
-            const SizedBox(width: 12),
-            Expanded(child: _buildMealCard(1, 'Meal 2 Date')),
-            const SizedBox(width: 12),
-            Expanded(child: _buildMealCard(2, 'Meal 3 Date')),
-          ],
-        ),
+        meals.isEmpty
+            ? _buildEmptyMealsRow()
+            : _buildMealsGrid(),
       ],
+    );
+  }
+
+  Widget _buildEmptyMealsRow() {
+    return Row(
+      children: [
+        Expanded(child: _buildMealCard(0, 'Meal 1 Date')),
+        const SizedBox(width: 12),
+        Expanded(child: _buildMealCard(1, 'Meal 2 Date')),
+        const SizedBox(width: 12),
+        Expanded(child: _buildMealCard(2, 'Meal 3 Date')),
+      ],
+    );
+  }
+
+  Widget _buildMealsGrid() {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: meals.asMap().entries.map((entry) {
+        int index = entry.key;
+        Meal meal = entry.value;
+        return SizedBox(
+          width: (MediaQuery.of(context).size.width - 56) / 3,
+          child: _buildActualMealCard(index, meal),
+        );
+      }).toList(),
     );
   }
 
@@ -172,6 +246,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 date,
                 style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActualMealCard(int index, Meal meal) {
+    return GestureDetector(
+      onTap: () => _onMealTapped(index),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Container(
+                height: 80,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.softGray,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
+                ),
+                child: meal.photoPath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(meal.photoPath!),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      )
+                    : const Center(
+                        child: Text(
+                          'Photo',
+                          style: TextStyle(
+                            color: AppTheme.charcoal,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                meal.name,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${meal.calories} cal',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.charcoal.withOpacity(0.7),
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -227,6 +362,184 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AddMealScreen extends StatefulWidget {
+  final Function(Meal) onMealAdded;
+
+  const AddMealScreen({super.key, required this.onMealAdded});
+
+  @override
+  State<AddMealScreen> createState() => _AddMealScreenState();
+}
+
+class _AddMealScreenState extends State<AddMealScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _caloriesController = TextEditingController();
+  final _proteinsController = TextEditingController();
+  final _fatsController = TextEditingController();
+  final _carbsController = TextEditingController();
+  String? _photoPath;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _caloriesController.dispose();
+    _proteinsController.dispose();
+    _fatsController.dispose();
+    _carbsController.dispose();
+    super.dispose();
+  }
+
+  void _addPhoto() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Photo picker functionality would be implemented here'))
+    );
+  }
+
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      final meal = Meal(
+        name: _nameController.text,
+        calories: int.parse(_caloriesController.text),
+        proteins: double.parse(_proteinsController.text),
+        fats: double.parse(_fatsController.text),
+        carbs: double.parse(_carbsController.text),
+        photoPath: _photoPath,
+      );
+      
+      widget.onMealAdded(meal);
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.creamWhite,
+      appBar: AppBar(
+        title: const Text('Add Meal'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Meal Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a meal name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _caloriesController,
+                decoration: const InputDecoration(
+                  labelText: 'Calories',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter calories';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _proteinsController,
+                decoration: const InputDecoration(
+                  labelText: 'Proteins (g)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter proteins';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _fatsController,
+                decoration: const InputDecoration(
+                  labelText: 'Fats (g)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter fats';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _carbsController,
+                decoration: const InputDecoration(
+                  labelText: 'Carbs (g)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter carbs';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _addPhoto,
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Add Photo'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _submitForm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.all(16),
+                ),
+                child: const Text('Submit'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
