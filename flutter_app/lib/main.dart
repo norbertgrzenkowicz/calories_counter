@@ -27,135 +27,203 @@ class FoodScannerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Food Scanner',
       theme: AppTheme.theme,
-      home: CameraScreen(cameras: cameras),
+      home: DashboardScreen(cameras: cameras),
     );
   }
 }
 
-class CameraScreen extends StatefulWidget {
+class DashboardScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
   
-  const CameraScreen({super.key, required this.cameras});
+  const DashboardScreen({super.key, required this.cameras});
 
   @override
-  State<CameraScreen> createState() => _CameraScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> {
-  CameraController? _controller;
-  bool _isLoading = false;
-  Map<String, dynamic>? _result;
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _selectedIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.cameras.isNotEmpty) {
-      _controller = CameraController(widget.cameras[0], ResolutionPreset.medium);
-      _controller!.initialize().then((_) {
-        if (!mounted) return;
-        setState(() {});
-      });
-    }
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-    
-    setState(() => _isLoading = true);
-    
-    try {
-      final image = await _controller!.takePicture();
-      await _uploadImage(image.path);
-    } catch (e) {
-      _showError('Failed to take picture: $e');
-    }
-    
-    setState(() => _isLoading = false);
-  }
-
-  Future<void> _uploadImage(String imagePath) async {
-    try {
-      Uint8List imageBytes = await File(imagePath).readAsBytes();
-      String base64Image = base64Encode(imageBytes);
-      
-      var response = await http.post(
-        Uri.parse('http://localhost:5001/analyze_food'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'image': base64Image}),
-      );
-      
-      if (response.statusCode == 200) {
-        setState(() {
-          _result = json.decode(response.body);
-        });
-      } else {
-        _showError('Server error: ${response.statusCode}');
-      }
-    } catch (e) {
-      _showError('Upload failed: $e');
-    }
-  }
-
-  void _showError(String message) {
+  void _onMealTapped(int mealIndex) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message))
+      SnackBar(content: Text('Meal ${mealIndex + 1} tapped'))
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.cameras.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Food Scanner')),
-        body: const Center(child: Text('No camera available')),
-      );
-    }
-    
-    if (_controller == null || !_controller!.value.isInitialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Food Scanner')),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: CameraPreview(_controller!),
-          ),
-          if (_result != null)
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Description:', style: Theme.of(context).textTheme.titleMedium),
-                    Text(_result!['description'] ?? ''),
-                    const SizedBox(height: 8),
-                    Text('Calories:', style: Theme.of(context).textTheme.titleMedium),
-                    Text(_result!['calories'] ?? ''),
-                  ],
+      backgroundColor: AppTheme.creamWhite,
+      appBar: AppBar(
+        title: const Text('Today'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildNutritionSummary(),
+            const SizedBox(height: 32),
+            _buildMealsSection(),
+            const Spacer(),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  Widget _buildNutritionSummary() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildNutritionBar('XXX kcal / XXX kcal', 0.6),
+            const SizedBox(height: 16),
+            _buildNutritionBar('XXX Proteins / XXX Proteins', 0.4),
+            const SizedBox(height: 16),
+            _buildNutritionBar('XXX Carbs / XXX Carbs', 0.8),
+            const SizedBox(height: 16),
+            _buildNutritionBar('XXX Fat / XXX Fat', 0.3),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNutritionBar(String label, double progress) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: progress,
+          backgroundColor: AppTheme.softGray,
+          valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
+          minHeight: 8,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMealsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Your Meals',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: _buildMealCard(0, 'Meal 1 Date')),
+            const SizedBox(width: 12),
+            Expanded(child: _buildMealCard(1, 'Meal 2 Date')),
+            const SizedBox(width: 12),
+            Expanded(child: _buildMealCard(2, 'Meal 3 Date')),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMealCard(int index, String date) {
+    return GestureDetector(
+      onTap: () => _onMealTapped(index),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Container(
+                height: 80,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.softGray,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Photo',
+                    style: TextStyle(
+                      color: AppTheme.charcoal,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _takePicture,
-                child: _isLoading 
-                  ? const CircularProgressIndicator()
-                  : const Text('Scan Food'),
+              const SizedBox(height: 12),
+              Text(
+                date,
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.charcoal.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildBottomNavItem(0, Icons.settings, 'Settings'),
+          _buildBottomNavItem(1, Icons.person, 'Your Profile'),
+          _buildBottomNavItem(2, Icons.settings, 'Settings'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem(int index, IconData icon, String label) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? AppTheme.primaryGreen : AppTheme.charcoal.withOpacity(0.6),
+            size: 24,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? AppTheme.primaryGreen : AppTheme.charcoal.withOpacity(0.6),
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
         ],
