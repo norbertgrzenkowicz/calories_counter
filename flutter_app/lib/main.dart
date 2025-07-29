@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,7 @@ class FoodScannerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Food Scanner',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: AppTheme.theme,
       home: CameraScreen(cameras: cameras),
     );
   }
