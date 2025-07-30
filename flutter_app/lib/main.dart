@@ -63,11 +63,46 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   List<Meal> meals = [];
+  DateTime _selectedDate = DateTime.now();
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _goToPreviousDay() {
+    setState(() {
+      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
+    });
+  }
+
+  void _goToNextDay() {
+    setState(() {
+      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
+    });
+  }
+
+  bool _isToday() {
+    final today = DateTime.now();
+    return _selectedDate.year == today.year && 
+           _selectedDate.month == today.month && 
+           _selectedDate.day == today.day;
+  }
+
+  String _getFormattedDate() {
+    if (_isToday()) {
+      return 'Today';
+    }
+    return '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+  }
+
+  List<Meal> _getMealsForSelectedDate() {
+    return meals.where((meal) {
+      return meal.date.year == _selectedDate.year &&
+             meal.date.month == _selectedDate.month &&
+             meal.date.day == _selectedDate.day;
+    }).toList();
   }
 
   void _onMealTapped(int mealIndex) {
@@ -94,6 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => AddMealScreen(
+          selectedDate: _selectedDate,
           onMealAdded: (meal) {
             setState(() {
               meals.add(meal);
@@ -109,10 +145,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: AppTheme.creamWhite,
       appBar: AppBar(
-        title: const Text('Today'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          onPressed: _goToPreviousDay,
+          icon: const Icon(Icons.arrow_back_ios),
+          tooltip: 'Previous Day',
+        ),
+        title: Text(_getFormattedDate()),
+        centerTitle: true,
         actions: [
+          if (!_isToday())
+            IconButton(
+              onPressed: _goToNextDay,
+              icon: const Icon(Icons.arrow_forward_ios),
+              tooltip: 'Next Day',
+            ),
           Row(
             children: [
               IconButton(
@@ -152,19 +200,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildNutritionSummary() {
+    final selectedDateMeals = _getMealsForSelectedDate();
+    final totalCalories = selectedDateMeals.fold(0, (sum, meal) => sum + meal.calories);
+    final totalProteins = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.proteins);
+    final totalCarbs = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.carbs);
+    final totalFats = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.fats);
+    
+    const targetCalories = 2000;
+    const targetProteins = 150.0;
+    const targetCarbs = 250.0;
+    const targetFats = 65.0;
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildNutritionBar('XXX kcal / XXX kcal', 0.6),
+            _buildNutritionBar('$totalCalories kcal / $targetCalories kcal', totalCalories / targetCalories),
             const SizedBox(height: 16),
-            _buildNutritionBar('XXX Proteins / XXX Proteins', 0.4),
+            _buildNutritionBar('${totalProteins.toStringAsFixed(1)}g Proteins / ${targetProteins.toStringAsFixed(0)}g Proteins', totalProteins / targetProteins),
             const SizedBox(height: 16),
-            _buildNutritionBar('XXX Carbs / XXX Carbs', 0.8),
+            _buildNutritionBar('${totalCarbs.toStringAsFixed(1)}g Carbs / ${targetCarbs.toStringAsFixed(0)}g Carbs', totalCarbs / targetCarbs),
             const SizedBox(height: 16),
-            _buildNutritionBar('XXX Fat / XXX Fat', 0.3),
+            _buildNutritionBar('${totalFats.toStringAsFixed(1)}g Fat / ${targetFats.toStringAsFixed(0)}g Fat', totalFats / targetFats),
           ],
         ),
       ),
@@ -199,7 +258,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         const SizedBox(height: 16),
-        meals.isEmpty
+        _getMealsForSelectedDate().isEmpty
             ? _buildEmptyMealsRow()
             : _buildMealsGrid(),
       ],
@@ -219,10 +278,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMealsGrid() {
+    final selectedDateMeals = _getMealsForSelectedDate();
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: meals.asMap().entries.map((entry) {
+      children: selectedDateMeals.asMap().entries.map((entry) {
         int index = entry.key;
         Meal meal = entry.value;
         return SizedBox(
@@ -386,8 +446,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class AddMealScreen extends StatefulWidget {
   final Function(Meal) onMealAdded;
+  final DateTime selectedDate;
 
-  const AddMealScreen({super.key, required this.onMealAdded});
+  const AddMealScreen({super.key, required this.onMealAdded, required this.selectedDate});
 
   @override
   State<AddMealScreen> createState() => _AddMealScreenState();
@@ -427,6 +488,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
         fats: double.parse(_fatsController.text),
         carbs: double.parse(_carbsController.text),
         photoPath: _photoPath,
+        date: widget.selectedDate,
       );
       
       widget.onMealAdded(meal);
@@ -439,7 +501,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
     return Scaffold(
       backgroundColor: AppTheme.creamWhite,
       appBar: AppBar(
-        title: const Text('Add Meal'),
+        title: Text('Add Meal - ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
