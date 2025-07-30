@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:io';
 import 'theme/app_theme.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class Meal {
   final String name;
@@ -10,6 +12,7 @@ class Meal {
   final double fats;
   final double carbs;
   final String? photoPath;
+  final DateTime date;
 
   Meal({
     required this.name,
@@ -18,7 +21,8 @@ class Meal {
     required this.fats,
     required this.carbs,
     this.photoPath,
-  });
+    DateTime? date,
+  }) : date = date ?? DateTime.now();
 }
 
 void main() async {
@@ -78,6 +82,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _openCalendar() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CalendarScreen(meals: meals),
+      ),
+    );
+  }
+
   void _addMeal() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -103,6 +115,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           Row(
             children: [
+              IconButton(
+                onPressed: _openCalendar,
+                icon: const Icon(Icons.calendar_today),
+                tooltip: 'Calendar',
+              ),
               IconButton(
                 onPressed: _addMeal,
                 icon: const Icon(Icons.add_circle_outline),
@@ -541,6 +558,355 @@ class _AddMealScreenState extends State<AddMealScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class CalendarScreen extends StatefulWidget {
+  final List<Meal> meals;
+
+  const CalendarScreen({super.key, required this.meals});
+
+  @override
+  State<CalendarScreen> createState() => _CalendarScreenState();
+}
+
+class _CalendarScreenState extends State<CalendarScreen> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  Map<DateTime, List<Meal>> _getMealsForDay() {
+    Map<DateTime, List<Meal>> mealsByDay = {};
+    for (Meal meal in widget.meals) {
+      DateTime day = DateTime(meal.date.year, meal.date.month, meal.date.day);
+      if (mealsByDay[day] == null) {
+        mealsByDay[day] = [];
+      }
+      mealsByDay[day]!.add(meal);
+    }
+    return mealsByDay;
+  }
+
+  int _getCaloriesForDay(DateTime day) {
+    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
+    DateTime dayKey = DateTime(day.year, day.month, day.day);
+    List<Meal>? mealsForDay = mealsByDay[dayKey];
+    if (mealsForDay == null) return 0;
+    return mealsForDay.fold(0, (sum, meal) => sum + meal.calories);
+  }
+
+  List<FlSpot> _getChartData() {
+    DateTime oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
+    List<FlSpot> spots = [];
+    
+    for (int i = 0; i <= 30; i++) {
+      DateTime day = oneMonthAgo.add(Duration(days: i));
+      int calories = _getCaloriesForDay(day);
+      spots.add(FlSpot(i.toDouble(), calories.toDouble()));
+    }
+    
+    return spots;
+  }
+
+  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    setState(() {
+      _selectedDay = selectedDay;
+      _focusedDay = focusedDay;
+    });
+    
+    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
+    DateTime dayKey = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    List<Meal>? mealsForDay = mealsByDay[dayKey];
+    
+    if (mealsForDay != null && mealsForDay.isNotEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => DayMealsScreen(
+            date: selectedDay,
+            meals: mealsForDay,
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
+    
+    return Scaffold(
+      backgroundColor: AppTheme.creamWhite,
+      appBar: AppBar(
+        title: const Text('Calendar'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close),
+            tooltip: 'Exit to Main Menu',
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TableCalendar<Meal>(
+                  firstDay: DateTime.utc(2020, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  focusedDay: _focusedDay,
+                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                  eventLoader: (day) {
+                    DateTime dayKey = DateTime(day.year, day.month, day.day);
+                    return mealsByDay[dayKey] ?? [];
+                  },
+                  onDaySelected: _onDaySelected,
+                  calendarStyle: const CalendarStyle(
+                    outsideDaysVisible: false,
+                  ),
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                  ),
+                  calendarBuilders: CalendarBuilders(
+                    markerBuilder: (context, day, events) {
+                      if (events.isNotEmpty) {
+                        int calories = _getCaloriesForDay(day);
+                        return Positioned(
+                          bottom: 1,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryGreen,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${calories}kcal',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Calories Chart (Last 30 Days)',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: LineChart(
+                          LineChartData(
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: _getChartData(),
+                                isCurved: true,
+                                color: AppTheme.primaryGreen,
+                                barWidth: 3,
+                                dotData: const FlDotData(show: false),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                                ),
+                              ),
+                            ],
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 40,
+                                  getTitlesWidget: (value, meta) {
+                                    return Text(
+                                      '${value.toInt()}',
+                                      style: const TextStyle(fontSize: 10),
+                                    );
+                                  },
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 20,
+                                  getTitlesWidget: (value, meta) {
+                                    if (value.toInt() % 5 == 0) {
+                                      DateTime date = DateTime.now().subtract(Duration(days: 30 - value.toInt()));
+                                      return Text(
+                                        '${date.day}/${date.month}',
+                                        style: const TextStyle(fontSize: 8),
+                                      );
+                                    }
+                                    return const Text('');
+                                  },
+                                ),
+                              ),
+                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            ),
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              horizontalInterval: 200,
+                              getDrawingHorizontalLine: (value) {
+                                return FlLine(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  strokeWidth: 1,
+                                );
+                              },
+                            ),
+                            borderData: FlBorderData(
+                              show: true,
+                              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DayMealsScreen extends StatelessWidget {
+  final DateTime date;
+  final List<Meal> meals;
+
+  const DayMealsScreen({super.key, required this.date, required this.meals});
+
+  @override
+  Widget build(BuildContext context) {
+    int totalCalories = meals.fold(0, (sum, meal) => sum + meal.calories);
+    double totalProteins = meals.fold(0, (sum, meal) => sum + meal.proteins);
+    double totalCarbs = meals.fold(0, (sum, meal) => sum + meal.carbs);
+    double totalFats = meals.fold(0, (sum, meal) => sum + meal.fats);
+
+    return Scaffold(
+      backgroundColor: AppTheme.creamWhite,
+      appBar: AppBar(
+        title: Text('${date.day}/${date.month}/${date.year}'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daily Summary',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildNutritionBar(context, '$totalCalories kcal', 1.0),
+                    const SizedBox(height: 16),
+                    _buildNutritionBar(context, '${totalProteins.toStringAsFixed(1)}g Proteins', 0.8),
+                    const SizedBox(height: 16),
+                    _buildNutritionBar(context, '${totalCarbs.toStringAsFixed(1)}g Carbs', 0.6),
+                    const SizedBox(height: 16),
+                    _buildNutritionBar(context, '${totalFats.toStringAsFixed(1)}g Fats', 0.4),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'Meals',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: meals.length,
+                itemBuilder: (context, index) {
+                  final meal = meals[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: AppTheme.softGray,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: meal.photoPath != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(meal.photoPath!),
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const Icon(Icons.fastfood, color: AppTheme.charcoal),
+                      ),
+                      title: Text(meal.name),
+                      subtitle: Text('${meal.calories} kcal'),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('P: ${meal.proteins.toStringAsFixed(1)}g', style: const TextStyle(fontSize: 10)),
+                          Text('C: ${meal.carbs.toStringAsFixed(1)}g', style: const TextStyle(fontSize: 10)),
+                          Text('F: ${meal.fats.toStringAsFixed(1)}g', style: const TextStyle(fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNutritionBar(BuildContext context, String label, double progress) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: progress,
+          backgroundColor: AppTheme.softGray,
+          valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
+          minHeight: 8,
+        ),
+      ],
     );
   }
 }
