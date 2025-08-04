@@ -50,7 +50,7 @@ class SupabaseService {
       developer.log('Testing Supabase connection', name: 'SupabaseService');
 
       final response = await client
-          .from('test')
+          .from('users')
           .select('*')
           .limit(1);
 
@@ -101,13 +101,14 @@ class SupabaseService {
 
       print('🔄 Getting Supabase status...');
       
-      final response = await client.rpc('version');
+      // Simple status check by querying users table instead of version function
+      await client.from('users').select('count').limit(1);
       
       final status = {
         'status': 'connected',
         'initialized': true,
         'url': supabaseUrl,
-        'version': response,
+        'message': 'Successfully connected to Supabase',
       };
 
       print('✅ Status check successful');

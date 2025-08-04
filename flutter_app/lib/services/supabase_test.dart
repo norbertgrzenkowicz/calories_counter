@@ -8,8 +8,13 @@ class SupabaseTest {
       
       final supabaseService = SupabaseService();
       
-      print('📝 Step 1: Initializing Supabase...');
-      await supabaseService.initialize();
+      print('📝 Step 1: Checking if Supabase is initialized...');
+      if (!supabaseService.isInitialized) {
+        print('⚠️ Supabase not initialized, attempting to initialize...');
+        await supabaseService.initialize();
+      } else {
+        print('✅ Supabase already initialized');
+      }
       
       print('📝 Step 2: Testing connection...');
       final connectionResult = await supabaseService.testConnection();
