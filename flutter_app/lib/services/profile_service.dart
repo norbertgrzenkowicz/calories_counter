@@ -307,6 +307,19 @@ class ProfileService {
       
       final weights = sortedHistory.map((e) => e.weightKg).toList();
       final totalEntries = weights.length;
+      
+      // Additional safety check to prevent division by zero
+      if (totalEntries == 0) {
+        return {
+          'totalEntries': 0,
+          'weightChange': 0.0,
+          'averageWeight': 0.0,
+          'minWeight': 0.0,
+          'maxWeight': 0.0,
+          'trend': 'stable',
+        };
+      }
+      
       final averageWeight = weights.reduce((a, b) => a + b) / totalEntries;
       final minWeight = weights.reduce((a, b) => a < b ? a : b);
       final maxWeight = weights.reduce((a, b) => a > b ? a : b);

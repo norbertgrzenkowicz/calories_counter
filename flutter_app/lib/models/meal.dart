@@ -1,4 +1,9 @@
 class Meal {
+  // Helper function to safely convert to double and handle NaN values
+  static double _safeToDouble(dynamic value) {
+    final result = value?.toDouble() ?? 0.0;
+    return result.isNaN || result.isInfinite ? 0.0 : result;
+  }
   final int? id;
   final String name;
   final String? uid;
@@ -59,9 +64,9 @@ class Meal {
       name: data['name'] ?? '',
       uid: data['uid'],
       calories: data['calories']?.toInt() ?? 0,
-      proteins: data['proteins']?.toDouble() ?? 0.0,
-      fats: data['fats']?.toDouble() ?? 0.0,
-      carbs: data['carbs']?.toDouble() ?? 0.0,
+      proteins: _safeToDouble(data['proteins']),
+      fats: _safeToDouble(data['fats']),
+      carbs: _safeToDouble(data['carbs']),
       photoUrl: data['photo_url'],
       date: DateTime.parse(data['date'] ?? DateTime.now().toIso8601String()),
       createdAt: data['created_at'] != null ? DateTime.parse(data['created_at']) : null,
