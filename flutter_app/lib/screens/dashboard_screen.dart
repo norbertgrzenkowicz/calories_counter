@@ -5,9 +5,13 @@ import 'package:food_scanner/services/supabase_service.dart';
 
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
+import '../models/user_profile.dart';
+import '../services/profile_service.dart';
+import '../services/nutrition_calculator_service.dart';
 import 'profile_screen.dart';
 import 'calendar_screen.dart';
 import 'add_meal_screen.dart';
+import 'weight_tracking_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -22,6 +26,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   late Future<List<Meal>> _meals;
   late DateTime _selectedDate;
+  UserProfile? _userProfile;
+  bool _isLoadingProfile = true;
 
   @override
   void initState() {
@@ -29,6 +35,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
     _meals = _getMealsFromSupabase();
+    _loadUserProfile();
+  }
+
+  void _loadUserProfile() async {
+    try {
+      final profileService = ProfileService();
+      final profile = await profileService.getUserProfile();
+      
+      setState(() {
+        _userProfile = profile;
+        _isLoadingProfile = false;
+      });
+      
+      // If no profile exists, prompt user to create one
+      if (profile == null && mounted) {
+        _showProfilePrompt();
+      }
+    } catch (e) {
+      setState(() => _isLoadingProfile = false);
+      print('Error loading user profile: $e');
+    }
+  }
+
+  void _showProfilePrompt() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Complete Your Profile'),
+        content: const Text(
+          'To get personalized calorie and nutrition targets, please complete your profile with your basic information.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _navigateToProfile();
+            },
+            child: const Text('Complete Profile'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Skip for Now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToProfile() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+    );
+    
+    // Reload profile after returning from profile screen
+    if (result != null || mounted) {
+      _loadUserProfile();
+    }
   }
 
   Future<List<Meal>> _getMealsFromSupabase() async {
@@ -52,11 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
     
     if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const ProfileScreen(),
-        ),
-      );
+      _navigateToProfile();
     }
   }
 
@@ -119,6 +179,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _openWeightTracking() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const WeightTrackingScreen(),
+      ),
+    );
+    
+    // Reload profile after returning from weight tracking (in case weight changed)
+    if (result != null || mounted) {
+      _loadUserProfile();
+    }
+  }
+
   void _addMeal() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -163,6 +236,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 tooltip: 'Calendar',
               ),
               IconButton(
+                onPressed: _openWeightTracking,
+                icon: const Icon(Icons.monitor_weight_outlined),
+                tooltip: 'Weight Tracking',
+              ),
+              IconButton(
                 onPressed: _addMeal,
                 icon: const Icon(Icons.add_circle_outline),
                 tooltip: 'Add Meal',
@@ -170,11 +248,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               PopupMenuButton<String>(
                 onSelected: (value) async {
                   if (value == 'profile') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      ),
-                    );
+                    _navigateToProfile();
                   } else if (value == 'logout') {
                     await SupabaseService().signOut();
                     Navigator.of(context).pushAndRemoveUntil(
@@ -221,25 +295,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildNutritionSummary() {
+    if (_isLoadingProfile) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20.0),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return FutureBuilder<List<Meal>>(
       future: _getMealsForSelectedDate(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
         }
+        
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading meals'));
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Center(child: Text('Error loading meals')),
+            ),
+          );
         }
+
         final selectedDateMeals = snapshot.data ?? [];
         final totalCalories = selectedDateMeals.fold(0, (sum, meal) => sum + meal.calories);
         final totalProteins = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.proteins);
         final totalCarbs = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.carbs);
         final totalFats = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.fats);
         
-        const targetCalories = 2000;
-        const targetProteins = 150.0;
-        const targetCarbs = 250.0;
-        const targetFats = 65.0;
+        // Get dynamic targets from user profile or use defaults
+        int targetCalories = 2000;
+        double targetProteins = 150.0;
+        double targetCarbs = 250.0;
+        double targetFats = 65.0;
+        
+        if (_userProfile != null && _userProfile!.hasRequiredDataForCalculations) {
+          final nutritionProfile = NutritionCalculatorService.calculateCompleteNutritionProfile(_userProfile!);
+          targetCalories = nutritionProfile['targetCalories'] ?? 2000;
+          final macros = nutritionProfile['macros'] as Map<String, double>? ?? {};
+          targetProteins = macros['protein'] ?? 150.0;
+          targetCarbs = macros['carbs'] ?? 250.0;
+          targetFats = macros['fat'] ?? 65.0;
+        }
         
         return Card(
           child: Padding(
@@ -247,13 +352,134 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildNutritionBar('$totalCalories kcal / $targetCalories kcal', totalCalories / targetCalories),
+                // Header with profile status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Daily Nutrition',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (_userProfile == null || !_userProfile!.hasRequiredDataForCalculations) ...[
+                      GestureDetector(
+                        onTap: _navigateToProfile,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.shade300),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                size: 16,
+                                color: Colors.orange.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Complete Profile',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 16,
+                              color: Colors.green.shade700,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Personalized',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 20),
+                
+                // Nutrition bars
+                _buildNutritionBar(
+                  '$totalCalories kcal / ${targetCalories.round()} kcal',
+                  targetCalories > 0 ? totalCalories / targetCalories : 0,
+                  isCalories: true,
+                  remaining: (targetCalories - totalCalories).toDouble(),
+                ),
                 const SizedBox(height: 16),
-                _buildNutritionBar('${totalProteins.toStringAsFixed(1)}g Proteins / ${targetProteins.toStringAsFixed(0)}g Proteins', totalProteins / targetProteins),
+                _buildNutritionBar(
+                  '${totalProteins.toStringAsFixed(1)}g / ${targetProteins.toStringAsFixed(0)}g Protein',
+                  targetProteins > 0 ? totalProteins / targetProteins : 0,
+                  remaining: targetProteins - totalProteins,
+                ),
                 const SizedBox(height: 16),
-                _buildNutritionBar('${totalCarbs.toStringAsFixed(1)}g Carbs / ${targetCarbs.toStringAsFixed(0)}g Carbs', totalCarbs / targetCarbs),
+                _buildNutritionBar(
+                  '${totalCarbs.toStringAsFixed(1)}g / ${targetCarbs.toStringAsFixed(0)}g Carbs',
+                  targetCarbs > 0 ? totalCarbs / targetCarbs : 0,
+                  remaining: targetCarbs - totalCarbs,
+                ),
                 const SizedBox(height: 16),
-                _buildNutritionBar('${totalFats.toStringAsFixed(1)}g Fat / ${targetFats.toStringAsFixed(0)}g Fat', totalFats / targetFats),
+                _buildNutritionBar(
+                  '${totalFats.toStringAsFixed(1)}g / ${targetFats.toStringAsFixed(0)}g Fat',
+                  targetFats > 0 ? totalFats / targetFats : 0,
+                  remaining: targetFats - totalFats,
+                ),
+                
+                // Goal information if profile exists
+                if (_userProfile != null && _userProfile!.hasRequiredDataForCalculations) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.softGray.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.flag,
+                          size: 16,
+                          color: AppTheme.primaryGreen,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Goal: ${_userProfile!.goalDisplayName}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.charcoal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -262,20 +488,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildNutritionBar(String label, double progress) {
+  Widget _buildNutritionBar(
+    String label, 
+    double progress, {
+    bool isCalories = false,
+    double? remaining,
+  }) {
+    // Determine progress bar color based on progress
+    Color progressColor;
+    if (progress >= 1.0) {
+      progressColor = progress > 1.2 ? Colors.red : Colors.orange;
+    } else if (progress >= 0.8) {
+      progressColor = AppTheme.primaryGreen;
+    } else {
+      progressColor = Colors.blue;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (remaining != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: remaining > 0 ? Colors.blue.shade50 : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  remaining > 0 
+                      ? '${remaining.toStringAsFixed(isCalories ? 0 : 1)}${isCalories ? ' kcal' : 'g'} left'
+                      : '${(-remaining).toStringAsFixed(isCalories ? 0 : 1)}${isCalories ? ' kcal' : 'g'} over',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: remaining > 0 ? Colors.blue.shade700 : Colors.orange.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: progress,
-          backgroundColor: AppTheme.softGray,
-          valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
-          minHeight: 8,
+        Stack(
+          children: [
+            LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              backgroundColor: AppTheme.softGray,
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+              minHeight: 8,
+            ),
+            if (progress > 1.0) ...[
+              // Show overflow indicator
+              Positioned.fill(
+                child: LinearProgressIndicator(
+                  value: 1.0,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(progressColor.withOpacity(0.3)),
+                  minHeight: 8,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${(progress * 100).toStringAsFixed(0)}% of target',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.grey.shade600,
+            fontSize: 11,
+          ),
         ),
       ],
     );

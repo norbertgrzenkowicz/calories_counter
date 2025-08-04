@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
+import '../models/user_profile.dart';
+import '../services/profile_service.dart';
+import '../services/nutrition_calculator_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,19 +14,22 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _ageController = TextEditingController();
+  final _heightController = TextEditingController();
   final _weightController = TextEditingController();
+  final _targetWeightController = TextEditingController();
+  final _weeklyTargetController = TextEditingController();
   
+  String _selectedGender = 'male';
   String _selectedGoal = 'maintaining';
-  double _activityLevel = 1.0;
+  String _selectedActivityKey = 'sedentary';
+  DateTime? _dateOfBirth;
   
-  final List<String> _goals = ['hypertrophy', 'weight loss', 'maintaining'];
-  final List<String> _activityLabels = [
-    'Sedentary',
-    'Sedentary + Walking', 
-    'Mid Physical Activity',
-    'Construction Worker'
-  ];
+  bool _isLoading = false;
+  bool _isLoadingProfile = true;
+  UserProfile? _currentProfile;
+
+  final List<String> _genders = ['male', 'female'];
+  final List<String> _goals = ['maintaining', 'weight_loss', 'weight_gain', 'hypertrophy'];
 
   @override
   void initState() {
@@ -35,42 +40,162 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _ageController.dispose();
+    _heightController.dispose();
     _weightController.dispose();
+    _targetWeightController.dispose();
+    _weeklyTargetController.dispose();
     super.dispose();
   }
 
   void _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nameController.text = prefs.getString('profile_name') ?? '';
-      _ageController.text = prefs.getString('profile_age') ?? '';
-      _weightController.text = prefs.getString('profile_weight') ?? '';
-      _selectedGoal = prefs.getString('profile_goal') ?? 'maintaining';
-      _activityLevel = prefs.getDouble('profile_activity') ?? 1.0;
-    });
+    setState(() => _isLoadingProfile = true);
+    
+    try {
+      final profileService = ProfileService();
+      final profile = await profileService.getUserProfile();
+      
+      if (profile != null) {
+        setState(() {
+          _currentProfile = profile;
+          _nameController.text = profile.fullName ?? '';
+          _heightController.text = profile.heightCm.toString();
+          _weightController.text = profile.currentWeightKg.toString();
+          _targetWeightController.text = profile.targetWeightKg?.toString() ?? '';
+          _weeklyTargetController.text = profile.weeklyWeightLossTarget.toString();
+          _selectedGender = profile.gender;
+          _selectedGoal = profile.goal;
+          _selectedActivityKey = NutritionCalculatorService.getActivityKey(profile.activityLevel);
+          _dateOfBirth = profile.dateOfBirth;
+        });
+      } else {
+        // Initialize with defaults for new profile
+        _weeklyTargetController.text = '0.5';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading profile: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isLoadingProfile = false);
+    }
   }
 
   void _saveProfile() async {
-    if (_formKey.currentState!.validate()) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('profile_name', _nameController.text);
-      await prefs.setString('profile_age', _ageController.text);
-      await prefs.setString('profile_weight', _weightController.text);
-      await prefs.setString('profile_goal', _selectedGoal);
-      await prefs.setDouble('profile_activity', _activityLevel);
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final profileService = ProfileService();
+      
+      print('Creating profile with data:');
+      print('- Name: ${_nameController.text.trim()}');
+      print('- Gender: $_selectedGender');
+      print('- Height: ${_heightController.text}');
+      print('- Weight: ${_weightController.text}');
+      print('- Target Weight: ${_targetWeightController.text}');
+      print('- Date of Birth: $_dateOfBirth');
+      print('- Goal: $_selectedGoal');
+      print('- Activity: $_selectedActivityKey');
+      print('- Weekly Target: ${_weeklyTargetController.text}');
+      
+      final profile = UserProfile(
+        id: _currentProfile?.id,
+        fullName: _nameController.text.trim(),
+        gender: _selectedGender,
+        heightCm: double.parse(_heightController.text),
+        currentWeightKg: double.parse(_weightController.text),
+        targetWeightKg: _targetWeightController.text.isNotEmpty 
+            ? double.parse(_targetWeightController.text)
+            : null,
+        dateOfBirth: _dateOfBirth,
+        goal: _selectedGoal,
+        activityLevel: NutritionCalculatorService.getPALValue(_selectedActivityKey),
+        weeklyWeightLossTarget: double.parse(_weeklyTargetController.text),
+        weightLossStartDate: _selectedGoal == 'weight_loss' && _currentProfile?.weightLossStartDate == null
+            ? DateTime.now()
+            : _currentProfile?.weightLossStartDate,
+        initialWeightKg: _selectedGoal == 'weight_loss' && _currentProfile?.initialWeightKg == null
+            ? double.parse(_weightController.text)
+            : _currentProfile?.initialWeightKg,
+      );
+      
+      print('Profile object created: $profile');
+      print('Has required data: ${profile.hasRequiredDataForCalculations}');
+      
+      final savedProfile = await profileService.saveUserProfile(profile);
+      print('Profile saved successfully: ${savedProfile.id}');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully!')),
+          const SnackBar(
+            content: Text('Profile saved successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.of(context).pop();
       }
+    } catch (e, stackTrace) {
+      print('Error saving profile: $e');
+      print('Stack trace: $stackTrace');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _selectDateOfBirth() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25)),
+      firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
+    );
+    
+    if (date != null) {
+      setState(() => _dateOfBirth = date);
+    }
+  }
+
+  String _getGoalDisplayName(String goal) {
+    switch (goal) {
+      case 'weight_loss':
+        return 'Weight Loss';
+      case 'weight_gain':
+        return 'Weight Gain';
+      case 'maintaining':
+        return 'Maintaining';
+      case 'hypertrophy':
+        return 'Hypertrophy';
+      default:
+        return goal;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingProfile) {
+      return Scaffold(
+        backgroundColor: AppTheme.creamWhite,
+        appBar: AppBar(
+          title: const Text('Your Profile'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.creamWhite,
       appBar: AppBar(
@@ -86,6 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Personal Information Card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -100,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         TextFormField(
                           controller: _nameController,
                           decoration: const InputDecoration(
-                            labelText: 'Name',
+                            labelText: 'Full Name',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.person),
                           ),
@@ -112,41 +238,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _ageController,
+                        DropdownButtonFormField<String>(
+                          value: _selectedGender,
                           decoration: const InputDecoration(
-                            labelText: 'Age',
+                            labelText: 'Gender',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.cake),
+                            prefixIcon: Icon(Icons.wc),
                           ),
-                          keyboardType: TextInputType.number,
+                          items: _genders.map((gender) {
+                            return DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender.capitalize()),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() => _selectedGender = value!);
+                          },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your age';
-                            }
-                            final age = int.tryParse(value);
-                            if (age == null || age <= 0 || age > 120) {
-                              return 'Please enter a valid age';
+                              return 'Please select your gender';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _weightController,
-                          decoration: const InputDecoration(
-                            labelText: 'Weight (kg)',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.monitor_weight),
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Date of Birth',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.cake),
+                            suffixIcon: const Icon(Icons.calendar_today),
+                            hintText: _dateOfBirth != null 
+                                ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
+                                : 'Select date of birth',
                           ),
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          onTap: _selectDateOfBirth,
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your weight';
+                            if (_dateOfBirth == null) {
+                              return 'Please select your date of birth';
                             }
-                            final weight = double.tryParse(value);
-                            if (weight == null || weight <= 0 || weight > 300) {
-                              return 'Please enter a valid weight';
+                            final age = DateTime.now().year - _dateOfBirth!.year;
+                            if (age < 13 || age > 100) {
+                              return 'Please enter a valid date of birth';
                             }
                             return null;
                           },
@@ -155,7 +289,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
+                
                 const SizedBox(height: 20),
+                
+                // Physical Characteristics Card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -163,24 +300,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Goals',
+                          'Physical Characteristics',
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: _heightController,
+                          decoration: const InputDecoration(
+                            labelText: 'Height (cm)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.height),
+                            suffixText: 'cm',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your height';
+                            }
+                            final height = double.tryParse(value);
+                            if (height == null || height < 100 || height > 250) {
+                              return 'Please enter a valid height (100-250 cm)';
+                            }
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _weightController,
+                          decoration: const InputDecoration(
+                            labelText: 'Current Weight (kg)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.monitor_weight),
+                            suffixText: 'kg',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your current weight';
+                            }
+                            final weight = double.tryParse(value);
+                            if (weight == null || weight < 30 || weight > 300) {
+                              return 'Please enter a valid weight (30-300 kg)';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _targetWeightController,
+                          decoration: const InputDecoration(
+                            labelText: 'Target Weight (kg) - Optional',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.flag),
+                            suffixText: 'kg',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          validator: (value) {
+                            if (value != null && value.isNotEmpty) {
+                              final weight = double.tryParse(value);
+                              if (weight == null || weight < 30 || weight > 300) {
+                                return 'Please enter a valid target weight (30-300 kg)';
+                              }
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Goals Card
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Goals & Targets',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Primary Goal',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: _goals.map((goal) {
                             final isSelected = _selectedGoal == goal;
                             return ChoiceChip(
-                              label: Text(
-                                goal.split(' ').map((word) => word[0].toUpperCase() + word.substring(1)).join(' '),
-                              ),
+                              label: Text(_getGoalDisplayName(goal)),
                               selected: isSelected,
                               onSelected: (selected) {
-                                setState(() {
-                                  _selectedGoal = goal;
-                                });
+                                setState(() => _selectedGoal = goal);
                               },
                               selectedColor: AppTheme.primaryGreen,
                               backgroundColor: AppTheme.softGray,
@@ -191,11 +409,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             );
                           }).toList(),
                         ),
+                        if (_selectedGoal == 'weight_loss' || _selectedGoal == 'weight_gain') ...[
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _weeklyTargetController,
+                            decoration: InputDecoration(
+                              labelText: _selectedGoal == 'weight_loss'
+                                  ? 'Weekly Weight Loss Target (kg)'
+                                  : 'Weekly Weight Gain Target (kg)',
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.trending_down),
+                              suffixText: 'kg/week',
+                              helperText: 'Recommended: 0.5-1.0 kg/week for sustainable results',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter weekly target';
+                              }
+                              final target = double.tryParse(value);
+                              if (target == null || target <= 0 || target > 2.0) {
+                                return 'Please enter a valid target (0.1-2.0 kg/week)';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
                       ],
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
+
+                // Activity Level Card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -206,51 +453,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Activity Level',
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _activityLabels[_activityLevel.toInt()],
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryGreen,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Slider(
-                          value: _activityLevel,
-                          min: 0,
-                          max: 3,
-                          divisions: 3,
-                          activeColor: AppTheme.primaryGreen,
-                          inactiveColor: AppTheme.softGray,
-                          onChanged: (value) {
-                            setState(() {
-                              _activityLevel = value;
-                            });
-                          },
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Low', style: Theme.of(context).textTheme.bodySmall),
-                              Text('High', style: Theme.of(context).textTheme.bodySmall),
-                            ],
-                          ),
-                        ),
+                        const SizedBox(height: 20),
+                        ...NutritionCalculatorService.activityLevels.entries.map((entry) {
+                          final isSelected = _selectedActivityKey == entry.key;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: InkWell(
+                              onTap: () => setState(() => _selectedActivityKey = entry.key),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppTheme.primaryGreen.withOpacity(0.1) : Colors.transparent,
+                                  border: Border.all(
+                                    color: isSelected ? AppTheme.primaryGreen : Colors.grey.shade300,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Radio<String>(
+                                      value: entry.key,
+                                      groupValue: _selectedActivityKey,
+                                      onChanged: (value) => setState(() => _selectedActivityKey = value!),
+                                      activeColor: AppTheme.primaryGreen,
+                                    ),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            NutritionCalculatorService.activityDescriptions[entry.key]!,
+                                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                            ),
+                                          ),
+                                          Text(
+                                            'PAL: ${entry.value}',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ],
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
+                // Save Button
                 ElevatedButton(
-                  onPressed: _saveProfile,
+                  onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryGreen,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.all(16),
+                    disabledBackgroundColor: Colors.grey.shade400,
                   ),
-                  child: const Text('Save Profile'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Save Profile'),
                 ),
               ],
             ),
@@ -258,5 +536,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return '${this[0].toUpperCase()}${substring(1)}';
   }
 }
