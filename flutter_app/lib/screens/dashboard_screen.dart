@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:io';
+import 'package:food_scanner/screens/login_screen.dart';
+import 'package:food_scanner/services/supabase_service.dart';
+
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/persistence_service.dart';
@@ -151,10 +154,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: const Icon(Icons.add_circle_outline),
                 tooltip: 'Add Meal',
               ),
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: AppTheme.primaryGreen,
-                child: Icon(Icons.person, color: Colors.white, size: 20),
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  if (value == 'profile') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  } else if (value == 'logout') {
+                    await SupabaseService().signOut();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'profile',
+                    child: Text('My Profile'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Text('Logout'),
+                  ),
+                ],
+                child: const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppTheme.primaryGreen,
+                  child: Icon(Icons.person, color: Colors.white, size: 20),
+                ),
               ),
               const SizedBox(width: 16),
             ],

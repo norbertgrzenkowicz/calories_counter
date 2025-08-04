@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Generated files that should not be committed
+android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+# iOS generated files
+ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
+
+# SQLite web binaries (can be regenerated with dart run sqflite_common_ffi_web:setup)
+web/sqflite_sw.js
+web/sqlite3.wasm
