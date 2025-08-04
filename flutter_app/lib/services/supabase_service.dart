@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
@@ -179,6 +180,200 @@ class SupabaseService {
     } catch (e) {
       developer.log('Failed to sign out: $e', name: 'SupabaseService');
       rethrow;
+    }
+  }
+
+  // Get current user ID
+  String? getCurrentUserId() {
+    if (!isInitialized) return null;
+    return client.auth.currentUser?.id;
+  }
+
+  // Fetch meals for a specific date range and current user
+  Future<List<Map<String, dynamic>>> getMealsByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Fetching meals for user: $userId from ${startDate.toIso8601String()} to ${endDate.toIso8601String()}', name: 'SupabaseService');
+
+      final response = await client
+          .from('meals')
+          .select('*')
+          .eq('uid', userId)
+          .gte('date', startDate.toIso8601String())
+          .lte('date', endDate.toIso8601String())
+          .order('date', ascending: true);
+
+      developer.log('Fetched ${response.length} meals', name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to fetch meals by date range: $e', name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  // Fetch meals for a specific date and current user
+  Future<List<Map<String, dynamic>>> getMealsByDate(DateTime date) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Create start and end of day timestamps
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+      developer.log('Fetching meals for user: $userId on ${date.toIso8601String()}', name: 'SupabaseService');
+
+      final response = await client
+          .from('meals')
+          .select('*')
+          .eq('uid', userId)
+          .gte('date', startOfDay.toIso8601String())
+          .lte('date', endOfDay.toIso8601String())
+          .order('created_at', ascending: true);
+
+      developer.log('Fetched ${response.length} meals for date', name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to fetch meals by date: $e', name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  // Fetch all meals for current user
+  Future<List<Map<String, dynamic>>> getAllUserMeals() async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Fetching all meals for user: $userId', name: 'SupabaseService');
+
+      final response = await client
+          .from('meals')
+          .select('*')
+          .eq('uid', userId)
+          .order('date', ascending: false);
+
+      developer.log('Fetched ${response.length} total meals', name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to fetch all user meals: $e', name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  // Add a meal for current user
+  Future<Map<String, dynamic>> addMeal(Map<String, dynamic> mealData) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Add user ID to meal data
+      final mealWithUser = {
+        ...mealData,
+        'uid': userId,
+      };
+
+      developer.log('Adding meal for user: $userId', name: 'SupabaseService');
+
+      final response = await client
+          .from('meals')
+          .insert(mealWithUser)
+          .select()
+          .single();
+
+      developer.log('Meal added successfully with ID: ${response['id']}', name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to add meal: $e', name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  // Upload photo to Supabase storage
+  Future<String?> uploadMealPhoto(String filePath, String fileName) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Create a unique file path for the user
+      final storagePath = 'meals/$userId/$fileName';
+
+      developer.log('Uploading photo to: $storagePath', name: 'SupabaseService');
+
+      // Upload file to storage
+      await client.storage
+          .from('meal-photos')
+          .upload(storagePath, File(filePath));
+
+      // Get public URL
+      final publicUrl = client.storage
+          .from('meal-photos')
+          .getPublicUrl(storagePath);
+
+      developer.log('Photo uploaded successfully: $publicUrl', name: 'SupabaseService');
+      return publicUrl;
+    } catch (e) {
+      developer.log('Failed to upload photo: $e', name: 'SupabaseService');
+      // Don't rethrow - photo upload failure should not prevent meal creation
+      return null;
+    }
+  }
+
+  // Delete meal photo from storage
+  Future<void> deleteMealPhoto(String photoUrl) async {
+    try {
+      if (!isInitialized) return;
+
+      // Extract path from URL
+      final uri = Uri.parse(photoUrl);
+      final pathSegments = uri.pathSegments;
+      if (pathSegments.length >= 3) {
+        final storagePath = pathSegments.sublist(2).join('/');
+        
+        await client.storage
+            .from('meal-photos')
+            .remove([storagePath]);
+
+        developer.log('Photo deleted from storage: $storagePath', name: 'SupabaseService');
+      }
+    } catch (e) {
+      developer.log('Failed to delete photo: $e', name: 'SupabaseService');
+      // Don't rethrow - photo deletion failure should not prevent other operations
     }
   }
 }

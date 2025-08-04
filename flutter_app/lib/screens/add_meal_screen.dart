@@ -46,37 +46,55 @@ class _AddMealScreenState extends State<AddMealScreen> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final meal = Meal(
-        name: _nameController.text,
-        calories: int.parse(_caloriesController.text),
-        proteins: double.parse(_proteinsController.text),
-        fats: double.parse(_fatsController.text),
-        carbs: double.parse(_carbsController.text),
-        photoPath: _photoPath,
-        date: widget.selectedDate,
-      );
-      
       try {
         final supabaseService = SupabaseService();
-        if (supabaseService.isInitialized) {
-          await supabaseService.client
-              .from('meals')
-              .insert(meal.toSupabase());
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Meal added successfully!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        } else {
+        if (!supabaseService.isInitialized) {
           throw Exception('Supabase not initialized');
+        }
+
+        // Show loading indicator
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Adding meal...'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+
+        String? photoUrl;
+        
+        // Upload photo if one was taken
+        if (_photoPath != null) {
+          final fileName = 'meal_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          photoUrl = await supabaseService.uploadMealPhoto(_photoPath!, fileName);
+        }
+
+        final meal = Meal(
+          name: _nameController.text,
+          calories: int.parse(_caloriesController.text),
+          proteins: double.parse(_proteinsController.text),
+          fats: double.parse(_fatsController.text),
+          carbs: double.parse(_carbsController.text),
+          photoUrl: photoUrl,
+          date: widget.selectedDate,
+        );
+        
+        await supabaseService.addMeal(meal.toSupabase());
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Meal added successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
         }
         
         widget.onMealAdded();
-        Navigator.of(context).pop();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

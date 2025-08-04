@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'dart:io';
 import 'package:food_scanner/screens/login_screen.dart';
 import 'package:food_scanner/services/supabase_service.dart';
 
@@ -39,11 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return [];
       }
       
-      final response = await supabaseService.client
-          .from('meals')
-          .select('*')
-          .order('date', ascending: false);
-      
+      final response = await supabaseService.getAllUserMeals();
       return response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
     } catch (e) {
       print('Error loading meals from Supabase: $e');
@@ -396,14 +391,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
                 ),
-                child: meal.photoPath != null
+                child: meal.photoUrl != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(meal.photoPath!),
+                        child: Image.network(
+                          meal.photoUrl!,
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Text(
+                                'Photo',
+                                style: TextStyle(
+                                  color: AppTheme.charcoal,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
                         ),
                       )
                     : const Center(

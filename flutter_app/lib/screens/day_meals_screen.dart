@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 
@@ -71,12 +70,21 @@ class DayMealsScreen extends StatelessWidget {
                           color: AppTheme.softGray,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: meal.photoPath != null
+                        child: meal.photoUrl != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(meal.photoPath!),
+                                child: Image.network(
+                                  meal.photoUrl!,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.fastfood, color: AppTheme.charcoal);
+                                  },
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  },
                                 ),
                               )
                             : const Icon(Icons.fastfood, color: AppTheme.charcoal),

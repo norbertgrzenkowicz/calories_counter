@@ -1,34 +1,40 @@
 class Meal {
   final int? id;
   final String name;
+  final String? uid;
   final int calories;
   final double proteins;
   final double fats;
   final double carbs;
-  final String? photoPath;
+  final String? photoUrl;
   final DateTime date;
+  final DateTime? createdAt;
 
   Meal({
     this.id,
     required this.name,
+    this.uid,
     required this.calories,
     required this.proteins,
     required this.fats,
     required this.carbs,
-    this.photoPath,
+    this.photoUrl,
     DateTime? date,
+    this.createdAt,
   }) : date = date ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
+      'uid': uid,
       'calories': calories,
       'proteins': proteins,
       'fats': fats,
       'carbs': carbs,
-      'photoPath': photoPath,
+      'photoUrl': photoUrl,
       'date': date.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 
@@ -36,12 +42,14 @@ class Meal {
     return Meal(
       id: map['id'],
       name: map['name'],
+      uid: map['uid'],
       calories: map['calories'],
       proteins: map['proteins'],
       fats: map['fats'],
       carbs: map['carbs'],
-      photoPath: map['photoPath'],
+      photoUrl: map['photoUrl'],
       date: DateTime.parse(map['date']),
+      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : null,
     );
   }
 
@@ -49,23 +57,26 @@ class Meal {
     return Meal(
       id: data['id'],
       name: data['name'] ?? '',
+      uid: data['uid'],
       calories: data['calories']?.toInt() ?? 0,
       proteins: data['proteins']?.toDouble() ?? 0.0,
       fats: data['fats']?.toDouble() ?? 0.0,
       carbs: data['carbs']?.toDouble() ?? 0.0,
-      photoPath: data['photo_path'],
+      photoUrl: data['photo_url'],
       date: DateTime.parse(data['date'] ?? DateTime.now().toIso8601String()),
+      createdAt: data['created_at'] != null ? DateTime.parse(data['created_at']) : null,
     );
   }
 
   Map<String, dynamic> toSupabase() {
     return {
       'name': name,
+      'uid': uid,
       'calories': calories,
       'proteins': proteins,
       'fats': fats,
       'carbs': carbs,
-      'photo_path': photoPath,
+      'photo_url': photoUrl,
       'date': date.toIso8601String(),
     };
   }
