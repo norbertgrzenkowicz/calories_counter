@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
-import '../services/persistence_service.dart';
+import '../services/supabase_service.dart';
 
 class AddMealScreen extends StatefulWidget {
   final Function() onMealAdded;
@@ -56,9 +56,37 @@ class _AddMealScreenState extends State<AddMealScreen> {
         date: widget.selectedDate,
       );
       
-      await PersistenceService().insertMeal(meal);
-      widget.onMealAdded();
-      Navigator.of(context).pop();
+      try {
+        final supabaseService = SupabaseService();
+        if (supabaseService.isInitialized) {
+          await supabaseService.client
+              .from('meals')
+              .insert(meal.toSupabase());
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Meal added successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          throw Exception('Supabase not initialized');
+        }
+        
+        widget.onMealAdded();
+        Navigator.of(context).pop();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to add meal: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 

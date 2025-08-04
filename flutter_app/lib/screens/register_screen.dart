@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
+import 'package:food_scanner/services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,6 +15,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _supabaseService = SupabaseService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -22,15 +26,114 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _register() async {
+  Future<void> _registerWithSupabase() async {
+    final email = _emailController.text.trim();
+    print('Attempting to register user: $email');
+    
+    try {
+      final response = await _supabaseService.client.auth.signUp(
+        email: email,
+        password: _passwordController.text,
+      );
+
+      if (response.user != null) {
+        print('Registration successful for user: $email');
+        print('User ID: ${response.user!.id}');
+        print('Email confirmed: ${response.user!.emailConfirmedAt != null}');
+        
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful! Please check your email to verify your account.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+      } else {
+        print('Registration failed: No user returned in response');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration failed: No user created'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } on AuthException catch (e) {
+      print('Registration failed for user: $email');
+      print('AuthException: ${e.message}');
+      print('Status code: ${e.statusCode}');
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Registration failed: ${e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      print('Registration failed for user: $email');
+      print('Unexpected error: $e');
+      print('Error type: ${e.runtimeType}');
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  bool _validateForm() {
+    if (_emailController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter an email address')),
+      );
+      return false;
+    }
+
+    if (!_emailController.text.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return false;
+    }
+
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters long')),
+      );
+      return false;
+    }
+
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match')),
       );
-      return;
+      return false;
     }
-    // Skip registration for now
-    Navigator.of(context).pop();
+
+    return true;
+  }
+
+  Future<void> _register() async {
+    if (!_validateForm()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _registerWithSupabase();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -83,6 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 32),
               CustomButton(
                 text: 'Register',
+                isLoading: _isLoading,
                 onPressed: _register,
               ),
               const SizedBox(height: 16),

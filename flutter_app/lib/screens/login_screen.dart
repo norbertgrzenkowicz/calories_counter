@@ -4,6 +4,8 @@ import 'package:food_scanner/screens/register_screen.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
+import 'package:food_scanner/services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,7 +17,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _supabaseService = SupabaseService();
   late List<CameraDescription> _cameras;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -39,11 +43,89 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _loginWithSupabase() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both email and password'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    print('Attempting to log in user: $email');
+    
+    try {
+      final response = await _supabaseService.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        print('Login successful for user: $email');
+        print('User ID: ${response.user!.id}');
+        print('Email confirmed: ${response.user!.emailConfirmedAt != null}');
+        print('Session: ${response.session != null ? "Active" : "None"}');
+        
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => DashboardScreen(cameras: _cameras)),
+        );
+      } else {
+        print('Login failed: No user returned in response');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login failed: Invalid credentials'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } on AuthException catch (e) {
+      print('Login failed for user: $email');
+      print('AuthException: ${e.message}');
+      print('Status code: ${e.statusCode}');
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login failed: ${e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      print('Login failed for user: $email');
+      print('Unexpected error: $e');
+      print('Error type: ${e.runtimeType}');
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _login() async {
-    // Skip authentication for now
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => DashboardScreen(cameras: _cameras)),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _loginWithSupabase();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _goToRegisterScreen() {
@@ -95,6 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 32),
               CustomButton(
                 text: 'Log In',
+                isLoading: _isLoading,
                 onPressed: _login,
               ),
               const SizedBox(height: 16),

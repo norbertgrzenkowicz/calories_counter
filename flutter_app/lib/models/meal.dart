@@ -44,4 +44,29 @@ class Meal {
       date: DateTime.parse(map['date']),
     );
   }
+
+  static Meal fromSupabase(Map<String, dynamic> data) {
+    return Meal(
+      id: data['id'],
+      name: data['name'] ?? '',
+      calories: data['calories']?.toInt() ?? 0,
+      proteins: data['proteins']?.toDouble() ?? 0.0,
+      fats: data['fats']?.toDouble() ?? 0.0,
+      carbs: data['carbs']?.toDouble() ?? 0.0,
+      photoPath: data['photo_path'],
+      date: DateTime.parse(data['date'] ?? DateTime.now().toIso8601String()),
+    );
+  }
+
+  Map<String, dynamic> toSupabase() {
+    return {
+      'name': name,
+      'calories': calories,
+      'proteins': proteins,
+      'fats': fats,
+      'carbs': carbs,
+      'photo_path': photoPath,
+      'date': date.toIso8601String(),
+    };
+  }
 }

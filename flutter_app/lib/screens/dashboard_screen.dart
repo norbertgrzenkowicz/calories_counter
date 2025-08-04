@@ -6,7 +6,6 @@ import 'package:food_scanner/services/supabase_service.dart';
 
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
-import '../services/persistence_service.dart';
 import 'profile_screen.dart';
 import 'calendar_screen.dart';
 import 'add_meal_screen.dart';
@@ -30,7 +29,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
-    _meals = PersistenceService().getMeals();
+    _meals = _getMealsFromSupabase();
+  }
+
+  Future<List<Meal>> _getMealsFromSupabase() async {
+    try {
+      final supabaseService = SupabaseService();
+      if (!supabaseService.isInitialized) {
+        return [];
+      }
+      
+      final response = await supabaseService.client
+          .from('meals')
+          .select('*')
+          .order('date', ascending: false);
+      
+      return response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+    } catch (e) {
+      print('Error loading meals from Supabase: $e');
+      return [];
+    }
   }
 
   void _onItemTapped(int index) {
@@ -50,14 +68,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _goToPreviousDay() {
     setState(() {
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
-      _meals = PersistenceService().getMeals();
+      _meals = _getMealsFromSupabase();
     });
   }
 
   void _goToNextDay() {
     setState(() {
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
-      _meals = PersistenceService().getMeals();
+      _meals = _getMealsFromSupabase();
     });
   }
 
@@ -113,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           selectedDate: _selectedDate,
           onMealAdded: () {
             setState(() {
-              _meals = PersistenceService().getMeals();
+              _meals = _getMealsFromSupabase();
             });
           },
         ),
