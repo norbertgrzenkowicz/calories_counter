@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
+import 'meal_detail_screen.dart';
 
 class DayMealsScreen extends StatelessWidget {
   final DateTime date;
@@ -63,6 +64,20 @@ class DayMealsScreen extends StatelessWidget {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MealDetailScreen(
+                              meal: meal,
+                              onMealUpdated: () {
+                                // Refresh could be implemented here if needed
+                                // For now, we'll just navigate back
+                              },
+                            ),
+                          ),
+                        );
+                      },
                       leading: Container(
                         width: 60,
                         height: 60,

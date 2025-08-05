@@ -354,6 +354,77 @@ class SupabaseService {
     }
   }
 
+  // Update a meal for current user
+  Future<Map<String, dynamic>> updateMeal(int mealId, Map<String, dynamic> mealData) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Updating meal $mealId for user: $userId', name: 'SupabaseService');
+
+      final response = await client
+          .from('meals')
+          .update(mealData)
+          .eq('id', mealId)
+          .eq('uid', userId)
+          .select()
+          .single();
+
+      developer.log('Meal updated successfully: ${response['id']}', name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to update meal: $e', name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  // Delete a meal for current user
+  Future<void> deleteMeal(int mealId) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Deleting meal $mealId for user: $userId', name: 'SupabaseService');
+
+      // First get the meal to check if it has a photo
+      final meal = await client
+          .from('meals')
+          .select('photo_url')
+          .eq('id', mealId)
+          .eq('uid', userId)
+          .single();
+
+      // Delete the meal from database
+      await client
+          .from('meals')
+          .delete()
+          .eq('id', mealId)
+          .eq('uid', userId);
+
+      // Delete the photo if it exists
+      if (meal['photo_url'] != null) {
+        await deleteMealPhoto(meal['photo_url']);
+      }
+
+      developer.log('Meal deleted successfully: $mealId', name: 'SupabaseService');
+    } catch (e) {
+      developer.log('Failed to delete meal: $e', name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
   // Delete meal photo from storage
   Future<void> deleteMealPhoto(String photoUrl) async {
     try {

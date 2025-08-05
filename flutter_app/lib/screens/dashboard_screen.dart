@@ -12,6 +12,7 @@ import 'profile_screen.dart';
 import 'calendar_screen.dart';
 import 'add_meal_screen.dart';
 import 'weight_tracking_screen.dart';
+import 'meal_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -160,14 +161,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onMealTapped(int mealIndex) async {
     final meals = await _getMealsForSelectedDate();
     if (mealIndex < meals.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${meals[mealIndex].name} was clicked'))
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Meal ${mealIndex + 1} was clicked'))
+      // Navigate to meal detail screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => MealDetailScreen(
+          meal: meals[mealIndex],
+          onMealUpdated: () {
+            setState(() {
+              // Refresh the data when meal is updated or deleted
+              _meals = _getMealsFromSupabase();
+            });
+          },
+        )),
       );
     }
+    // Remove the else block - don't show any message for empty meal slots
+  }
+
+  void _onActualMealTapped(Meal meal) {
+    // Navigate directly to meal detail screen with the actual meal object
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MealDetailScreen(
+        meal: meal,
+        onMealUpdated: () {
+          setState(() {
+            // Refresh the data when meal is updated or deleted
+            _meals = _getMealsFromSupabase();
+          });
+        },
+      )),
+    );
   }
 
   void _openCalendar() async {
@@ -595,7 +619,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             }
             final meals = snapshot.data ?? [];
             return meals.isEmpty
-                ? _buildEmptyMealsRow()
+                ? _buildEmptyMealsMessage()
                 : _buildMealsGrid(meals);
           },
         ),
@@ -603,15 +627,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildEmptyMealsRow() {
-    return Row(
-      children: [
-        Expanded(child: _buildMealCard(0, 'Meal 1 Date')),
-        const SizedBox(width: 12),
-        Expanded(child: _buildMealCard(1, 'Meal 2 Date')),
-        const SizedBox(width: 12),
-        Expanded(child: _buildMealCard(2, 'Meal 3 Date')),
-      ],
+  Widget _buildEmptyMealsMessage() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.fastfood_outlined,
+              size: 48,
+              color: AppTheme.charcoal.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No meals added today',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppTheme.charcoal.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap the + button to add your first meal',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.charcoal.withOpacity(0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -630,48 +674,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildMealCard(int index, String date) {
-    return GestureDetector(
-      onTap: () => _onMealTapped(index),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Container(
-                height: 80,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppTheme.softGray,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
-                ),
-                child: const Center(
-                  child: Text(
-                    'Photo',
-                    style: TextStyle(
-                      color: AppTheme.charcoal,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                date,
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildActualMealCard(int index, Meal meal) {
     return GestureDetector(
-      onTap: () => _onMealTapped(index),
+      onTap: () => _onActualMealTapped(meal),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
