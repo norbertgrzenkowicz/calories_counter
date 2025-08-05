@@ -38,6 +38,19 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
     super.dispose();
   }
 
+  // Helper function to parse weight with both comma and dot decimal separators
+  double? _parseWeight(String text) {
+    if (text.isEmpty) return null;
+    
+    // Replace comma with dot for parsing
+    String normalizedText = text.replaceAll(',', '.');
+    
+    // Handle multiple dots (invalid input)
+    if (normalizedText.split('.').length > 2) return null;
+    
+    return double.tryParse(normalizedText);
+  }
+
   void _loadData() async {
     setState(() => _isLoadingHistory = true);
     
@@ -82,7 +95,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
       return;
     }
 
-    final weight = double.tryParse(_weightController.text);
+    final weight = _parseWeight(_weightController.text);
     if (weight == null || weight <= 0 || weight > 300) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid weight (1-300 kg)')),
@@ -209,6 +222,69 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
     );
   }
 
+  void _showDeleteConfirmation(WeightHistory entry) {
+    final dateString = '${entry.recordedDate.day}/${entry.recordedDate.month}/${entry.recordedDate.year}';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Weight Entry'),
+        content: Text('Are you sure you want to delete the weight entry from $dateString?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteWeightEntry(entry);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteWeightEntry(WeightHistory entry) async {
+    if (entry.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot delete entry: Invalid ID'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final profileService = ProfileService();
+      await profileService.deleteWeightEntry(entry.id!);
+      
+      _loadData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Weight entry deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting weight entry: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildAnalysisRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -272,9 +348,10 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   // Add Weight Entry Card
                   Card(
                     child: Padding(
@@ -295,6 +372,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                             controller: _weightController,
                             decoration: const InputDecoration(
                               labelText: 'Weight (kg)',
+                              hintText: 'e.g., 70.5 or 70,5',
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.monitor_weight),
                               suffixText: 'kg',
@@ -388,8 +466,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                   ),
                   const SizedBox(height: 12),
                   
-                  Expanded(
-                    child: _weightHistory.isEmpty
+                  _weightHistory.isEmpty
                         ? Card(
                             child: Center(
                               child: Padding(
@@ -422,10 +499,8 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                               ),
                             ),
                           )
-                        : ListView.builder(
-                            itemCount: _weightHistory.length,
-                            itemBuilder: (context, index) {
-                              final entry = _weightHistory[index];
+                        : Column(
+                            children: _weightHistory.map((entry) {
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 child: ListTile(
@@ -437,9 +512,26 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                       size: 20,
                                     ),
                                   ),
-                                  title: Text(
-                                    '${entry.weightKg.toStringAsFixed(1)} kg',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  title: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${entry.weightKg.toStringAsFixed(1)} kg',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => _showDeleteConfirmation(entry),
+                                        icon: const Icon(Icons.close, size: 20),
+                                        color: Colors.red.shade600,
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 24,
+                                          minHeight: 24,
+                                        ),
+                                        tooltip: 'Delete entry',
+                                      ),
+                                    ],
                                   ),
                                   subtitle: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,10 +600,11 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                   ),
                                 ),
                               );
-                            },
+                            }).toList(),
                           ),
-                  ),
+                  const SizedBox(height: 80), // Space for bottom padding
                 ],
+                ),
               ),
             ),
     );

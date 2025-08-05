@@ -280,14 +280,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildNutritionSummary(),
-            const SizedBox(height: 32),
-            _buildMealsSection(),
-            const Spacer(),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildNutritionSummary(),
+              const SizedBox(height: 32),
+              _buildMealsSection(),
+              const SizedBox(height: 80), // Space for bottom navigation
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
