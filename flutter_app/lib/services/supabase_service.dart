@@ -208,7 +208,7 @@ class SupabaseService {
 
       final response = await client
           .from('meals')
-          .select('*')
+          .select('*, photo_url')
           .eq('uid', userId)
           .gte('date', startDate.toIso8601String())
           .lte('date', endDate.toIso8601String())
@@ -242,7 +242,7 @@ class SupabaseService {
 
       final response = await client
           .from('meals')
-          .select('*')
+          .select('*, photo_url')
           .eq('uid', userId)
           .gte('date', startOfDay.toIso8601String())
           .lte('date', endOfDay.toIso8601String())
@@ -272,7 +272,7 @@ class SupabaseService {
 
       final response = await client
           .from('meals')
-          .select('*')
+          .select('*, photo_url')
           .eq('uid', userId)
           .order('date', ascending: false);
 
@@ -334,6 +334,8 @@ class SupabaseService {
       final storagePath = 'meals/$userId/$fileName';
 
       developer.log('Uploading photo to: $storagePath', name: 'SupabaseService');
+      print('DEBUG: About to upload - File path: $filePath, exists: ${File(filePath).existsSync()}');
+      print('DEBUG: User ID: $userId, Storage path: $storagePath');
 
       // Upload file to storage
       await client.storage
@@ -349,6 +351,12 @@ class SupabaseService {
       return publicUrl;
     } catch (e) {
       developer.log('Failed to upload photo: $e', name: 'SupabaseService');
+      print('DEBUG: Photo upload error details: $e');
+      print('DEBUG: File path: $filePath');
+      print('DEBUG: File exists: ${File(filePath).existsSync()}');
+      final currentUserId = getCurrentUserId();
+      print('DEBUG: User ID: $currentUserId');
+      print('DEBUG: Storage path: meals/$currentUserId/$fileName');
       // Don't rethrow - photo upload failure should not prevent meal creation
       return null;
     }

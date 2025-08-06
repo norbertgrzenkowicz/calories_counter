@@ -104,7 +104,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
       
       final response = await supabaseService.getAllUserMeals();
-      return response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+      final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+      
+      // Debug: Log photo URLs
+      for (var meal in meals) {
+        print('Meal: ${meal.name}, Photo URL: ${meal.photoUrl}');
+      }
+      
+      return meals;
     } catch (e) {
       print('Error loading meals from Supabase: $e');
       return [];
@@ -701,12 +708,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           height: double.infinity,
                           errorBuilder: (context, error, stackTrace) {
                             return const Center(
-                              child: Text(
-                                'Photo',
-                                style: TextStyle(
-                                  color: AppTheme.charcoal,
-                                  fontSize: 14,
-                                ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.fastfood, size: 24, color: AppTheme.charcoal),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'No photo',
+                                    style: TextStyle(
+                                      color: AppTheme.charcoal,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           },
@@ -719,12 +733,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       )
                     : const Center(
-                        child: Text(
-                          'Photo',
-                          style: TextStyle(
-                            color: AppTheme.charcoal,
-                            fontSize: 14,
-                          ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.fastfood, size: 24, color: AppTheme.charcoal),
+                            SizedBox(height: 4),
+                            Text(
+                              'No photo',
+                              style: TextStyle(
+                                color: AppTheme.charcoal,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
               ),
