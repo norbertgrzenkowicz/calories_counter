@@ -23,29 +23,16 @@ class SupabaseService {
   Future<void> initialize() async {
     try {
       if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-        print('❌ Supabase environment variables not configured');
-        print('Environment check - URL: ${supabaseUrl.isEmpty ? "MISSING" : "OK"}');
-        print('Environment check - ANON_KEY: ${supabaseAnonKey.isEmpty ? "MISSING" : "OK"}');
         throw Exception('Supabase environment variables not configured. Use --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key');
       }
 
-      print('🔧 Initializing Supabase connection...');
-      print('🔗 URL: ${supabaseUrl.substring(0, 30)}...');
-      
       await Supabase.initialize(
         url: supabaseUrl,
         anonKey: supabaseAnonKey,
       );
       _client = Supabase.instance.client;
-      print('✅ Supabase initialized successfully');
-      print('🔗 Connected to: ${supabaseUrl.substring(0, 20)}...');
       developer.log('Supabase client initialized', name: 'SupabaseService');
     } catch (e) {
-      print('❌ Failed to initialize Supabase: $e');
-      print('Error type: ${e.runtimeType}');
-      if (e.toString().contains('network')) {
-        print('Network-related error detected');
-      }
       developer.log('Failed to initialize Supabase: $e', name: 'SupabaseService');
       rethrow;
     }

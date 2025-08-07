@@ -55,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     } catch (e) {
       setState(() => _isLoadingProfile = false);
-      print('Error loading user profile: $e');
+      // Error loading user profile, continue with default behavior
     }
   }
 
@@ -106,14 +106,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final response = await supabaseService.getAllUserMeals();
       final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
       
-      // Debug: Log photo URLs
-      for (var meal in meals) {
-        print('Meal: ${meal.name}, Photo URL: ${meal.photoUrl}');
-      }
-      
       return meals;
     } catch (e) {
-      print('Error loading meals from Supabase: $e');
+      // Error loading meals from Supabase, return empty list
       return [];
     }
   }
