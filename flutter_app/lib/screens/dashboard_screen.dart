@@ -263,54 +263,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
               icon: const Icon(Icons.arrow_forward_ios),
               tooltip: 'Next Day',
             ),
-          Row(
-            children: [
-              IconButton(
-                onPressed: _openCalendar,
-                icon: const Icon(Icons.calendar_today),
-                tooltip: 'Calendar',
-              ),
-              IconButton(
-                onPressed: _openWeightTracking,
-                icon: const Icon(Icons.monitor_weight_outlined),
-                tooltip: 'Weight Tracking',
-              ),
-              IconButton(
-                onPressed: _addMeal,
-                icon: const Icon(Icons.add_circle_outline),
-                tooltip: 'Add Meal',
-              ),
-              PopupMenuButton<String>(
-                onSelected: (value) async {
-                  if (value == 'profile') {
-                    _navigateToProfile();
-                  } else if (value == 'logout') {
-                    await SupabaseService().signOut();
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  }
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'profile',
-                    child: Text('My Profile'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'logout',
-                    child: Text('Logout'),
-                  ),
-                ],
-                child: const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppTheme.primaryGreen,
-                  child: Icon(Icons.person, color: Colors.white, size: 20),
-                ),
-              ),
-              const SizedBox(width: 16),
-            ],
+          IconButton(
+            onPressed: _openCalendar,
+            icon: const Icon(Icons.calendar_today),
+            tooltip: 'Calendar',
           ),
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'profile') {
+                _navigateToProfile();
+              } else if (value == 'logout') {
+                await SupabaseService().signOut();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: Text('My Profile'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Text('Logout'),
+              ),
+            ],
+            child: const Icon(Icons.settings),
+          ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Padding(
