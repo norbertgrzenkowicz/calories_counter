@@ -123,7 +123,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _selectedIndex = index;
     });
     
-    if (index == 1) {
+    if (index == 0) {
+      _openWeightTracking();
+    } else if (index == 1) {
+      _addMeal();
+    } else if (index == 2) {
       _navigateToProfile();
     }
   }
@@ -790,9 +794,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildBottomNavItem(0, Icons.settings, 'Settings'),
-          _buildBottomNavItem(1, Icons.person, 'Your Profile'),
-          _buildBottomNavItem(2, Icons.settings, 'Settings'),
+          _buildBottomNavItem(0, Icons.monitor_weight, 'Weight'),
+          _buildAddMealNavItem(),
+          _buildBottomNavItem(2, Icons.person, 'Profile'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddMealNavItem() {
+    final isSelected = _selectedIndex == 1;
+    return GestureDetector(
+      onTap: () => _onItemTapped(1),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGreen,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Add Meal',
+            style: TextStyle(
+              color: isSelected ? AppTheme.primaryGreen : AppTheme.charcoal.withOpacity(0.6),
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
         ],
       ),
     );
