@@ -396,25 +396,13 @@ class ProfileService {
         throw Exception('No current user');
       }
 
-      developer.log('Initializing profile from auth user', name: 'ProfileService');
+      developer.log('User authenticated but no profile exists', name: 'ProfileService');
 
-      // Create minimal profile with only auth data, no hardcoded defaults
-      // This will prompt user to complete their profile with real data
-      final profile = UserProfile(
-        uid: userId,
-        fullName: user.userMetadata?['full_name'] as String?,
-        email: user.email,
-        // No hardcoded defaults - user must provide real data
-        gender: null,
-        heightCm: null,
-        currentWeightKg: null,
-        goal: null,
-        activityLevel: null,
-      );
-
-      return await saveUserProfile(profile);
+      // Don't create a profile with dummy data - return null to prompt user
+      // to complete their profile with real information through the UI
+      return null;
     } catch (e) {
-      developer.log('Failed to initialize profile from auth: $e', name: 'ProfileService');
+      developer.log('Failed to check profile from auth: $e', name: 'ProfileService');
       return null;
     }
   }
