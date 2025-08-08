@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'theme/app_theme.dart';
-import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/supabase_service.dart';
 
 void main() async {
@@ -35,7 +35,7 @@ class FoodScannerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Food Scanner',
       theme: AppTheme.theme,
-      home: LoginScreen(),
+      home: SplashScreen(cameras: cameras),
     );
   }
 }
