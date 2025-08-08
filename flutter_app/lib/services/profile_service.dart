@@ -379,7 +379,7 @@ class ProfileService {
     }
   }
 
-  // Initialize profile with default values from auth user
+  // Initialize basic profile structure from auth user (without hardcoded defaults)
   Future<UserProfile?> initializeProfileFromAuth() async {
     try {
       if (!_supabaseService.isInitialized) {
@@ -398,16 +398,18 @@ class ProfileService {
 
       developer.log('Initializing profile from auth user', name: 'ProfileService');
 
-      // Create basic profile with defaults
+      // Create minimal profile with only auth data, no hardcoded defaults
+      // This will prompt user to complete their profile with real data
       final profile = UserProfile(
         uid: userId,
         fullName: user.userMetadata?['full_name'] as String?,
         email: user.email,
-        gender: 'male', // Default, user will need to update
-        heightCm: 170.0, // Default, user will need to update
-        currentWeightKg: 70.0, // Default, user will need to update
-        goal: 'maintaining',
-        activityLevel: 1.2, // Sedentary default
+        // No hardcoded defaults - user must provide real data
+        gender: null,
+        heightCm: null,
+        currentWeightKg: null,
+        goal: null,
+        activityLevel: null,
       );
 
       return await saveUserProfile(profile);
