@@ -571,15 +571,17 @@ class SupabaseService {
       // Count total cached products for current user
       final totalResponse = await client
           .from('cached_products')
-          .select('barcode', const FetchOptions(count: CountOption.exact))
-          .eq('user_id', userId);
+          .select()
+          .eq('user_id', userId)
+          .count(CountOption.exact);
 
       // Count fresh cached products (less than 7 days old)
       final freshResponse = await client
           .from('cached_products')
-          .select('barcode', const FetchOptions(count: CountOption.exact))
+          .select()
           .eq('user_id', userId)
-          .gte('cached_at', DateTime.now().subtract(const Duration(days: 7)).toIso8601String());
+          .gte('cached_at', DateTime.now().subtract(const Duration(days: 7)).toIso8601String())
+          .count(CountOption.exact);
 
       return {
         'total_cached': totalResponse.count ?? 0,

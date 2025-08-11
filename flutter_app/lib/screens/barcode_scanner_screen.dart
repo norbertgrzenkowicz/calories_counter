@@ -24,6 +24,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   bool _isScanning = true;
   String? _scannedBarcode;
+  bool _isTorchOn = false;
 
   @override
   void dispose() {
@@ -52,6 +53,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   void _toggleFlash() {
     controller.toggleTorch();
+    setState(() {
+      _isTorchOn = !_isTorchOn;
+    });
   }
 
   @override
@@ -65,13 +69,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: ValueListenableBuilder<TorchState>(
-              valueListenable: controller.torchState,
-              builder: (context, state, child) {
-                return Icon(
-                  state == TorchState.on ? Icons.flash_on : Icons.flash_off,
-                );
-              },
+            icon: Icon(
+              _isTorchOn ? Icons.flash_on : Icons.flash_off,
             ),
             onPressed: _toggleFlash,
           ),
