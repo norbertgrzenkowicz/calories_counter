@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/supabase_service.dart';
+import 'barcode_scanner_screen.dart';
 
 class AddMealScreen extends StatefulWidget {
   final Function() onMealAdded;
@@ -28,6 +29,8 @@ class _AddMealScreenState extends State<AddMealScreen> {
   bool _isAnalyzing = false;
   bool _hasAnalyzedPhoto = false;
   Map<String, dynamic>? _analysisResult;
+  String? _scannedBarcode;
+  bool _isScanningBarcode = false;
   
   // API endpoint using cloud function
   static const String _apiBaseUrl = 'https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api';
@@ -131,6 +134,52 @@ class _AddMealScreenState extends State<AddMealScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _scanBarcode() async {
+    setState(() {
+      _isScanningBarcode = true;
+    });
+
+    try {
+      final result = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BarcodeScannerScreen(),
+        ),
+      );
+
+      if (result != null) {
+        setState(() {
+          _scannedBarcode = result;
+          _nameController.text = 'Product $result'; // Placeholder name
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Barcode scanned: $result'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        // TODO: Look up product in OpenFoodFacts - will be implemented in Phase 2
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to scan barcode: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isScanningBarcode = false;
+      });
     }
   }
 
@@ -331,6 +380,47 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     padding: const EdgeInsets.all(16),
                   ),
                 ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _isScanningBarcode ? null : _scanBarcode,
+                  icon: _isScanningBarcode
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.qr_code_scanner),
+                  label: Text(_isScanningBarcode ? 'Scanning...' : 'Scan Barcode'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                  ),
+                ),
+                if (_scannedBarcode != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.qr_code, color: Colors.orange.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Barcode: $_scannedBarcode\n(Product lookup coming in Phase 2)',
+                            style: TextStyle(
+                              color: Colors.orange.shade700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (_hasAnalyzedPhoto && _analysisResult != null) ...[                  
                   const SizedBox(height: 16),
                   Container(
