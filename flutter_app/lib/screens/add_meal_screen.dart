@@ -171,8 +171,9 @@ class _AddMealScreenState extends State<AddMealScreen> {
           ),
         );
 
-        // Look up product in OpenFoodFacts
-        final product = await OpenFoodFactsService.getProductByBarcode(result);
+        // Look up product with cache-first strategy
+        final supabaseService = SupabaseService();
+        final product = await supabaseService.getProductWithCache(result);
         
         if (product != null && mounted) {
           setState(() {
