@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'openfoodfacts_service.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
@@ -464,6 +465,157 @@ class SupabaseService {
     } catch (e) {
       developer.log('Failed to delete photo: $e', name: 'SupabaseService');
       // Don't rethrow - photo deletion failure should not prevent other operations
+    }
+  }
+
+  // ========== CACHED PRODUCTS METHODS ==========
+
+  /// Cache a product from OpenFoodFacts for faster future access
+  Future<void> cacheProduct(ProductNutrition product) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      // Products can be cached globally (user_id = null) or per user
+
+      developer.log('Caching product: ${product.barcode}', name: 'SupabaseService');
+
+      // Use upsert to handle conflicts if product already exists
+      await client.from('cached_products').upsert({
+        ...product.toSupabase(),
+        'user_id': userId, // Cache per user for now
+      });
+
+      developer.log('Product cached successfully: ${product.barcode}',
+          name: 'SupabaseService');
+    } catch (e) {
+      developer.log('Failed to cache product: $e', name: 'SupabaseService');
+      // Don't rethrow - caching failure should not break the main flow
+    }
+  }
+
+  /// Get a cached product by barcode
+  Future<ProductNutrition?> getCachedProduct(String barcode) async {
+    try {
+      if (!isInitialized) {
+        return null;
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        return null;
+      }
+
+      developer.log('Looking up cached product: $barcode', name: 'SupabaseService');
+
+      // Look for user-specific or global cached products that are not expired
+      final response = await client
+          .from('cached_products')
+          .select('*')
+          .eq('barcode', barcode)
+          .or('user_id.eq.$userId,user_id.is.null')
+          .gte('cached_at', DateTime.now().subtract(const Duration(days: 7)).toIso8601String())
+          .order('user_id', ascending: false) // Prefer user-specific cache
+          .limit(1);
+
+      if (response.isNotEmpty) {
+        developer.log('Found cached product: $barcode', name: 'SupabaseService');
+        return ProductNutrition.fromSupabase(response.first);
+      }
+
+      developer.log('No cached product found for: $barcode', name: 'SupabaseService');
+      return null;
+    } catch (e) {
+      developer.log('Failed to get cached product: $e', name: 'SupabaseService');
+      return null; // Return null on error - will fallback to API
+    }
+  }
+
+  /// Clean up old cached products (older than 7 days)
+  Future<void> cleanupOldCachedProducts() async {
+    try {
+      if (!isInitialized) {
+        return;
+      }
+
+      developer.log('Cleaning up old cached products', name: 'SupabaseService');
+
+      final cutoffDate = DateTime.now().subtract(const Duration(days: 7));
+      
+      await client
+          .from('cached_products')
+          .delete()
+          .lt('cached_at', cutoffDate.toIso8601String());
+
+      developer.log('Old cached products cleaned up', name: 'SupabaseService');
+    } catch (e) {
+      developer.log('Failed to cleanup cached products: $e', name: 'SupabaseService');
+      // Don't rethrow - cleanup failure should not break the app
+    }
+  }
+
+  /// Get statistics about cached products
+  Future<Map<String, dynamic>> getCacheStats() async {
+    try {
+      if (!isInitialized) {
+        return {'error': 'Supabase not initialized'};
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        return {'error': 'User not authenticated'};
+      }
+
+      // Count total cached products for current user
+      final totalResponse = await client
+          .from('cached_products')
+          .select('barcode', const FetchOptions(count: CountOption.exact))
+          .eq('user_id', userId);
+
+      // Count fresh cached products (less than 7 days old)
+      final freshResponse = await client
+          .from('cached_products')
+          .select('barcode', const FetchOptions(count: CountOption.exact))
+          .eq('user_id', userId)
+          .gte('cached_at', DateTime.now().subtract(const Duration(days: 7)).toIso8601String());
+
+      return {
+        'total_cached': totalResponse.count ?? 0,
+        'fresh_cached': freshResponse.count ?? 0,
+        'cache_hit_potential': '${((freshResponse.count ?? 0) * 100 / (totalResponse.count ?? 1)).toStringAsFixed(1)}%',
+      };
+    } catch (e) {
+      developer.log('Failed to get cache stats: $e', name: 'SupabaseService');
+      return {'error': e.toString()};
+    }
+  }
+
+  /// Combined method to get product with caching logic
+  Future<ProductNutrition?> getProductWithCache(String barcode) async {
+    try {
+      // First try to get from cache
+      final cachedProduct = await getCachedProduct(barcode);
+      if (cachedProduct != null) {
+        developer.log('Using cached product: $barcode', name: 'SupabaseService');
+        return cachedProduct;
+      }
+
+      // If not in cache, fetch from OpenFoodFacts
+      developer.log('Cache miss, fetching from OpenFoodFacts: $barcode', name: 'SupabaseService');
+      final product = await OpenFoodFactsService.getProductByBarcode(barcode);
+      
+      // If found, cache it for future use
+      if (product != null) {
+        await cacheProduct(product);
+        return product;
+      }
+
+      return null;
+    } catch (e) {
+      developer.log('Failed to get product with cache: $e', name: 'SupabaseService');
+      return null;
     }
   }
 }
