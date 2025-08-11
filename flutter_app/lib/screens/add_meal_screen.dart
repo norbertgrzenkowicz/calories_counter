@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/supabase_service.dart';
+import '../services/openfoodfacts_service.dart';
 import 'barcode_scanner_screen.dart';
 
 class AddMealScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
   Map<String, dynamic>? _analysisResult;
   String? _scannedBarcode;
   bool _isScanningBarcode = false;
+  ProductNutrition? _scannedProduct;
   
   // API endpoint using cloud function
   static const String _apiBaseUrl = 'https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api';
@@ -150,22 +152,55 @@ class _AddMealScreenState extends State<AddMealScreen> {
         ),
       );
 
-      if (result != null) {
+      if (result != null && mounted) {
+        // Validate barcode format
+        if (!OpenFoodFactsService.isValidBarcode(result)) {
+          throw Exception('Invalid barcode format');
+        }
+
         setState(() {
           _scannedBarcode = result;
-          _nameController.text = 'Product $result'; // Placeholder name
         });
 
-        if (mounted) {
+        // Show scanning feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Looking up product...'),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Look up product in OpenFoodFacts
+        final product = await OpenFoodFactsService.getProductByBarcode(result);
+        
+        if (product != null && mounted) {
+          setState(() {
+            _scannedProduct = product;
+            _nameController.text = product.displayName;
+          });
+
+          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Barcode scanned: $result'),
+              content: Text('Product found: ${product.name}'),
               backgroundColor: Colors.green,
             ),
           );
-        }
+        } else if (mounted) {
+          // Product not found - show placeholder
+          setState(() {
+            _scannedProduct = null;
+            _nameController.text = 'Unknown Product ($result)';
+          });
 
-        // TODO: Look up product in OpenFoodFacts - will be implemented in Phase 2
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Product not found in database. You can enter nutrition manually.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -180,6 +215,29 @@ class _AddMealScreenState extends State<AddMealScreen> {
       setState(() {
         _isScanningBarcode = false;
       });
+    }
+  }
+
+  void _acceptBarcodeNutrition() {
+    if (_scannedProduct != null && _scannedProduct!.hasBasicNutrition) {
+      // Calculate nutrition for 100g serving
+      final nutrition = _scannedProduct!.calculateNutritionForPortion(100.0);
+      
+      setState(() {
+        _caloriesController.text = nutrition['calories'].toString();
+        _proteinsController.text = nutrition['protein'].toString();
+        _fatsController.text = nutrition['fats'].toString();
+        _carbsController.text = nutrition['carbs'].toString();
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Product nutrition accepted! Values filled in.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     }
   }
 
@@ -398,25 +456,90 @@ class _AddMealScreenState extends State<AddMealScreen> {
                 if (_scannedBarcode != null) ...[
                   const SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: _scannedProduct != null ? Colors.green.shade50 : Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
+                      border: Border.all(
+                        color: _scannedProduct != null ? Colors.green.shade200 : Colors.orange.shade200
+                      ),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.qr_code, color: Colors.orange.shade700),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Barcode: $_scannedBarcode\n(Product lookup coming in Phase 2)',
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.qr_code, 
+                              color: _scannedProduct != null ? Colors.green.shade700 : Colors.orange.shade700
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _scannedProduct != null 
+                                  ? 'Product Found:' 
+                                  : 'Barcode Scanned:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: _scannedProduct != null ? Colors.green.shade700 : Colors.orange.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _scannedProduct != null 
+                            ? _scannedProduct!.displayName
+                            : 'Barcode: $_scannedBarcode',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        ),
+                        if (_scannedProduct != null && _scannedProduct!.hasBasicNutrition) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Nutrition per 100g:',
                             style: TextStyle(
-                              color: Colors.orange.shade700,
-                              fontSize: 14,
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              if (_scannedProduct!.caloriesPer100g != null)
+                                Text('${_scannedProduct!.caloriesPer100g!.round()} kcal  ', style: const TextStyle(fontSize: 12)),
+                              if (_scannedProduct!.proteinPer100g != null)
+                                Text('P: ${_scannedProduct!.proteinPer100g!.toStringAsFixed(1)}g  ', style: const TextStyle(fontSize: 12)),
+                              if (_scannedProduct!.carbsPer100g != null)
+                                Text('C: ${_scannedProduct!.carbsPer100g!.toStringAsFixed(1)}g  ', style: const TextStyle(fontSize: 12)),
+                              if (_scannedProduct!.fatPer100g != null)
+                                Text('F: ${_scannedProduct!.fatPer100g!.toStringAsFixed(1)}g', style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _acceptBarcodeNutrition,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Accept & Fill Nutrition Values'),
+                            ),
+                          ),
+                        ] else if (_scannedProduct == null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Product not found in OpenFoodFacts database.\nYou can enter nutrition information manually.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
