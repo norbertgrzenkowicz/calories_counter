@@ -352,15 +352,30 @@ class SupabaseService {
           .from('meal-photos')
           .upload(storagePath, File(filePath));
 
-      // Get public URL
-      final signedUrl = await client.storage
-          .from('meal-photos')
-          .createSignedUrl(storagePath, 3600);
-
-      developer.log('Photo uploaded successfully: $signedUrl',
-          name: 'SupabaseService');
-
-      return signedUrl;
+      // Try to get public URL first, fall back to signed URL if needed
+      try {
+        final publicUrl = client.storage
+            .from('meal-photos')
+            .getPublicUrl(storagePath);
+        
+        developer.log('Photo uploaded successfully: $publicUrl',
+            name: 'SupabaseService');
+        
+        return publicUrl;
+      } catch (publicUrlError) {
+        // Fall back to signed URL with shorter expiry
+        developer.log('Public URL failed, trying signed URL: $publicUrlError', 
+            name: 'SupabaseService');
+        
+        final signedUrl = await client.storage
+            .from('meal-photos')
+            .createSignedUrl(storagePath, 1800); // 30 minutes
+            
+        developer.log('Photo uploaded with signed URL: $signedUrl',
+            name: 'SupabaseService');
+            
+        return signedUrl;
+      }
     } catch (e) {
       developer.log('Failed to upload photo: $e', name: 'SupabaseService');
       print('DEBUG: Photo upload error details: $e');
