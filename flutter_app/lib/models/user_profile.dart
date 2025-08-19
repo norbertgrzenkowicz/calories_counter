@@ -1,3 +1,5 @@
+import '../core/app_logger.dart';
+
 class UserProfile {
   final int? id;
   final String? uid;
@@ -252,7 +254,7 @@ class UserProfile {
         tdeeCalories = calculateTDEE();
         targetCalories = calculateTargetCalories();
       } catch (e) {
-        print('Error calculating nutrition values: $e');
+        AppLogger.error('Error calculating nutrition values: $e');
         // Use defaults if calculation fails
       }
     }

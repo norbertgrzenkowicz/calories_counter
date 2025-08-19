@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import '../core/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:food_scanner/screens/register_screen.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
@@ -31,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       _cameras = await availableCameras();
     } catch (e) {
-      print('Camera error: $e');
+      AppLogger.error('Camera initialization failed', e);
       _cameras = [];
     }
   }
@@ -57,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     
-    print('Attempting to log in user: $email');
+    AppLogger.logUserAction('login_attempt');
     
     try {
       final response = await _supabaseService.client.auth.signInWithPassword(
@@ -66,17 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.user != null) {
-        print('Login successful for user: $email');
-        print('User ID: ${response.user!.id}');
-        print('Email confirmed: ${response.user!.emailConfirmedAt != null}');
-        print('Session: ${response.session != null ? "Active" : "None"}');
+        AppLogger.logUserAction('login_successful');
         
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => DashboardScreen(cameras: _cameras)),
         );
       } else {
-        print('Login failed: No user returned in response');
+        AppLogger.error('Login failed: No user returned');
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -86,9 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } on AuthException catch (e) {
-      print('Login failed for user: $email');
-      print('AuthException: ${e.message}');
-      print('Status code: ${e.statusCode}');
+      AppLogger.error('Login failed - AuthException', e);
       
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,9 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
-      print('Login failed for user: $email');
-      print('Unexpected error: $e');
-      print('Error type: ${e.runtimeType}');
+      AppLogger.error('Login failed - Unexpected error', e);
       
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

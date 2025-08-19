@@ -1,9 +1,60 @@
-class Meal {
-  // Helper function to safely convert to double and handle NaN values
-  static double _safeToDouble(dynamic value) {
-    final result = value?.toDouble() ?? 0.0;
-    return result.isNaN || result.isInfinite ? 0.0 : result;
+/// Extension for safe number parsing with proper type checking
+extension SafeNumParsing on Object? {
+  double toSafeDouble() {
+    final self = this;
+    if (self == null) return 0.0;
+    
+    if (self is double) {
+      return self.isFinite ? self : 0.0;
+    }
+    
+    if (self is int) {
+      return self.toDouble();
+    }
+    
+    if (self is String) {
+      final parsed = double.tryParse(self);
+      return parsed?.isFinite == true ? parsed! : 0.0;
+    }
+    
+    if (self is num) {
+      final asDouble = self.toDouble();
+      return asDouble.isFinite ? asDouble : 0.0;
+    }
+    
+    return 0.0;
   }
+  
+  int toSafeInt() {
+    final self = this;
+    if (self == null) return 0;
+    
+    if (self is int) {
+      return self;
+    }
+    
+    if (self is double) {
+      return self.isFinite ? self.round() : 0;
+    }
+    
+    if (self is String) {
+      return int.tryParse(self) ?? 0;
+    }
+    
+    if (self is num) {
+      return self.round();
+    }
+    
+    return 0;
+  }
+  
+  String toSafeString() {
+    final self = this;
+    return self?.toString() ?? '';
+  }
+}
+
+class Meal {
   final int? id;
   final String name;
   final String? uid;
@@ -45,32 +96,49 @@ class Meal {
 
   static Meal fromMap(Map<String, dynamic> map) {
     return Meal(
-      id: map['id'],
-      name: map['name'],
-      uid: map['uid'],
-      calories: map['calories'],
-      proteins: map['proteins'],
-      fats: map['fats'],
-      carbs: map['carbs'],
-      photoUrl: map['photoUrl'],
-      date: DateTime.parse(map['date']),
-      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : null,
+      id: (map['id'] as Object?) == null ? null : (map['id'] as Object?).toSafeInt(),
+      name: (map['name'] as Object?).toSafeString(),
+      uid: map['uid']?.toString(),
+      calories: (map['calories'] as Object?).toSafeInt(),
+      proteins: (map['proteins'] as Object?).toSafeDouble(),
+      fats: (map['fats'] as Object?).toSafeDouble(),
+      carbs: (map['carbs'] as Object?).toSafeDouble(),
+      photoUrl: map['photoUrl']?.toString(),
+      date: _parseDate(map['date']),
+      createdAt: map['createdAt'] != null ? _parseDate(map['createdAt']) : null,
     );
   }
 
   static Meal fromSupabase(Map<String, dynamic> data) {
     return Meal(
-      id: data['id'],
-      name: data['name'] ?? '',
-      uid: data['uid'],
-      calories: data['calories']?.toInt() ?? 0,
-      proteins: _safeToDouble(data['proteins']),
-      fats: _safeToDouble(data['fats']),
-      carbs: _safeToDouble(data['carbs']),
-      photoUrl: data['photo_url'],
-      date: DateTime.parse(data['date'] ?? DateTime.now().toIso8601String()),
-      createdAt: data['created_at'] != null ? DateTime.parse(data['created_at']) : null,
+      id: (data['id'] as Object?) == null ? null : (data['id'] as Object?).toSafeInt(),
+      name: (data['name'] as Object?).toSafeString(),
+      uid: data['uid']?.toString(),
+      calories: (data['calories'] as Object?).toSafeInt(),
+      proteins: (data['proteins'] as Object?).toSafeDouble(),
+      fats: (data['fats'] as Object?).toSafeDouble(),
+      carbs: (data['carbs'] as Object?).toSafeDouble(),
+      photoUrl: data['photo_url']?.toString(),
+      date: _parseDate(data['date']),
+      createdAt: data['created_at'] != null ? _parseDate(data['created_at']) : null,
     );
+  }
+  
+  /// Safely parse date with fallback
+  static DateTime _parseDate(dynamic dateValue) {
+    if (dateValue == null) return DateTime.now();
+    
+    if (dateValue is DateTime) return dateValue;
+    
+    if (dateValue is String) {
+      try {
+        return DateTime.parse(dateValue);
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+    
+    return DateTime.now();
   }
 
   Map<String, dynamic> toSupabase() {

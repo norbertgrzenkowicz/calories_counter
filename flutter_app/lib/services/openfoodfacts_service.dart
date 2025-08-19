@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../core/app_logger.dart';
 
 class OpenFoodFactsService {
   static const String _baseUrl = 'https://world.openfoodfacts.org/api/v2';
@@ -35,7 +36,7 @@ class OpenFoodFactsService {
         throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
       }
     } catch (e) {
-      print('OpenFoodFacts API error for barcode $barcode: $e');
+      AppLogger.error('OpenFoodFacts API error for barcode', e);
       return null;
     }
   }
@@ -75,7 +76,7 @@ class OpenFoodFactsService {
         throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
       }
     } catch (e) {
-      print('OpenFoodFacts search error for query "$query": $e');
+      AppLogger.error('OpenFoodFacts search error', e);
       return [];
     }
   }

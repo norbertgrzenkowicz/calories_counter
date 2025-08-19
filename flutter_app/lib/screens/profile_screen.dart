@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
 import '../models/user_profile.dart';
 import '../services/profile_service.dart';
@@ -90,16 +91,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final profileService = ProfileService();
       
-      print('Creating profile with data:');
-      print('- Name: ${_nameController.text.trim()}');
-      print('- Gender: $_selectedGender');
-      print('- Height: ${_heightController.text}');
-      print('- Weight: ${_weightController.text}');
-      print('- Target Weight: ${_targetWeightController.text}');
-      print('- Date of Birth: $_dateOfBirth');
-      print('- Goal: $_selectedGoal');
-      print('- Activity: $_selectedActivityKey');
-      print('- Weekly Target: ${_weeklyTargetController.text}');
+      AppLogger.logUserAction('profile_creation_attempt');
+      // Note: Profile data not logged for privacy
+      // Weekly target not logged for privacy
       
       final profile = UserProfile(
         id: _currentProfile?.id,
@@ -122,11 +116,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : _currentProfile?.initialWeightKg,
       );
       
-      print('Profile object created: $profile');
-      print('Has required data: ${profile.hasRequiredDataForCalculations}');
+      AppLogger.debug('Profile object created');
+      AppLogger.debug('Has required data: ${profile.hasRequiredDataForCalculations}');
       
       final savedProfile = await profileService.saveUserProfile(profile);
-      print('Profile saved successfully: ${savedProfile.id}');
+      AppLogger.info('Profile saved successfully');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -138,8 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.of(context).pop();
       }
     } catch (e, stackTrace) {
-      print('Error saving profile: $e');
-      print('Stack trace: $stackTrace');
+      AppLogger.error('Error saving profile', e, stackTrace);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
 import 'package:food_scanner/services/supabase_service.dart';
+import 'package:food_scanner/core/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _registerWithSupabase() async {
     final email = _emailController.text.trim();
-    print('Attempting to register user: $email');
+    AppLogger.logUserAction('user_registration_attempt');
     
     try {
       final response = await _supabaseService.client.auth.signUp(
@@ -37,9 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (response.user != null) {
-        print('Registration successful for user: $email');
-        print('User ID: ${response.user!.id}');
-        print('Email confirmed: ${response.user!.emailConfirmedAt != null}');
+        AppLogger.logUserAction('user_registration_successful');
         
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -50,7 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         Navigator.of(context).pop();
       } else {
-        print('Registration failed: No user returned in response');
+        AppLogger.error('Registration failed: No user returned');
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -60,9 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } on AuthException catch (e) {
-      print('Registration failed for user: $email');
-      print('AuthException: ${e.message}');
-      print('Status code: ${e.statusCode}');
+      AppLogger.error('Registration failed - AuthException', e);
       
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,9 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } catch (e) {
-      print('Registration failed for user: $email');
-      print('Unexpected error: $e');
-      print('Error type: ${e.runtimeType}');
+      AppLogger.error('Registration failed - Unexpected error', e);
       
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

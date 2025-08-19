@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'supabase_service.dart';
+import '../core/app_logger.dart';
 
 class SupabaseTest {
   static Future<void> runConnectionTest() async {
@@ -31,9 +32,9 @@ class SupabaseTest {
       print('   - Status: ${status?['status'] ?? 'unknown'}');
       
     } catch (e) {
-      print('💥 Test failed with error: $e');
+      AppLogger.error('Connection test failed', e);
       if (kDebugMode) {
-        print('Stack trace: ${StackTrace.current}');
+        AppLogger.debug('Stack trace available in debug mode');
       }
     }
   }
