@@ -52,46 +52,83 @@ Total issues found: **837 issues**
 
 ## Security Issues
 
+### CRITICAL Security Vulnerabilities
+1. **EXPOSED CREDENTIALS IN REPOSITORY** - `dart_defines.json`
+   - **Supabase URL and API key hardcoded and committed to git**
+   - API key: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (truncated)
+   - URL: `https://uhaxeijddtuznnnqbbcd.supabase.co`
+   - **Severity**: CRITICAL - Full database access exposure
+   - **Action**: IMMEDIATELY rotate keys and remove from git history
+
 ### Authentication & Data Handling
-1. **Hardcoded environment variables** - `lib/services/supabase_service.dart`
-   - API keys visible in code (though using --dart-define)
-   - **Severity**: MEDIUM - Potential credential exposure
+2. **Hardcoded API endpoints** - `lib/screens/add_meal_screen.dart:38`
+   - Google Cloud Functions URL hardcoded: `https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api`
+   - **Severity**: MEDIUM - Service discovery and potential credential exposure
 
-2. **Debug prints with sensitive data** - Multiple services
-   - User IDs, API responses logged to console
-   - **Severity**: MEDIUM - Information disclosure
+3. **Extensive debug logging with sensitive data** - 100+ locations
+   - User IDs, API responses, authentication tokens logged to console
+   - `lib/services/supabase_service.dart` - prints user IDs, query results, storage paths
+   - `lib/services/profile_service.dart` - logs user data and operations
+   - `lib/screens/login_screen.dart` - logs authentication attempts and errors
+   - **Severity**: HIGH - Information disclosure in production logs
 
-3. **File upload without validation** - `lib/services/supabase_service.dart`
-   - No file type or size validation before upload
-   - **Severity**: MEDIUM - Potential security vulnerabilities
+4. **File upload without validation** - `lib/services/supabase_service.dart`
+   - No file type, size, or content validation before upload
+   - Accepts any file type for meal photos
+   - No virus scanning or malware protection
+   - **Severity**: MEDIUM - Potential malware upload and storage abuse
 
-4. **Generic exception handling** - Throughout codebase
+5. **Generic exception handling** - Throughout codebase
    - Catching all exceptions without specific handling
+   - Error messages potentially exposing system information
    - **Severity**: LOW - Security information leakage
+
+6. **Password handling** - `lib/screens/login_screen.dart` & `register_screen.dart`
+   - Passwords stored in TextEditingController text fields
+   - No secure memory clearing after use
+   - **Severity**: LOW - Memory dump exposure risk
 
 ## Performance Issues
 
 ### Memory Management
-1. **Controller disposal issues** - Multiple screens
-   - TextEditingController, AnimationController not properly disposed
-   - **Severity**: MEDIUM - Memory leaks
+1. **Controller disposal issues** - 13 StatefulWidget files identified
+   - `login_screen.dart` - _emailController, _passwordController disposal
+   - `register_screen.dart` - _passwordController, _confirmPasswordController disposal
+   - `barcode_scanner_screen.dart` - MobileScannerController disposal
+   - `dashboard_screen.dart` - Multiple controllers and animations
+   - **Severity**: MEDIUM - Memory leaks in production
 
-2. **Unnecessary rebuilds** - Dashboard and calendar screens
+2. **Excessive print statements** - 100+ debug print locations
+   - `lib/services/supabase_service.dart` - 30+ print statements
+   - `lib/services/supabase_test.dart` - 15+ print statements  
+   - `lib/services/openfoodfacts_service.dart` - API error prints
+   - **Severity**: MEDIUM - Performance impact and log pollution
+
+3. **Unnecessary rebuilds** - Dashboard and calendar screens
+   - StatefulWidget with setState() instead of efficient state management
    - Entire widget trees rebuilding on minor state changes
-   - **Severity**: MEDIUM - Performance degradation
+   - FutureBuilder usage without optimization
+   - **Severity**: MEDIUM - UI performance degradation
 
-3. **Synchronous file operations** - Image handling
-   - File.existsSync() called on main thread
+4. **Synchronous file operations** - Image handling
+   - `File.existsSync()` called on main thread in supabase_service.dart:383
    - **Severity**: LOW - UI blocking potential
 
 ### Network & Data
-4. **No caching strategy** - API calls
-   - Repeated API calls without local caching
-   - **Severity**: MEDIUM - Poor user experience
+5. **No caching strategy** - API calls
+   - OpenFoodFacts API calls without local caching (except basic product cache)
+   - Repeated authentication checks
+   - **Severity**: MEDIUM - Poor user experience and API rate limits
 
-5. **Large response handling** - Meal data fetching
-   - No pagination for large datasets
+6. **Large response handling** - Meal data fetching
+   - `getAllUserMeals()` loads entire history without pagination
+   - No lazy loading for large datasets
    - **Severity**: MEDIUM - Memory usage and performance
+
+7. **Inefficient data structures**
+   - Multiple List<Map<String, dynamic>> conversions throughout codebase
+   - Dynamic typing instead of proper models in some locations
+   - **Severity**: LOW - CPU overhead and type safety
 
 ## Code Quality Issues (551)
 
