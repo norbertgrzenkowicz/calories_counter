@@ -130,7 +130,7 @@ class SupabaseService {
       final status = {
         'status': 'connected',
         'initialized': true,
-        'url': supabaseUrl,
+        'url': Environment.supabaseUrl,
         'message': 'Successfully connected to Supabase',
       };
 
