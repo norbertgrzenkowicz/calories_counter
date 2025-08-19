@@ -1,27 +1,25 @@
 import 'package:camera/camera.dart';
 import '../core/app_logger.dart';
-import '../core/service_locator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_scanner/screens/register_screen.dart';
-import 'package:food_scanner/screens/dashboard_screen.dart';
+import 'package:food_scanner/screens/dashboard_screen_riverpod.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
-import 'package:food_scanner/services/supabase_service.dart';
+import 'package:food_scanner/providers/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  SupabaseService get _supabaseService => getIt<SupabaseService>();
   late List<CameraDescription> _cameras;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -45,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _loginWithSupabase() async {
+  Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     
@@ -62,64 +60,18 @@ class _LoginScreenState extends State<LoginScreen> {
     AppLogger.logUserAction('login_attempt');
     
     try {
-      final response = await _supabaseService.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-
-      if (response.user != null) {
+      await ref.read(authNotifierProvider.notifier).signIn(email, password);
+      
+      // Check if login was successful
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isAuthenticated && mounted) {
         AppLogger.logUserAction('login_successful');
-        
-        if (!mounted) return;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => DashboardScreen(cameras: _cameras)),
-        );
-      } else {
-        AppLogger.error('Login failed: No user returned');
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login failed: Invalid credentials'),
-            backgroundColor: Colors.red,
-          ),
+          MaterialPageRoute(builder: (context) => DashboardScreenRiverpod(cameras: _cameras)),
         );
       }
-    } on AuthException catch (e) {
-      AppLogger.error('Login failed - AuthException', e);
-      
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login failed: ${e.message}'),
-          backgroundColor: Colors.red,
-        ),
-      );
     } catch (e) {
-      AppLogger.error('Login failed - Unexpected error', e);
-      
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _login() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await _loginWithSupabase();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      AppLogger.error('Login failed', e);
     }
   }
 
@@ -131,6 +83,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    
+    // Listen for auth state changes and show errors
+    ref.listen(authNotifierProvider, (previous, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
     return Scaffold(
       backgroundColor: AppTheme.creamWhite,
       body: Center(
@@ -172,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 32),
               CustomButton(
                 text: 'Log In',
-                isLoading: _isLoading,
+                isLoading: authState.isLoading,
                 onPressed: _login,
               ),
               const SizedBox(height: 16),

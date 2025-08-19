@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'core/service_locator.dart';
@@ -22,7 +23,11 @@ void main() async {
     // Camera initialization failed, continue without camera
   }
 
-  runApp(FoodScannerApp(cameras: cameras));
+  runApp(
+    ProviderScope(
+      child: FoodScannerApp(cameras: cameras),
+    ),
+  );
 }
 
 class FoodScannerApp extends StatelessWidget {
