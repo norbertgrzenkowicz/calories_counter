@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../services/supabase_service.dart';
+import '../domain/entities/result.dart';
 import '../core/app_logger.dart';
-import 'service_providers.dart';
+import 'repository_providers.dart';
 
 part 'auth_provider.g.dart';
 
@@ -41,8 +41,8 @@ class AuthNotifier extends _$AuthNotifier {
   @override
   AuthState build() {
     // Initialize with current user if available
-    final supabaseService = ref.read(supabaseServiceProvider);
-    final currentUserId = supabaseService.getCurrentUserId();
+    final authRepository = ref.read(authRepositoryProvider);
+    final currentUserId = authRepository.getCurrentUserId();
     
     return AuthState(
       userId: currentUserId,
@@ -54,92 +54,74 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> signIn(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     
-    try {
-      final supabaseService = ref.read(supabaseServiceProvider);
-      
-      // Perform authentication through Supabase
-      await supabaseService.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      
-      final userId = supabaseService.getCurrentUserId();
-      
-      if (userId != null) {
+    final authRepository = ref.read(authRepositoryProvider);
+    final result = await authRepository.signIn(email, password);
+    
+    result.when(
+      success: (userId) {
         state = state.copyWith(
           userId: userId,
           isAuthenticated: true,
           isLoading: false,
         );
         AppLogger.info('User signed in successfully');
-      } else {
+      },
+      failure: (error) {
+        AppLogger.error('Sign in failed: ${error.toString()}');
         state = state.copyWith(
           isLoading: false,
-          error: 'Authentication failed - no user ID returned',
+          error: _getErrorMessage(error),
         );
-      }
-    } catch (e) {
-      AppLogger.error('Sign in failed', e);
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
+      },
+    );
   }
 
   /// Sign up new user with email and password
   Future<void> signUp(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     
-    try {
-      final supabaseService = ref.read(supabaseServiceProvider);
-      
-      await supabaseService.client.auth.signUp(
-        email: email,
-        password: password,
-      );
-      
-      final userId = supabaseService.getCurrentUserId();
-      
-      if (userId != null) {
+    final authRepository = ref.read(authRepositoryProvider);
+    final result = await authRepository.signUp(email, password);
+    
+    result.when(
+      success: (userId) {
         state = state.copyWith(
           userId: userId,
           isAuthenticated: true,
           isLoading: false,
         );
         AppLogger.info('User signed up successfully');
-      } else {
+      },
+      failure: (error) {
+        AppLogger.error('Sign up failed: ${error.toString()}');
         state = state.copyWith(
           isLoading: false,
-          error: 'Registration completed - please check your email for verification',
+          error: _getErrorMessage(error),
         );
-      }
-    } catch (e) {
-      AppLogger.error('Sign up failed', e);
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
+      },
+    );
   }
 
   /// Sign out current user
   Future<void> signOut() async {
     state = state.copyWith(isLoading: true, error: null);
     
-    try {
-      final supabaseService = ref.read(supabaseServiceProvider);
-      await supabaseService.signOut();
-      
-      state = const AuthState(isAuthenticated: false);
-      AppLogger.info('User signed out successfully');
-    } catch (e) {
-      AppLogger.error('Sign out failed', e);
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
+    final authRepository = ref.read(authRepositoryProvider);
+    final result = await authRepository.signOut();
+    
+    result.when(
+      success: (_) {
+        state = const AuthState(isAuthenticated: false);
+        AppLogger.info('User signed out successfully');
+      },
+      failure: (error) {
+        AppLogger.error('Sign out failed: ${error.toString()}');
+        state = state.copyWith(
+          isLoading: false,
+          error: _getErrorMessage(error),
+        );
+      },
+    );
   }
 
   /// Clear any error state
@@ -149,12 +131,26 @@ class AuthNotifier extends _$AuthNotifier {
 
   /// Check and refresh authentication state
   void refreshAuthState() {
-    final supabaseService = ref.read(supabaseServiceProvider);
-    final currentUserId = supabaseService.getCurrentUserId();
+    final authRepository = ref.read(authRepositoryProvider);
+    final currentUserId = authRepository.getCurrentUserId();
     
     state = state.copyWith(
       userId: currentUserId,
       isAuthenticated: currentUserId != null,
+    );
+  }
+
+  /// Convert AppError to user-friendly error message
+  String _getErrorMessage(AppError error) {
+    return error.when(
+      network: (message, statusCode) => 'Network error: $message',
+      authentication: (message) => message,
+      validation: (message, fieldErrors) => message,
+      notFound: (message) => message,
+      conflict: (message) => message,
+      server: (message, statusCode) => 'Server error: $message',
+      unknown: (message, exception) => message,
+      staleData: (message) => message,
     );
   }
 }
