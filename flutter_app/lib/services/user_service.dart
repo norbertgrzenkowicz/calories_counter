@@ -1,9 +1,10 @@
 import 'dart:developer' as developer;
 import '../models/meal.dart';
+import '../core/service_locator.dart';
 import 'supabase_service.dart';
 
 class UserService {
-  final SupabaseService _supabaseService = SupabaseService();
+  SupabaseService get _supabaseService => getIt<SupabaseService>();
 
   // Get meals for current user on a specific date
   Future<List<Meal>> getMealsForDate(DateTime date) async {

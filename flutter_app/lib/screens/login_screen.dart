@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import '../core/app_logger.dart';
+import '../core/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:food_scanner/screens/register_screen.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
@@ -18,7 +19,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _supabaseService = SupabaseService();
+  SupabaseService get _supabaseService => getIt<SupabaseService>();
   late List<CameraDescription> _cameras;
   bool _isLoading = false;
 

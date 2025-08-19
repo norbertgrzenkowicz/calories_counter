@@ -3,6 +3,7 @@ import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
 import 'package:food_scanner/services/supabase_service.dart';
 import 'package:food_scanner/core/app_logger.dart';
+import 'package:food_scanner/core/service_locator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -16,7 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _supabaseService = SupabaseService();
+  SupabaseService get _supabaseService => getIt<SupabaseService>();
   bool _isLoading = false;
 
   @override
