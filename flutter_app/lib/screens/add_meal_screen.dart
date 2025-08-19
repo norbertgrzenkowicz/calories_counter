@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/supabase_service.dart';
@@ -52,8 +53,8 @@ class _AddMealScreenState extends State<AddMealScreen> {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
-      print('DEBUG: Photo picked, path: ${pickedFile.path}');
-      print('DEBUG: File exists at path: ${File(pickedFile.path).existsSync()}');
+      AppLogger.debug('Photo selected for upload');
+      AppLogger.debug('File exists: ${File(pickedFile.path).existsSync()}');
       setState(() {
         _photoPath = pickedFile.path;
         _hasAnalyzedPhoto = false;
@@ -266,7 +267,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
         if (_photoPath != null) {
           final fileName = 'meal_${DateTime.now().millisecondsSinceEpoch}.jpg';
           photoUrl = await supabaseService.uploadMealPhoto(_photoPath!, fileName);
-          print('DEBUG: Photo uploaded, URL: $photoUrl');
+          AppLogger.debug('Photo uploaded successfully');
         }
 
         final meal = Meal(
@@ -279,8 +280,8 @@ class _AddMealScreenState extends State<AddMealScreen> {
           date: widget.selectedDate,
         );
         
-        print('DEBUG: Meal object photo URL: ${meal.photoUrl}');
-        print('DEBUG: Meal toSupabase: ${meal.toSupabase()}');
+        AppLogger.debug('Meal object created with photo');
+        // Note: Meal data not logged for privacy
         
         await supabaseService.addMeal(meal.toSupabase());
         

@@ -53,3 +53,9 @@ ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
 # SQLite web binaries (can be regenerated with dart run sqflite_common_ffi_web:setup)
 web/sqflite_sw.js
 web/sqlite3.wasm
+
+# Environment variables and sensitive data
+dart_defines.json
+*.env
+.env*
+env.json

@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/app_logger.dart';
+import '../core/environment.dart';
 import 'openfoodfacts_service.dart';
 
 class SupabaseService {
@@ -8,9 +10,6 @@ class SupabaseService {
   factory SupabaseService() => _instance;
   SupabaseService._internal();
 
-  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const String supabaseAnonKey =
-      String.fromEnvironment('SUPABASE_ANON_KEY');
 
   SupabaseClient? _client;
   SupabaseClient get client {
@@ -25,20 +24,16 @@ class SupabaseService {
 
   Future<void> initialize() async {
     try {
-      if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-        throw Exception(
-            'Supabase environment variables not configured. Use --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key');
-      }
+      Environment.validate();
 
       await Supabase.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey,
+        url: Environment.supabaseUrl,
+        anonKey: Environment.supabaseAnonKey,
       );
       _client = Supabase.instance.client;
-      developer.log('Supabase client initialized', name: 'SupabaseService');
+      AppLogger.info('Supabase client initialized successfully');
     } catch (e) {
-      developer.log('Failed to initialize Supabase: $e',
-          name: 'SupabaseService');
+      AppLogger.error('Failed to initialize Supabase', e);
       rethrow;
     }
   }
@@ -46,52 +41,45 @@ class SupabaseService {
   Future<bool> testConnection() async {
     try {
       if (!isInitialized) {
-        print('❌ Cannot test connection: Supabase not initialized');
+        AppLogger.error('Cannot test connection: Supabase not initialized');
         throw Exception('Supabase not initialized');
       }
 
-      print('🔄 Testing Supabase connection...');
-      developer.log('Testing Supabase connection', name: 'SupabaseService');
+      AppLogger.debug('Testing Supabase connection...');
 
       // Test basic connection with a simple query
-      print('🔍 Checking database schema...');
+      AppLogger.debug('Checking database schema...');
       try {
         final response = await client.from('users').select('*').limit(1);
 
-        print('✅ Connection test successful');
-        print('📊 Query result: $response');
-        print('📋 Users table exists and is accessible');
-        developer.log('Connection test successful. Result: $response',
-            name: 'SupabaseService');
+        AppLogger.info('Connection test successful');
+        AppLogger.debug('Users table exists and is accessible');
 
         return true;
       } catch (tableError) {
-        print('⚠️ Users table query failed: $tableError');
+        AppLogger.warning('Users table query failed: ${tableError.toString()}');
 
         // Try to check if we can access any table
         try {
           await client.rpc('version');
-          print('✅ Basic Supabase connection works');
-          print('❌ But users table is not accessible');
+          AppLogger.info('Basic Supabase connection works');
+          AppLogger.warning('But users table is not accessible');
           return false;
         } catch (basicError) {
-          print('❌ Basic connection also failed: $basicError');
+          AppLogger.error('Basic connection also failed', basicError);
           throw basicError;
         }
       }
     } catch (e) {
-      print('❌ Connection test failed: $e');
-      print('Error type: ${e.runtimeType}');
+      AppLogger.error('Connection test failed', e);
       if (e.toString().contains('404')) {
-        print(
-            '💡 Table not found - you may need to create a public.users table');
-        print('💡 Or configure RLS policies for the users table');
+        AppLogger.info('Table not found - you may need to create a public.users table');
+        AppLogger.info('Or configure RLS policies for the users table');
       } else if (e.toString().contains('401') || e.toString().contains('403')) {
-        print(
-            '💡 Authentication/authorization error - check API keys and RLS policies');
+        AppLogger.info('Authentication/authorization error - check API keys and RLS policies');
       } else if (e.toString().contains('network') ||
           e.toString().contains('timeout')) {
-        print('💡 Network connectivity issue detected');
+        AppLogger.info('Network connectivity issue detected');
       }
       developer.log('Connection test failed: $e', name: 'SupabaseService');
       return false;
@@ -105,22 +93,21 @@ class SupabaseService {
         throw Exception('Supabase not initialized');
       }
 
-      print('🔄 Executing query on table: $table');
+      AppLogger.debug('Executing query on table: $table');
       developer.log('Executing query on table: $table',
           name: 'SupabaseService');
 
       final response = await client.from(table).select('*').limit(limit);
 
-      print('✅ Query executed successfully');
-      print('📊 Result count: ${response.length}');
-      print('📋 Data: $response');
+      AppLogger.info('Query executed successfully');
+      AppLogger.debug('Result count: ${response.length}');
       developer.log(
           'Query successful. Count: ${response.length}, Data: $response',
           name: 'SupabaseService');
 
       return response;
     } catch (e) {
-      print('❌ Query failed: $e');
+      AppLogger.error('Query failed', e);
       developer.log('Query failed: $e', name: 'SupabaseService');
       return null;
     }
@@ -135,7 +122,7 @@ class SupabaseService {
         };
       }
 
-      print('🔄 Getting Supabase status...');
+      AppLogger.debug('Getting Supabase status...');
 
       // Simple status check by querying users table instead of version function
       await client.from('users').select('count').limit(1);
@@ -147,8 +134,7 @@ class SupabaseService {
         'message': 'Successfully connected to Supabase',
       };
 
-      print('✅ Status check successful');
-      print('📊 Status: $status');
+      AppLogger.info('Status check successful');
       developer.log('Status check successful: $status',
           name: 'SupabaseService');
 
@@ -160,7 +146,7 @@ class SupabaseService {
         'error': e.toString(),
       };
 
-      print('❌ Status check failed: $e');
+      AppLogger.error('Status check failed', e);
       developer.log('Status check failed: $e', name: 'SupabaseService');
 
       return errorStatus;
@@ -343,9 +329,8 @@ class SupabaseService {
 
       developer.log('Uploading photo to: $storagePath',
           name: 'SupabaseService');
-      print(
-          'DEBUG: About to upload - File path: $filePath, exists: ${File(filePath).existsSync()}');
-      print('DEBUG: User ID: $userId, Storage path: $storagePath');
+      AppLogger.debug('About to upload photo');
+      AppLogger.debug('File exists: ${File(filePath).existsSync()}');
 
       // Upload file to storage
       await client.storage
@@ -378,12 +363,9 @@ class SupabaseService {
       }
     } catch (e) {
       developer.log('Failed to upload photo: $e', name: 'SupabaseService');
-      print('DEBUG: Photo upload error details: $e');
-      print('DEBUG: File path: $filePath');
-      print('DEBUG: File exists: ${File(filePath).existsSync()}');
-      final currentUserId = getCurrentUserId();
-      print('DEBUG: User ID: $currentUserId');
-      print('DEBUG: Storage path: meals/$currentUserId/$fileName');
+      AppLogger.error('Photo upload failed', e);
+      AppLogger.debug('File exists: ${File(filePath).existsSync()}');
+      // Note: User ID and file paths not logged for security
       // Don't rethrow - photo upload failure should not prevent meal creation
       return null;
     }
