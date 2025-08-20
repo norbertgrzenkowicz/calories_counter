@@ -58,12 +58,15 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
   void _addMeal() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => AddMealScreen(cameras: widget.cameras),
+        builder: (context) => AddMealScreen(
+          selectedDate: _selectedDate,
+          onMealAdded: () {
+            // Refresh meals when returning from add meal screen
+            ref.invalidate(mealsNotifierProvider(_selectedDate));
+          },
+        ),
       ),
-    ).then((_) {
-      // Refresh meals when returning from add meal screen
-      ref.invalidate(mealsNotifierProvider(_selectedDate));
-    });
+    );
   }
 
   void _navigateToProfile() async {
@@ -222,9 +225,9 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNutritionItem('Calories', nutrition['calories'].toString(), '$calorieTarget'),
-          _buildNutritionItem('Protein', '${nutrition['proteins'].toStringAsFixed(1)}g', ''),
-          _buildNutritionItem('Carbs', '${nutrition['carbs'].toStringAsFixed(1)}g', ''),
-          _buildNutritionItem('Fat', '${nutrition['fats'].toStringAsFixed(1)}g', ''),
+          _buildNutritionItem('Protein', '${nutrition['proteins']?.toStringAsFixed(1) ?? '0.0'}g', ''),
+          _buildNutritionItem('Carbs', '${nutrition['carbs']?.toStringAsFixed(1) ?? '0.0'}g', ''),
+          _buildNutritionItem('Fat', '${nutrition['fats']?.toStringAsFixed(1) ?? '0.0'}g', ''),
         ],
       ),
     );
@@ -314,7 +317,7 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  meal['photo_url'],
+                  meal['photo_url'] as String,
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
@@ -323,7 +326,7 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
                 ),
               )
             : const Icon(Icons.restaurant, size: 50),
-        title: Text(meal['name'] ?? 'Unknown Meal'),
+        title: Text((meal['name'] as String?) ?? 'Unknown Meal'),
         subtitle: Text(
           '${meal['calories'] ?? 0} cal • P:${meal['proteins'] ?? 0}g C:${meal['carbs'] ?? 0}g F:${meal['fats'] ?? 0}g',
         ),
@@ -342,7 +345,7 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
           ],
           onSelected: (value) {
             if (value == 'delete') {
-              _deleteMeal(meal['id']);
+              _deleteMeal(meal['id'] as int?);
             }
           },
         ),
