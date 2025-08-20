@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../services/supabase_service.dart';
+import '../models/meal.dart';
 import '../core/app_logger.dart';
-import 'service_providers.dart';
+import 'repository_providers.dart';
 import 'auth_provider.dart';
 
 part 'meals_provider.g.dart';
@@ -12,7 +12,7 @@ part 'meals_provider.g.dart';
 class MealsNotifier extends _$MealsNotifier {
   @override
   Future<List<Map<String, dynamic>>> build(DateTime date) async {
-    final supabaseService = ref.read(supabaseServiceProvider);
+    final mealRepository = ref.read(mealRepositoryProvider);
     final userId = ref.read(currentUserIdProvider);
     
     if (userId == null) {
@@ -21,7 +21,15 @@ class MealsNotifier extends _$MealsNotifier {
     
     try {
       AppLogger.debug('Loading meals for date: ${date.toIso8601String()}');
-      return await supabaseService.getMealsByDate(date);
+      final result = await mealRepository.getMealsByDate(date);
+      
+      return result.when(
+        success: (meals) => meals.map((meal) => meal.toSupabase()).toList(),
+        failure: (error) {
+          AppLogger.error('Failed to load meals: ${error.toString()}');
+          throw Exception('Failed to load meals: ${error.toString()}');
+        },
+      );
     } catch (e) {
       AppLogger.error('Failed to load meals', e);
       throw Exception('Failed to load meals: $e');
@@ -29,8 +37,8 @@ class MealsNotifier extends _$MealsNotifier {
   }
 
   /// Add a new meal
-  Future<void> addMeal(Map<String, dynamic> mealData) async {
-    final supabaseService = ref.read(supabaseServiceProvider);
+  Future<void> addMeal(Meal meal) async {
+    final mealRepository = ref.read(mealRepositoryProvider);
     final userId = ref.read(currentUserIdProvider);
     
     if (userId == null) {
@@ -41,12 +49,20 @@ class MealsNotifier extends _$MealsNotifier {
       AppLogger.info('Adding new meal');
       state = const AsyncValue.loading();
       
-      await supabaseService.addMeal(mealData);
+      final result = await mealRepository.addMeal(meal);
       
-      // Refresh the meals list
-      ref.invalidateSelf();
-      
-      AppLogger.info('Meal added successfully');
+      result.when(
+        success: (createdMeal) {
+          // Refresh the meals list
+          ref.invalidateSelf();
+          AppLogger.info('Meal added successfully');
+        },
+        failure: (error) {
+          AppLogger.error('Failed to add meal: ${error.toString()}');
+          state = AsyncValue.error(error, StackTrace.current);
+          throw Exception('Failed to add meal: ${error.toString()}');
+        },
+      );
     } catch (e) {
       AppLogger.error('Failed to add meal', e);
       state = AsyncValue.error(e, StackTrace.current);
@@ -55,8 +71,8 @@ class MealsNotifier extends _$MealsNotifier {
   }
 
   /// Update an existing meal
-  Future<void> updateMeal(int mealId, Map<String, dynamic> mealData) async {
-    final supabaseService = ref.read(supabaseServiceProvider);
+  Future<void> updateMeal(Meal meal) async {
+    final mealRepository = ref.read(mealRepositoryProvider);
     final userId = ref.read(currentUserIdProvider);
     
     if (userId == null) {
@@ -64,15 +80,23 @@ class MealsNotifier extends _$MealsNotifier {
     }
     
     try {
-      AppLogger.info('Updating meal: $mealId');
+      AppLogger.info('Updating meal: ${meal.id}');
       state = const AsyncValue.loading();
       
-      await supabaseService.updateMeal(mealId, mealData);
+      final result = await mealRepository.updateMeal(meal);
       
-      // Refresh the meals list
-      ref.invalidateSelf();
-      
-      AppLogger.info('Meal updated successfully');
+      result.when(
+        success: (updatedMeal) {
+          // Refresh the meals list
+          ref.invalidateSelf();
+          AppLogger.info('Meal updated successfully');
+        },
+        failure: (error) {
+          AppLogger.error('Failed to update meal: ${error.toString()}');
+          state = AsyncValue.error(error, StackTrace.current);
+          throw Exception('Failed to update meal: ${error.toString()}');
+        },
+      );
     } catch (e) {
       AppLogger.error('Failed to update meal', e);
       state = AsyncValue.error(e, StackTrace.current);
@@ -82,7 +106,7 @@ class MealsNotifier extends _$MealsNotifier {
 
   /// Delete a meal
   Future<void> deleteMeal(int mealId) async {
-    final supabaseService = ref.read(supabaseServiceProvider);
+    final mealRepository = ref.read(mealRepositoryProvider);
     final userId = ref.read(currentUserIdProvider);
     
     if (userId == null) {
@@ -93,12 +117,20 @@ class MealsNotifier extends _$MealsNotifier {
       AppLogger.info('Deleting meal: $mealId');
       state = const AsyncValue.loading();
       
-      await supabaseService.deleteMeal(mealId);
+      final result = await mealRepository.deleteMeal(mealId);
       
-      // Refresh the meals list
-      ref.invalidateSelf();
-      
-      AppLogger.info('Meal deleted successfully');
+      result.when(
+        success: (_) {
+          // Refresh the meals list
+          ref.invalidateSelf();
+          AppLogger.info('Meal deleted successfully');
+        },
+        failure: (error) {
+          AppLogger.error('Failed to delete meal: ${error.toString()}');
+          state = AsyncValue.error(error, StackTrace.current);
+          throw Exception('Failed to delete meal: ${error.toString()}');
+        },
+      );
     } catch (e) {
       AppLogger.error('Failed to delete meal', e);
       state = AsyncValue.error(e, StackTrace.current);
@@ -110,7 +142,7 @@ class MealsNotifier extends _$MealsNotifier {
 /// Provider for getting all user meals
 @riverpod
 Future<List<Map<String, dynamic>>> allUserMeals(AllUserMealsRef ref) async {
-  final supabaseService = ref.read(supabaseServiceProvider);
+  final mealRepository = ref.read(mealRepositoryProvider);
   final userId = ref.read(currentUserIdProvider);
   
   if (userId == null) {
@@ -119,7 +151,15 @@ Future<List<Map<String, dynamic>>> allUserMeals(AllUserMealsRef ref) async {
   
   try {
     AppLogger.debug('Loading all user meals');
-    return await supabaseService.getAllUserMeals();
+    final result = await mealRepository.getAllUserMeals();
+    
+    return result.when(
+      success: (meals) => meals.map((meal) => meal.toSupabase()).toList(),
+      failure: (error) {
+        AppLogger.error('Failed to load all user meals: ${error.toString()}');
+        throw Exception('Failed to load meals: ${error.toString()}');
+      },
+    );
   } catch (e) {
     AppLogger.error('Failed to load all user meals', e);
     throw Exception('Failed to load meals: $e');

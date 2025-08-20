@@ -6,7 +6,7 @@ part of 'meals_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$allUserMealsHash() => r'1dee3b4267ddaf9b8a7a519c06e0fff47bfe6088';
+String _$allUserMealsHash() => r'07f7f790c277c74cc621fb6fd1c1c664dfa6711a';
 
 /// Provider for getting all user meals
 ///
@@ -334,7 +334,7 @@ class _DailyMealCountProviderElement extends AutoDisposeProviderElement<int>
   DateTime get date => (origin as DailyMealCountProvider).date;
 }
 
-String _$mealsNotifierHash() => r'531133cfcb5cf3d4da8f9d621c61c04a2d64f18c';
+String _$mealsNotifierHash() => r'f673a5c965f5d7ef7492b5d4ac6ba0851ec867d8';
 
 abstract class _$MealsNotifier
     extends BuildlessAutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {

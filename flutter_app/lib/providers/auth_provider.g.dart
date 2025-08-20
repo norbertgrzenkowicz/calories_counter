@@ -44,7 +44,7 @@ final currentUserIdProvider = AutoDisposeProvider<String?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentUserIdRef = AutoDisposeProviderRef<String?>;
-String _$authNotifierHash() => r'21d3768656f88c7365b943b1a613b40adb71ad7a';
+String _$authNotifierHash() => r'5e115d9b5836680a84e9ba4b7299e84db3aaabf2';
 
 /// Authentication state notifier using Riverpod
 ///

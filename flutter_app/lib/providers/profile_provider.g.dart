@@ -25,7 +25,7 @@ final hasProfileProvider = AutoDisposeProvider<bool>.internal(
 // ignore: unused_element
 typedef HasProfileRef = AutoDisposeProviderRef<bool>;
 String _$dailyCalorieTargetHash() =>
-    r'0389173c28d14acbd4990be4d3829002c188a770';
+    r'1880281deecf14faae3f62306b1f34eb6396177a';
 
 /// Provider for getting daily calorie target
 ///
@@ -44,7 +44,7 @@ final dailyCalorieTargetProvider = AutoDisposeProvider<int>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DailyCalorieTargetRef = AutoDisposeProviderRef<int>;
-String _$profileNotifierHash() => r'b383852ca193492e80368798d2d20eade7bb3480';
+String _$profileNotifierHash() => r'9dd15f694d7ab70fa3565aae32e32c1b700456cd';
 
 /// User profile state notifier
 ///

@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/user_profile.dart';
-import '../services/profile_service.dart';
 import '../core/app_logger.dart';
-import 'service_providers.dart';
+import 'repository_providers.dart';
 import 'auth_provider.dart';
 
 part 'profile_provider.g.dart';
@@ -21,8 +20,16 @@ class ProfileNotifier extends _$ProfileNotifier {
     
     try {
       AppLogger.debug('Loading user profile');
-      final profileService = ref.read(profileServiceProvider);
-      return await profileService.getUserProfile();
+      final profileRepository = ref.read(profileRepositoryProvider);
+      final result = await profileRepository.getUserProfile();
+      
+      return result.when(
+        success: (profile) => profile,
+        failure: (error) {
+          AppLogger.error('Failed to load user profile: ${error.toString()}');
+          return null;
+        },
+      );
     } catch (e) {
       AppLogger.error('Failed to load user profile', e);
       return null;
@@ -41,13 +48,21 @@ class ProfileNotifier extends _$ProfileNotifier {
       AppLogger.info('Updating user profile');
       state = const AsyncValue.loading();
       
-      final profileService = ref.read(profileServiceProvider);
-      await profileService.saveUserProfile(profile);
+      final profileRepository = ref.read(profileRepositoryProvider);
+      final result = await profileRepository.updateUserProfile(profile);
       
-      // Refresh the profile data
-      ref.invalidateSelf();
-      
-      AppLogger.info('Profile updated successfully');
+      result.when(
+        success: (updatedProfile) {
+          // Refresh the profile data
+          ref.invalidateSelf();
+          AppLogger.info('Profile updated successfully');
+        },
+        failure: (error) {
+          AppLogger.error('Failed to update profile: ${error.toString()}');
+          state = AsyncValue.error(error, StackTrace.current);
+          throw Exception('Failed to update profile: ${error.toString()}');
+        },
+      );
     } catch (e) {
       AppLogger.error('Failed to update profile', e);
       state = AsyncValue.error(e, StackTrace.current);
@@ -67,13 +82,21 @@ class ProfileNotifier extends _$ProfileNotifier {
       AppLogger.info('Creating user profile');
       state = const AsyncValue.loading();
       
-      final profileService = ref.read(profileServiceProvider);
-      await profileService.saveUserProfile(profile);
+      final profileRepository = ref.read(profileRepositoryProvider);
+      final result = await profileRepository.createUserProfile(profile);
       
-      // Refresh the profile data
-      ref.invalidateSelf();
-      
-      AppLogger.info('Profile created successfully');
+      result.when(
+        success: (createdProfile) {
+          // Refresh the profile data
+          ref.invalidateSelf();
+          AppLogger.info('Profile created successfully');
+        },
+        failure: (error) {
+          AppLogger.error('Failed to create profile: ${error.toString()}');
+          state = AsyncValue.error(error, StackTrace.current);
+          throw Exception('Failed to create profile: ${error.toString()}');
+        },
+      );
     } catch (e) {
       AppLogger.error('Failed to create profile', e);
       state = AsyncValue.error(e, StackTrace.current);
