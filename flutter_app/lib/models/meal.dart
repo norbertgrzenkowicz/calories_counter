@@ -153,4 +153,31 @@ class Meal {
       'date': date.toIso8601String(),
     };
   }
+
+  /// Create a copy of this Meal with the given fields replaced with new values
+  Meal copyWith({
+    int? id,
+    String? name,
+    String? uid,
+    int? calories,
+    double? proteins,
+    double? fats,
+    double? carbs,
+    String? photoUrl,
+    DateTime? date,
+    DateTime? createdAt,
+  }) {
+    return Meal(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      uid: uid ?? this.uid,
+      calories: calories ?? this.calories,
+      proteins: proteins ?? this.proteins,
+      fats: fats ?? this.fats,
+      carbs: carbs ?? this.carbs,
+      photoUrl: photoUrl ?? this.photoUrl,
+      date: date ?? this.date,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
