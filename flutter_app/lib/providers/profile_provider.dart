@@ -42,7 +42,7 @@ class ProfileNotifier extends _$ProfileNotifier {
       state = const AsyncValue.loading();
       
       final profileService = ref.read(profileServiceProvider);
-      await profileService.updateUserProfile(profile);
+      await profileService.saveUserProfile(profile);
       
       // Refresh the profile data
       ref.invalidateSelf();
@@ -68,7 +68,7 @@ class ProfileNotifier extends _$ProfileNotifier {
       state = const AsyncValue.loading();
       
       final profileService = ref.read(profileServiceProvider);
-      await profileService.createUserProfile(profile);
+      await profileService.saveUserProfile(profile);
       
       // Refresh the profile data
       ref.invalidateSelf();
@@ -101,22 +101,27 @@ int dailyCalorieTarget(DailyCalorieTargetRef ref) {
   
   return profileAsync.when(
     data: (profile) {
-      if (profile?.dailyCalorieTarget != null && profile!.dailyCalorieTarget > 0) {
-        return profile.dailyCalorieTarget;
+      if (profile?.targetCalories != null && profile!.targetCalories! > 0) {
+        return profile.targetCalories!;
       }
       
-      // Calculate basic BMR if profile exists but no custom target
-      if (profile != null && profile.weight > 0 && profile.height > 0 && profile.age > 0) {
-        // Using Mifflin-St Jeor equation
+      // Use calculated TDEE if available
+      if (profile?.tdeeCalories != null && profile!.tdeeCalories! > 0) {
+        return profile.tdeeCalories!;
+      }
+      
+      // Calculate basic BMR if profile exists but no target
+      if (profile != null && profile.currentWeightKg > 0 && profile.heightCm > 0) {
+        // Using Mifflin-St Jeor equation (simplified with default age)
         double bmr;
         if (profile.gender.toLowerCase() == 'male') {
-          bmr = 88.362 + (13.397 * profile.weight) + (4.799 * profile.height) - (5.677 * profile.age);
+          bmr = 88.362 + (13.397 * profile.currentWeightKg) + (4.799 * profile.heightCm) - (5.677 * 30);
         } else {
-          bmr = 447.593 + (9.247 * profile.weight) + (3.098 * profile.height) - (4.330 * profile.age);
+          bmr = 447.593 + (9.247 * profile.currentWeightKg) + (3.098 * profile.heightCm) - (4.330 * 30);
         }
         
-        // Apply activity factor (assuming lightly active = 1.375)
-        return (bmr * 1.375).round();
+        // Apply activity factor from profile
+        return (bmr * profile.activityLevel).round();
       }
       
       // Default calorie target
