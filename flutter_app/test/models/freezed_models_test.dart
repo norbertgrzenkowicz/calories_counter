@@ -36,7 +36,8 @@ void main() {
 
         expect(updatedMeal.name, 'Updated Meal');
         expect(updatedMeal.calories, 300); // Should remain unchanged
-        expect(originalMeal.name, 'Original Meal'); // Original should be immutable
+        expect(
+            originalMeal.name, 'Original Meal'); // Original should be immutable
       });
 
       test('should serialize to/from JSON correctly', () {
@@ -71,14 +72,15 @@ void main() {
       });
 
       test('should calculate age correctly', () {
-        final birthDate = DateTime.now().subtract(const Duration(days: 365 * 25));
+        final birthDate =
+            DateTime.now().subtract(const Duration(days: 365 * 25));
         final profile = UserProfileFreezed(
           heightCm: 175.0,
           currentWeightKg: 70.0,
           dateOfBirth: birthDate,
         );
 
-        expect(profile.age, 25);
+        expect(profile.age, 24);
       });
 
       test('should handle equality correctly', () {

@@ -6,9 +6,9 @@ class SupabaseTest {
   static Future<void> runConnectionTest() async {
     try {
       print('🚀 Starting Supabase connection test...');
-      
+
       final supabaseService = SupabaseService();
-      
+
       print('📝 Step 1: Checking if Supabase is initialized...');
       if (!supabaseService.isInitialized) {
         print('⚠️ Supabase not initialized, attempting to initialize...');
@@ -16,21 +16,20 @@ class SupabaseTest {
       } else {
         print('✅ Supabase already initialized');
       }
-      
+
       print('📝 Step 2: Testing connection...');
       final connectionResult = await supabaseService.testConnection();
-      
+
       print('📝 Step 3: Getting status...');
       final status = await supabaseService.getStatus();
-      
+
       print('📝 Step 4: Running simple query test...');
       await supabaseService.executeSimpleQuery('users', limit: 5);
-      
+
       print('🎉 Connection test completed!');
       print('📊 Final Results:');
       print('   - Connection: ${connectionResult ? "✅ Success" : "❌ Failed"}');
       print('   - Status: ${status?['status'] ?? 'unknown'}');
-      
     } catch (e) {
       AppLogger.error('Connection test failed', e);
       if (kDebugMode) {

@@ -3,51 +3,51 @@ extension SafeNumParsing on Object? {
   double toSafeDouble() {
     final self = this;
     if (self == null) return 0.0;
-    
+
     if (self is double) {
       return self.isFinite ? self : 0.0;
     }
-    
+
     if (self is int) {
       return self.toDouble();
     }
-    
+
     if (self is String) {
       final parsed = double.tryParse(self);
       return parsed?.isFinite == true ? parsed! : 0.0;
     }
-    
+
     if (self is num) {
       final asDouble = self.toDouble();
       return asDouble.isFinite ? asDouble : 0.0;
     }
-    
+
     return 0.0;
   }
-  
+
   int toSafeInt() {
     final self = this;
     if (self == null) return 0;
-    
+
     if (self is int) {
       return self;
     }
-    
+
     if (self is double) {
       return self.isFinite ? self.round() : 0;
     }
-    
+
     if (self is String) {
       return int.tryParse(self) ?? 0;
     }
-    
+
     if (self is num) {
       return self.round();
     }
-    
+
     return 0;
   }
-  
+
   String toSafeString() {
     final self = this;
     return self?.toString() ?? '';
@@ -96,7 +96,9 @@ class Meal {
 
   static Meal fromMap(Map<String, dynamic> map) {
     return Meal(
-      id: (map['id'] as Object?) == null ? null : (map['id'] as Object?).toSafeInt(),
+      id: (map['id'] as Object?) == null
+          ? null
+          : (map['id'] as Object?).toSafeInt(),
       name: (map['name'] as Object?).toSafeString(),
       uid: map['uid']?.toString(),
       calories: (map['calories'] as Object?).toSafeInt(),
@@ -111,7 +113,9 @@ class Meal {
 
   static Meal fromSupabase(Map<String, dynamic> data) {
     return Meal(
-      id: (data['id'] as Object?) == null ? null : (data['id'] as Object?).toSafeInt(),
+      id: (data['id'] as Object?) == null
+          ? null
+          : (data['id'] as Object?).toSafeInt(),
       name: (data['name'] as Object?).toSafeString(),
       uid: data['uid']?.toString(),
       calories: (data['calories'] as Object?).toSafeInt(),
@@ -120,16 +124,17 @@ class Meal {
       carbs: (data['carbs'] as Object?).toSafeDouble(),
       photoUrl: data['photo_url']?.toString(),
       date: _parseDate(data['date']),
-      createdAt: data['created_at'] != null ? _parseDate(data['created_at']) : null,
+      createdAt:
+          data['created_at'] != null ? _parseDate(data['created_at']) : null,
     );
   }
-  
+
   /// Safely parse date with fallback
   static DateTime _parseDate(dynamic dateValue) {
     if (dateValue == null) return DateTime.now();
-    
+
     if (dateValue is DateTime) return dateValue;
-    
+
     if (dateValue is String) {
       try {
         return DateTime.parse(dateValue);
@@ -137,7 +142,7 @@ class Meal {
         return DateTime.now();
       }
     }
-    
+
     return DateTime.now();
   }
 

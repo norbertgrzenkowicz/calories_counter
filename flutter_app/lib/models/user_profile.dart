@@ -3,22 +3,23 @@ import '../core/app_logger.dart';
 class UserProfile {
   final int? id;
   final String? uid;
-  
+
   // Basic Profile Information
   final String? fullName;
   final String? email;
   final DateTime? dateOfBirth;
-  
+
   // Physical Characteristics (required for BMR calculations)
   final String gender; // 'male' or 'female'
   final double heightCm;
   final double currentWeightKg;
   final double? targetWeightKg;
-  
+
   // Goals and Activity
-  final String goal; // 'weight_loss', 'weight_gain', 'maintaining', 'hypertrophy'
+  final String
+      goal; // 'weight_loss', 'weight_gain', 'maintaining', 'hypertrophy'
   final double activityLevel; // PAL value (1.2-2.4)
-  
+
   // Calculated Values
   final int? bmrCalories;
   final int? tdeeCalories;
@@ -26,12 +27,12 @@ class UserProfile {
   final double? targetProteinG;
   final double? targetCarbsG;
   final double? targetFatsG;
-  
+
   // Weight Loss Tracking
   final DateTime? weightLossStartDate;
   final double? initialWeightKg;
   final double weeklyWeightLossTarget;
-  
+
   // Timestamps
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -66,7 +67,7 @@ class UserProfile {
     if (dateOfBirth == null) return null;
     final now = DateTime.now();
     int age = now.year - dateOfBirth!.year;
-    if (now.month < dateOfBirth!.month || 
+    if (now.month < dateOfBirth!.month ||
         (now.month == dateOfBirth!.month && now.day < dateOfBirth!.day)) {
       age--;
     }
@@ -75,11 +76,11 @@ class UserProfile {
 
   // Check if profile has minimum required data for calculations
   bool get hasRequiredDataForCalculations {
-    return gender.isNotEmpty && 
-           heightCm > 0 && 
-           currentWeightKg > 0 && 
-           age != null && 
-           age! > 0;
+    return gender.isNotEmpty &&
+        heightCm > 0 &&
+        currentWeightKg > 0 &&
+        age != null &&
+        age! > 0;
   }
 
   // Get goal display name
@@ -102,21 +103,24 @@ class UserProfile {
   String get activityLevelDescription {
     if (activityLevel <= 1.2) return 'Sedentary (little/no exercise)';
     if (activityLevel <= 1.375) return 'Light (light exercise 1-3 days/week)';
-    if (activityLevel <= 1.55) return 'Moderate (moderate exercise 3-5 days/week)';
+    if (activityLevel <= 1.55)
+      return 'Moderate (moderate exercise 3-5 days/week)';
     if (activityLevel <= 1.725) return 'Active (hard exercise 6-7 days/week)';
-    if (activityLevel <= 1.9) return 'Very Active (very hard exercise, physical job)';
+    if (activityLevel <= 1.9)
+      return 'Very Active (very hard exercise, physical job)';
     return 'Extremely Active (very hard exercise, physical job + training)';
   }
 
   // Calculate BMR using Mifflin-St Jeor equation
   int calculateBMR() {
     if (!hasRequiredDataForCalculations) return 0;
-    
+
     // BMR = 10 × weight(kg) + 6.25 × height(cm) - 5 × age(years) + s
     // where s = +5 for males, -161 for females
     final genderFactor = gender.toLowerCase() == 'male' ? 5 : -161;
-    final bmr = (10 * currentWeightKg) + (6.25 * heightCm) - (5 * age!) + genderFactor;
-    
+    final bmr =
+        (10 * currentWeightKg) + (6.25 * heightCm) - (5 * age!) + genderFactor;
+
     return bmr.round();
   }
 
@@ -129,22 +133,23 @@ class UserProfile {
   // Calculate target calories based on goal
   int calculateTargetCalories() {
     final tdee = calculateTDEE();
-    
+
     switch (goal) {
       case 'weight_loss':
         // Create deficit based on weekly target (1 kg/week = ~7700 kcal deficit = ~500 kcal/day)
         final dailyDeficit = (weeklyWeightLossTarget * 7700 / 7).round();
-        return (tdee - dailyDeficit).clamp(1200, tdee); // Don't go below 1200 kcal
-      
+        return (tdee - dailyDeficit)
+            .clamp(1200, tdee); // Don't go below 1200 kcal
+
       case 'weight_gain':
         // Create surplus for weight gain (0.5 kg/week = ~250 kcal/day surplus)
         final dailySurplus = (weeklyWeightLossTarget * 7700 / 7).round();
         return tdee + dailySurplus;
-      
+
       case 'hypertrophy':
         // Slight surplus for muscle building
         return tdee + 200;
-      
+
       case 'maintaining':
       default:
         return tdee;
@@ -154,7 +159,7 @@ class UserProfile {
   // Calculate target macros
   Map<String, double> calculateTargetMacros() {
     final targetCals = calculateTargetCalories();
-    
+
     // Protein: 1.6-2.2g per kg body weight (higher for weight loss/hypertrophy)
     double proteinPerKg;
     switch (goal) {
@@ -168,19 +173,19 @@ class UserProfile {
       default:
         proteinPerKg = 1.6;
     }
-    
+
     final protein = (currentWeightKg * proteinPerKg);
     final proteinCalories = protein * 4; // 4 kcal per gram
-    
+
     // Fat: 0.8-1.2g per kg body weight (25-35% of total calories)
     final fatPercentage = goal == 'weight_loss' ? 0.25 : 0.30;
     final fatCalories = targetCals * fatPercentage;
     final fat = fatCalories / 9; // 9 kcal per gram
-    
+
     // Carbs: remainder of calories
     final remainingCalories = targetCals - proteinCalories - fatCalories;
     final carbs = remainingCalories / 4; // 4 kcal per gram
-    
+
     return {
       'protein': protein,
       'fat': fat,
@@ -233,7 +238,8 @@ class UserProfile {
       targetFatsG: targetFatsG ?? this.targetFatsG,
       weightLossStartDate: weightLossStartDate ?? this.weightLossStartDate,
       initialWeightKg: initialWeightKg ?? this.initialWeightKg,
-      weeklyWeightLossTarget: weeklyWeightLossTarget ?? this.weeklyWeightLossTarget,
+      weeklyWeightLossTarget:
+          weeklyWeightLossTarget ?? this.weeklyWeightLossTarget,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -246,7 +252,7 @@ class UserProfile {
     int bmrCalories = 0;
     int tdeeCalories = 0;
     int targetCalories = 0;
-    
+
     if (hasRequiredDataForCalculations) {
       try {
         macros = calculateTargetMacros();
@@ -258,12 +264,13 @@ class UserProfile {
         // Use defaults if calculation fails
       }
     }
-    
+
     return {
       'uid': uid,
       'full_name': fullName?.isNotEmpty == true ? fullName : null,
       'email': email?.isNotEmpty == true ? email : null,
-      'date_of_birth': dateOfBirth?.toIso8601String().split('T')[0], // Date only
+      'date_of_birth':
+          dateOfBirth?.toIso8601String().split('T')[0], // Date only
       'gender': gender,
       'height_cm': heightCm,
       'current_weight_kg': currentWeightKg,
@@ -276,7 +283,8 @@ class UserProfile {
       'target_protein_g': macros['protein'],
       'target_carbs_g': macros['carbs'],
       'target_fats_g': macros['fat'],
-      'weight_loss_start_date': weightLossStartDate?.toIso8601String().split('T')[0],
+      'weight_loss_start_date':
+          weightLossStartDate?.toIso8601String().split('T')[0],
       'initial_weight_kg': initialWeightKg,
       'weekly_weight_loss_target': weeklyWeightLossTarget,
     };
@@ -289,7 +297,7 @@ class UserProfile {
       uid: data['uid'],
       fullName: data['full_name'],
       email: data['email'],
-      dateOfBirth: data['date_of_birth'] != null 
+      dateOfBirth: data['date_of_birth'] != null
           ? DateTime.parse(data['date_of_birth'])
           : null,
       gender: data['gender'] ?? 'male',
@@ -308,11 +316,12 @@ class UserProfile {
           ? DateTime.parse(data['weight_loss_start_date'])
           : null,
       initialWeightKg: data['initial_weight_kg']?.toDouble(),
-      weeklyWeightLossTarget: (data['weekly_weight_loss_target'] ?? 0.5).toDouble(),
-      createdAt: data['created_at'] != null 
+      weeklyWeightLossTarget:
+          (data['weekly_weight_loss_target'] ?? 0.5).toDouble(),
+      createdAt: data['created_at'] != null
           ? DateTime.parse(data['created_at'])
           : null,
-      updatedAt: data['updated_at'] != null 
+      updatedAt: data['updated_at'] != null
           ? DateTime.parse(data['updated_at'])
           : null,
     );

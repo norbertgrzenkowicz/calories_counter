@@ -10,7 +10,7 @@ import 'package:food_scanner/services/user_service.dart';
 final getIt = GetIt.instance;
 
 /// Configures and registers all dependencies in the dependency injection container
-/// 
+///
 /// This should be called once at app startup to ensure all services are properly
 /// configured and ready for injection throughout the application.
 Future<void> configureDependencies() async {
@@ -22,15 +22,16 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<OpenFoodFactsService>(OpenFoodFactsService.new)
     ..registerLazySingleton<UserService>(UserService.new)
     // Singleton services - register existing instance
-    ..registerLazySingleton<NutritionCalculatorService>(NutritionCalculatorService.new);
-  
+    ..registerLazySingleton<NutritionCalculatorService>(
+        NutritionCalculatorService.new);
+
   // Initialize Supabase after registration
   final supabaseService = getIt<SupabaseService>();
   await supabaseService.initialize();
 }
 
 /// Resets all registered dependencies
-/// 
+///
 /// This is primarily used for testing to ensure clean state between tests
 Future<void> resetDependencies() async {
   await getIt.reset();

@@ -29,7 +29,8 @@ class UserService {
       );
       return response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
     } catch (e) {
-      developer.log('Failed to get meals for date range: $e', name: 'UserService');
+      developer.log('Failed to get meals for date range: $e',
+          name: 'UserService');
       return [];
     }
   }
@@ -57,7 +58,7 @@ class UserService {
   }) async {
     try {
       String? photoUrl;
-      
+
       // Upload photo if provided
       if (photoPath != null) {
         final fileName = 'meal_${DateTime.now().millisecondsSinceEpoch}.jpg';

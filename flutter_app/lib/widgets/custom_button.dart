@@ -74,10 +74,9 @@ class _CustomButtonState extends State<CustomButton>
                 gradient: widget.isSecondary ? null : AppTheme.buttonGradient,
                 color: widget.isSecondary ? Colors.white : null,
                 borderRadius: BorderRadius.circular(16),
-                border:
-                    widget.isSecondary
-                        ? Border.all(color: AppTheme.softGray, width: 1.5)
-                        : null,
+                border: widget.isSecondary
+                    ? Border.all(color: AppTheme.softGray, width: 1.5)
+                    : null,
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.charcoal.withOpacity(0.1),
@@ -118,10 +117,9 @@ class _CustomButtonState extends State<CustomButton>
                             Icon(
                               widget.icon,
                               size: 20,
-                              color:
-                                  widget.isSecondary
-                                      ? AppTheme.primaryGreen
-                                      : Colors.white,
+                              color: widget.isSecondary
+                                  ? AppTheme.primaryGreen
+                                  : Colors.white,
                             ),
                             const SizedBox(width: 8),
                           ],
@@ -130,12 +128,11 @@ class _CustomButtonState extends State<CustomButton>
                             style: Theme.of(
                               context,
                             ).textTheme.labelLarge?.copyWith(
-                              color:
-                                  widget.isSecondary
+                                  color: widget.isSecondary
                                       ? AppTheme.primaryGreen
                                       : Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ],
                       ],

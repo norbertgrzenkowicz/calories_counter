@@ -4,20 +4,22 @@ import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 /// Secure application logging service
-/// 
+///
 /// Provides production-safe logging that prevents sensitive data exposure
 /// in release builds while maintaining useful debug information in development.
 class AppLogger {
   static final Logger _logger = Logger(
     level: kReleaseMode ? Level.warning : Level.debug,
-    printer: kReleaseMode ? SimplePrinter() : PrettyPrinter(
-      methodCount: 2,
-      errorMethodCount: 8,
-      lineLength: 120,
-      colors: true,
-      printEmojis: true,
-      printTime: false,
-    ),
+    printer: kReleaseMode
+        ? SimplePrinter()
+        : PrettyPrinter(
+            methodCount: 2,
+            errorMethodCount: 8,
+            lineLength: 120,
+            colors: true,
+            printEmojis: true,
+            printTime: false,
+          ),
   );
 
   /// Log debug information (development only)
@@ -58,17 +60,17 @@ class AppLogger {
   }
 
   /// Log user actions without exposing sensitive data
-  /// 
+  ///
   /// NEVER include user IDs, emails, or personal information
   static void logUserAction(String action) {
     info('User action: $action');
   }
 
   /// Log API calls without exposing sensitive data
-  /// 
+  ///
   /// NEVER include API keys, tokens, or response data containing personal info
   static void logApiCall(String method, String endpoint, [int? statusCode]) {
-    final message = statusCode != null 
+    final message = statusCode != null
         ? '$method $endpoint -> $statusCode'
         : '$method $endpoint';
     debug('API: $message');

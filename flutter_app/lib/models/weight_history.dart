@@ -1,28 +1,28 @@
 class WeightHistory {
   final int? id;
   final String? uid;
-  
+
   // Weight Data
   final double weightKg;
   final DateTime recordedDate;
-  
+
   // Context Information
   final String measurementTime; // 'morning', 'afternoon', 'evening'
   final String? notes;
-  
+
   // Goal Tracking
   final String? goalAtTime;
   final int daysSinceGoalStart;
-  
+
   // Calculated Fields
   final double? weightChangeKg;
   final double? weeklyAverageKg;
   final double? monthlyAverageKg;
-  
+
   // Weight Loss Phase Tracking
   final bool isInitialPhase;
   final String phase; // 'initial' or 'steady_state'
-  
+
   // Timestamps
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -167,7 +167,8 @@ class WeightHistory {
     return {
       'uid': uid,
       'weight_kg': weightKg,
-      'recorded_date': recordedDate.toIso8601String().split('T')[0], // Date only
+      'recorded_date':
+          recordedDate.toIso8601String().split('T')[0], // Date only
       'measurement_time': measurementTime,
       'notes': notes,
       'goal_at_time': goalAtTime,
@@ -186,7 +187,8 @@ class WeightHistory {
       id: data['id'],
       uid: data['uid'],
       weightKg: (data['weight_kg'] ?? 0.0).toDouble(),
-      recordedDate: DateTime.parse(data['recorded_date'] ?? DateTime.now().toIso8601String()),
+      recordedDate: DateTime.parse(
+          data['recorded_date'] ?? DateTime.now().toIso8601String()),
       measurementTime: data['measurement_time'] ?? 'morning',
       notes: data['notes'],
       goalAtTime: data['goal_at_time'],
@@ -196,10 +198,10 @@ class WeightHistory {
       monthlyAverageKg: data['monthly_average_kg']?.toDouble(),
       isInitialPhase: data['is_initial_phase'] ?? true,
       phase: data['phase'] ?? 'initial',
-      createdAt: data['created_at'] != null 
+      createdAt: data['created_at'] != null
           ? DateTime.parse(data['created_at'])
           : null,
-      updatedAt: data['updated_at'] != null 
+      updatedAt: data['updated_at'] != null
           ? DateTime.parse(data['updated_at'])
           : null,
     );

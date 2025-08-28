@@ -103,17 +103,17 @@ class _CustomLoadingDialogState extends State<CustomLoadingDialog>
             Text(
               widget.message,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: AppTheme.charcoal,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: AppTheme.charcoal,
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'We\'re curating amazing local spots just for you',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.charcoal.withOpacity(0.7),
-              ),
+                    color: AppTheme.charcoal.withOpacity(0.7),
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -126,10 +126,9 @@ class _CustomLoadingDialogState extends State<CustomLoadingDialog>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => CustomLoadingDialog(
-            message: message ?? 'Finding your perfect spot...',
-          ),
+      builder: (context) => CustomLoadingDialog(
+        message: message ?? 'Finding your perfect spot...',
+      ),
     );
   }
 

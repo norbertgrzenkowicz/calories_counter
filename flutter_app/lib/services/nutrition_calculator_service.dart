@@ -2,17 +2,18 @@ import '../models/user_profile.dart';
 import '../models/weight_history.dart';
 
 class NutritionCalculatorService {
-  static final NutritionCalculatorService _instance = NutritionCalculatorService._internal();
+  static final NutritionCalculatorService _instance =
+      NutritionCalculatorService._internal();
   factory NutritionCalculatorService() => _instance;
   NutritionCalculatorService._internal();
 
   // Physical Activity Level (PAL) mapping based on scientific research
   static const Map<String, double> activityLevels = {
-    'sedentary': 1.2,           // Little/no exercise
-    'lightly_active': 1.375,    // Light exercise 1-3 days/week
-    'moderately_active': 1.55,  // Moderate exercise 3-5 days/week
-    'very_active': 1.725,       // Hard exercise 6-7 days/week
-    'extremely_active': 1.9,    // Very hard exercise, physical job + training
+    'sedentary': 1.2, // Little/no exercise
+    'lightly_active': 1.375, // Light exercise 1-3 days/week
+    'moderately_active': 1.55, // Moderate exercise 3-5 days/week
+    'very_active': 1.725, // Hard exercise 6-7 days/week
+    'extremely_active': 1.9, // Very hard exercise, physical job + training
   };
 
   // Activity level descriptions for UI
@@ -58,7 +59,7 @@ class NutritionCalculatorService {
     // where s = +5 for males, -161 for females
     final genderFactor = gender.toLowerCase() == 'male' ? 5 : -161;
     final bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age) + genderFactor;
-    
+
     return bmr.round();
   }
 
@@ -80,17 +81,18 @@ class NutritionCalculatorService {
       case 'weight_loss':
         // Create deficit based on weekly target (1 kg/week = ~7700 kcal deficit = ~500 kcal/day)
         final dailyDeficit = (weeklyWeightChangeTarget * 7700 / 7).round();
-        return (tdee - dailyDeficit).clamp(1200, tdee); // Don't go below 1200 kcal
-      
+        return (tdee - dailyDeficit)
+            .clamp(1200, tdee); // Don't go below 1200 kcal
+
       case 'weight_gain':
         // Create surplus for weight gain
         final dailySurplus = (weeklyWeightChangeTarget * 7700 / 7).round();
         return tdee + dailySurplus;
-      
+
       case 'hypertrophy':
         // Slight surplus for muscle building
         return tdee + 200;
-      
+
       case 'maintaining':
       default:
         return tdee;
@@ -116,19 +118,19 @@ class NutritionCalculatorService {
       default:
         proteinPerKg = 1.6;
     }
-    
+
     final protein = (weightKg * proteinPerKg);
     final proteinCalories = protein * 4; // 4 kcal per gram
-    
+
     // Fat: 25-35% of total calories depending on goal
     final fatPercentage = goal == 'weight_loss' ? 0.25 : 0.30;
     final fatCalories = targetCalories * fatPercentage;
     final fat = fatCalories / 9; // 9 kcal per gram
-    
+
     // Carbs: remainder of calories
     final remainingCalories = targetCalories - proteinCalories - fatCalories;
     final carbs = remainingCalories / 4; // 4 kcal per gram
-    
+
     return {
       'protein': protein,
       'fat': fat,
@@ -137,7 +139,8 @@ class NutritionCalculatorService {
   }
 
   // Calculate complete nutrition profile from UserProfile
-  static Map<String, dynamic> calculateCompleteNutritionProfile(UserProfile profile) {
+  static Map<String, dynamic> calculateCompleteNutritionProfile(
+      UserProfile profile) {
     if (!profile.hasRequiredDataForCalculations) {
       return {
         'error': 'Insufficient profile data for calculations',
@@ -212,7 +215,8 @@ class NutritionCalculatorService {
 
     final firstEntry = sortedHistory.first;
     final lastEntry = sortedHistory.last;
-    final daysBetween = lastEntry.recordedDate.difference(firstEntry.recordedDate).inDays;
+    final daysBetween =
+        lastEntry.recordedDate.difference(firstEntry.recordedDate).inDays;
 
     if (daysBetween <= 0) {
       return {
@@ -222,17 +226,18 @@ class NutritionCalculatorService {
     }
 
     final actualWeightChange = lastEntry.weightKg - firstEntry.weightKg;
-    
+
     // Determine if we're in initial phase (first 28 days of weight loss)
     final isInitialPhase = daysBetween <= 28;
-    
+
     final expectedWeightChange = calculateExpectedWeightChange(
-      calorieDeficit: -dailyCalorieDeficit, // Negative because we want weight loss
+      calorieDeficit:
+          -dailyCalorieDeficit, // Negative because we want weight loss
       days: daysBetween,
       isInitialPhase: isInitialPhase,
     );
 
-    final progressPercentage = expectedWeightChange != 0 
+    final progressPercentage = expectedWeightChange != 0
         ? (actualWeightChange / expectedWeightChange) * 100
         : 0.0;
 
@@ -241,16 +246,19 @@ class NutritionCalculatorService {
 
     if (progressPercentage > 120) {
       progressStatus = 'exceeding';
-      recommendation = 'Weight loss is faster than expected. Consider increasing calorie intake slightly to ensure sustainable progress.';
+      recommendation =
+          'Weight loss is faster than expected. Consider increasing calorie intake slightly to ensure sustainable progress.';
     } else if (progressPercentage > 80) {
       progressStatus = 'on_track';
       recommendation = 'Excellent progress! Continue with current plan.';
     } else if (progressPercentage > 50) {
       progressStatus = 'slow_progress';
-      recommendation = 'Progress is slower than expected. Consider increasing activity or reducing calorie intake slightly.';
+      recommendation =
+          'Progress is slower than expected. Consider increasing activity or reducing calorie intake slightly.';
     } else {
       progressStatus = 'minimal_progress';
-      recommendation = 'Very slow progress. Review your calorie tracking accuracy and consider adjusting your plan.';
+      recommendation =
+          'Very slow progress. Review your calorie tracking accuracy and consider adjusting your plan.';
     }
 
     return {
@@ -299,27 +307,32 @@ class NutritionCalculatorService {
     // Check minimum calorie intake
     final minCalories = gender.toLowerCase() == 'male' ? 1500 : 1200;
     if (targetCalories < minCalories) {
-      warnings.add('Target calories ($targetCalories) below recommended minimum ($minCalories)');
+      warnings.add(
+          'Target calories ($targetCalories) below recommended minimum ($minCalories)');
       isValid = false;
     }
 
     // Check protein intake
     final proteinPerKg = macros['protein']! / weightKg;
     if (proteinPerKg < 0.8) {
-      warnings.add('Protein intake too low (${proteinPerKg.toStringAsFixed(1)}g/kg). Minimum 0.8g/kg recommended.');
+      warnings.add(
+          'Protein intake too low (${proteinPerKg.toStringAsFixed(1)}g/kg). Minimum 0.8g/kg recommended.');
       isValid = false;
     } else if (proteinPerKg > 3.0) {
-      warnings.add('Protein intake very high (${proteinPerKg.toStringAsFixed(1)}g/kg). Consider reducing.');
+      warnings.add(
+          'Protein intake very high (${proteinPerKg.toStringAsFixed(1)}g/kg). Consider reducing.');
     }
 
     // Check fat intake
     final fatCalories = macros['fat']! * 9;
     final fatPercentage = (fatCalories / targetCalories) * 100;
     if (fatPercentage < 20) {
-      warnings.add('Fat intake too low (${fatPercentage.toStringAsFixed(1)}%). Minimum 20% recommended.');
+      warnings.add(
+          'Fat intake too low (${fatPercentage.toStringAsFixed(1)}%). Minimum 20% recommended.');
       isValid = false;
     } else if (fatPercentage > 40) {
-      warnings.add('Fat intake very high (${fatPercentage.toStringAsFixed(1)}%). Consider reducing.');
+      warnings.add(
+          'Fat intake very high (${fatPercentage.toStringAsFixed(1)}%). Consider reducing.');
     }
 
     return {

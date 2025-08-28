@@ -4,7 +4,7 @@ part 'weight_history_freezed.freezed.dart';
 part 'weight_history_freezed.g.dart';
 
 /// Immutable data model for weight history tracking using Freezed
-/// 
+///
 /// Provides comprehensive weight tracking with context information,
 /// goal tracking, and calculated fields for progress analysis.
 @freezed
@@ -13,52 +13,53 @@ class WeightHistoryFreezed with _$WeightHistoryFreezed {
   const factory WeightHistoryFreezed({
     /// Database ID for the weight entry
     int? id,
-    
+
     /// User authentication ID
     String? uid,
-    
+
     // Weight Data
     /// Weight measurement in kilograms
     required double weightKg,
-    
+
     /// Date when weight was recorded
     required DateTime recordedDate,
-    
+
     // Context Information
     /// Time of day when measured
-    @Default('morning') String measurementTime, // 'morning', 'afternoon', 'evening'
-    
+    @Default('morning')
+    String measurementTime, // 'morning', 'afternoon', 'evening'
+
     /// Optional notes about the measurement
     String? notes,
-    
+
     // Goal Tracking
     /// User's goal at the time of measurement
     String? goalAtTime,
-    
+
     /// Number of days since goal started
     @Default(0) int daysSinceGoalStart,
-    
+
     // Calculated Fields
     /// Change from previous measurement
     double? weightChangeKg,
-    
+
     /// Weekly average weight
     double? weeklyAverageKg,
-    
+
     /// Monthly average weight
     double? monthlyAverageKg,
-    
+
     // Weight Loss Phase Tracking
     /// Whether this is in the initial weight loss phase
     @Default(false) bool isInitialPhase,
-    
+
     /// Current phase of weight loss journey
     @Default('steady_state') String phase, // 'initial' or 'steady_state'
-    
+
     // Timestamps
     /// Entry creation timestamp
     DateTime? createdAt,
-    
+
     /// Entry last update timestamp
     DateTime? updatedAt,
   }) = _WeightHistoryFreezed;
@@ -78,14 +79,14 @@ class WeightHistoryFreezed with _$WeightHistoryFreezed {
       notes: data['notes'] as String?,
       goalAtTime: data['goal_at_time'] as String?,
       daysSinceGoalStart: data['days_since_goal_start'] as int? ?? 0,
-      weightChangeKg: data['weight_change_kg'] != null 
-          ? _safeParseDouble(data['weight_change_kg']) 
+      weightChangeKg: data['weight_change_kg'] != null
+          ? _safeParseDouble(data['weight_change_kg'])
           : null,
-      weeklyAverageKg: data['weekly_average_kg'] != null 
-          ? _safeParseDouble(data['weekly_average_kg']) 
+      weeklyAverageKg: data['weekly_average_kg'] != null
+          ? _safeParseDouble(data['weekly_average_kg'])
           : null,
-      monthlyAverageKg: data['monthly_average_kg'] != null 
-          ? _safeParseDouble(data['monthly_average_kg']) 
+      monthlyAverageKg: data['monthly_average_kg'] != null
+          ? _safeParseDouble(data['monthly_average_kg'])
           : null,
       isInitialPhase: data['is_initial_phase'] as bool? ?? false,
       phase: data['phase'] as String? ?? 'steady_state',
@@ -127,19 +128,17 @@ extension WeightHistoryFreezedExtension on WeightHistoryFreezed {
         return 'Evening';
       default:
         return measurementTime.replaceFirst(
-          measurementTime[0], 
-          measurementTime[0].toUpperCase()
-        );
+            measurementTime[0], measurementTime[0].toUpperCase());
     }
   }
 
   /// Gets weight change description for UI
   String get weightChangeDescription {
     if (weightChangeKg == null || weightChangeKg == 0) return 'No change';
-    
+
     final change = weightChangeKg!;
     final absChange = change.abs();
-    
+
     if (change > 0) {
       return '+${absChange.toStringAsFixed(1)}kg';
     } else {
@@ -150,7 +149,7 @@ extension WeightHistoryFreezedExtension on WeightHistoryFreezed {
   /// Gets weight change color category for UI
   String get weightChangeColor {
     if (weightChangeKg == null || weightChangeKg == 0) return 'neutral';
-    
+
     return weightChangeKg! < 0 ? 'negative' : 'positive';
   }
 
@@ -162,8 +161,8 @@ extension WeightHistoryFreezedExtension on WeightHistoryFreezed {
   bool get isToday {
     final now = DateTime.now();
     return recordedDate.year == now.year &&
-           recordedDate.month == now.month &&
-           recordedDate.day == now.day;
+        recordedDate.month == now.month &&
+        recordedDate.day == now.day;
   }
 
   /// Checks if this entry is from this week
@@ -174,39 +173,40 @@ extension WeightHistoryFreezedExtension on WeightHistoryFreezed {
   }
 
   /// Gets days since this measurement
-  int get daysSinceMeasurement => DateTime.now().difference(recordedDate).inDays;
+  int get daysSinceMeasurement =>
+      DateTime.now().difference(recordedDate).inDays;
 }
 
 // Helper functions for safe parsing
 double _safeParseDouble(dynamic value) {
   if (value == null) return 0.0;
-  
+
   if (value is double) {
     return value.isFinite ? value : 0.0;
   }
-  
+
   if (value is int) {
     return value.toDouble();
   }
-  
+
   if (value is String) {
     final parsed = double.tryParse(value);
     return parsed?.isFinite == true ? parsed! : 0.0;
   }
-  
+
   if (value is num) {
     final asDouble = value.toDouble();
     return asDouble.isFinite ? asDouble : 0.0;
   }
-  
+
   return 0.0;
 }
 
 DateTime? _parseDate(dynamic dateValue) {
   if (dateValue == null) return null;
-  
+
   if (dateValue is DateTime) return dateValue;
-  
+
   if (dateValue is String) {
     try {
       return DateTime.parse(dateValue);
@@ -214,6 +214,6 @@ DateTime? _parseDate(dynamic dateValue) {
       return null;
     }
   }
-  
+
   return null;
 }
