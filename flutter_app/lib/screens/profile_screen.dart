@@ -19,18 +19,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _weightController = TextEditingController();
   final _targetWeightController = TextEditingController();
   final _weeklyTargetController = TextEditingController();
-  
+
   String _selectedGender = 'male';
   String _selectedGoal = 'maintaining';
   String _selectedActivityKey = 'sedentary';
   DateTime? _dateOfBirth;
-  
+
   bool _isLoading = false;
   bool _isLoadingProfile = true;
   UserProfile? _currentProfile;
 
   final List<String> _genders = ['male', 'female'];
-  final List<String> _goals = ['maintaining', 'weight_loss', 'weight_gain', 'hypertrophy'];
+  final List<String> _goals = [
+    'maintaining',
+    'weight_loss',
+    'weight_gain',
+    'hypertrophy'
+  ];
 
   @override
   void initState() {
@@ -50,22 +55,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _loadProfile() async {
     setState(() => _isLoadingProfile = true);
-    
+
     try {
       final profileService = ProfileService();
       final profile = await profileService.getUserProfile();
-      
+
       if (profile != null) {
         setState(() {
           _currentProfile = profile;
           _nameController.text = profile.fullName ?? '';
           _heightController.text = profile.heightCm.toString();
           _weightController.text = profile.currentWeightKg.toString();
-          _targetWeightController.text = profile.targetWeightKg?.toString() ?? '';
-          _weeklyTargetController.text = profile.weeklyWeightLossTarget.toString();
+          _targetWeightController.text =
+              profile.targetWeightKg?.toString() ?? '';
+          _weeklyTargetController.text =
+              profile.weeklyWeightLossTarget.toString();
           _selectedGender = profile.gender;
           _selectedGoal = profile.goal;
-          _selectedActivityKey = NutritionCalculatorService.getActivityKey(profile.activityLevel);
+          _selectedActivityKey =
+              NutritionCalculatorService.getActivityKey(profile.activityLevel);
           _dateOfBirth = profile.dateOfBirth;
         });
       } else {
@@ -85,43 +93,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final profileService = ProfileService();
-      
+
       AppLogger.logUserAction('profile_creation_attempt');
       // Note: Profile data not logged for privacy
       // Weekly target not logged for privacy
-      
+
       final profile = UserProfile(
         id: _currentProfile?.id,
         fullName: _nameController.text.trim(),
         gender: _selectedGender,
         heightCm: double.parse(_heightController.text),
         currentWeightKg: double.parse(_weightController.text),
-        targetWeightKg: _targetWeightController.text.isNotEmpty 
+        targetWeightKg: _targetWeightController.text.isNotEmpty
             ? double.parse(_targetWeightController.text)
             : null,
         dateOfBirth: _dateOfBirth,
         goal: _selectedGoal,
-        activityLevel: NutritionCalculatorService.getPALValue(_selectedActivityKey),
+        activityLevel:
+            NutritionCalculatorService.getPALValue(_selectedActivityKey),
         weeklyWeightLossTarget: double.parse(_weeklyTargetController.text),
-        weightLossStartDate: _selectedGoal == 'weight_loss' && _currentProfile?.weightLossStartDate == null
+        weightLossStartDate: _selectedGoal == 'weight_loss' &&
+                _currentProfile?.weightLossStartDate == null
             ? DateTime.now()
             : _currentProfile?.weightLossStartDate,
-        initialWeightKg: _selectedGoal == 'weight_loss' && _currentProfile?.initialWeightKg == null
+        initialWeightKg: _selectedGoal == 'weight_loss' &&
+                _currentProfile?.initialWeightKg == null
             ? double.parse(_weightController.text)
             : _currentProfile?.initialWeightKg,
       );
-      
+
       AppLogger.debug('Profile object created');
-      AppLogger.debug('Has required data: ${profile.hasRequiredDataForCalculations}');
-      
+      AppLogger.debug(
+          'Has required data: ${profile.hasRequiredDataForCalculations}');
+
       final savedProfile = await profileService.saveUserProfile(profile);
       AppLogger.info('Profile saved successfully');
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -133,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e, stackTrace) {
       AppLogger.error('Error saving profile', e, stackTrace);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -150,11 +162,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _selectDateOfBirth() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25)),
+      initialDate: _dateOfBirth ??
+          DateTime.now().subtract(const Duration(days: 365 * 25)),
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
       lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
     );
-    
+
     if (date != null) {
       setState(() => _dateOfBirth = date);
     }
@@ -262,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             border: const OutlineInputBorder(),
                             prefixIcon: const Icon(Icons.cake),
                             suffixIcon: const Icon(Icons.calendar_today),
-                            hintText: _dateOfBirth != null 
+                            hintText: _dateOfBirth != null
                                 ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
                                 : 'Select date of birth',
                           ),
@@ -271,7 +284,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             if (_dateOfBirth == null) {
                               return 'Please select your date of birth';
                             }
-                            final age = DateTime.now().year - _dateOfBirth!.year;
+                            final age =
+                                DateTime.now().year - _dateOfBirth!.year;
                             if (age < 13 || age > 100) {
                               return 'Please enter a valid date of birth';
                             }
@@ -282,9 +296,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Physical Characteristics Card
                 Card(
                   child: Padding(
@@ -305,13 +319,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             prefixIcon: Icon(Icons.height),
                             suffixText: 'cm',
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your height';
                             }
                             final height = double.tryParse(value);
-                            if (height == null || height < 100 || height > 250) {
+                            if (height == null ||
+                                height < 100 ||
+                                height > 250) {
                               return 'Please enter a valid height (100-250 cm)';
                             }
                             return null;
@@ -326,7 +343,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             prefixIcon: Icon(Icons.monitor_weight),
                             suffixText: 'kg',
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your current weight';
@@ -347,11 +365,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             prefixIcon: Icon(Icons.flag),
                             suffixText: 'kg',
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           validator: (value) {
                             if (value != null && value.isNotEmpty) {
                               final weight = double.tryParse(value);
-                              if (weight == null || weight < 30 || weight > 300) {
+                              if (weight == null ||
+                                  weight < 30 ||
+                                  weight > 300) {
                                 return 'Please enter a valid target weight (30-300 kg)';
                               }
                             }
@@ -396,13 +417,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               selectedColor: AppTheme.primaryGreen,
                               backgroundColor: AppTheme.softGray,
                               labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : AppTheme.charcoal,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppTheme.charcoal,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
                               ),
                             );
                           }).toList(),
                         ),
-                        if (_selectedGoal == 'weight_loss' || _selectedGoal == 'weight_gain') ...[
+                        if (_selectedGoal == 'weight_loss' ||
+                            _selectedGoal == 'weight_gain') ...[
                           const SizedBox(height: 20),
                           TextFormField(
                             controller: _weeklyTargetController,
@@ -413,15 +439,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               border: const OutlineInputBorder(),
                               prefixIcon: const Icon(Icons.trending_down),
                               suffixText: 'kg/week',
-                              helperText: 'Recommended: 0.5-1.0 kg/week for sustainable results',
+                              helperText:
+                                  'Recommended: 0.5-1.0 kg/week for sustainable results',
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter weekly target';
                               }
                               final target = double.tryParse(value);
-                              if (target == null || target <= 0 || target > 2.0) {
+                              if (target == null ||
+                                  target <= 0 ||
+                                  target > 2.0) {
                                 return 'Please enter a valid target (0.1-2.0 kg/week)';
                               }
                               return null;
@@ -447,18 +477,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 20),
-                        ...NutritionCalculatorService.activityLevels.entries.map((entry) {
+                        ...NutritionCalculatorService.activityLevels.entries
+                            .map((entry) {
                           final isSelected = _selectedActivityKey == entry.key;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: InkWell(
-                              onTap: () => setState(() => _selectedActivityKey = entry.key),
+                              onTap: () => setState(
+                                  () => _selectedActivityKey = entry.key),
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppTheme.primaryGreen.withOpacity(0.1) : Colors.transparent,
+                                  color: isSelected
+                                      ? AppTheme.primaryGreen.withOpacity(0.1)
+                                      : Colors.transparent,
                                   border: Border.all(
-                                    color: isSelected ? AppTheme.primaryGreen : Colors.grey.shade300,
+                                    color: isSelected
+                                        ? AppTheme.primaryGreen
+                                        : Colors.grey.shade300,
                                     width: isSelected ? 2 : 1,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -468,24 +504,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Radio<String>(
                                       value: entry.key,
                                       groupValue: _selectedActivityKey,
-                                      onChanged: (value) => setState(() => _selectedActivityKey = value!),
+                                      onChanged: (value) => setState(
+                                          () => _selectedActivityKey = value!),
                                       activeColor: AppTheme.primaryGreen,
                                     ),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            NutritionCalculatorService.activityDescriptions[entry.key]!,
-                                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                            ),
+                                            NutritionCalculatorService
+                                                    .activityDescriptions[
+                                                entry.key]!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  fontWeight: isSelected
+                                                      ? FontWeight.w600
+                                                      : FontWeight.normal,
+                                                ),
                                           ),
                                           Text(
                                             'PAL: ${entry.value}',
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: Colors.grey.shade600,
-                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Colors.grey.shade600,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -517,7 +565,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                             strokeWidth: 2,
                           ),
                         )

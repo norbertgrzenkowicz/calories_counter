@@ -22,7 +22,7 @@ class MealDetailScreen extends StatefulWidget {
 class _MealDetailScreenState extends State<MealDetailScreen> {
   late Meal currentMeal;
   bool isEditing = false;
-  
+
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _caloriesController;
@@ -40,10 +40,13 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
 
   void _initializeControllers() {
     _nameController = TextEditingController(text: currentMeal.name);
-    _caloriesController = TextEditingController(text: currentMeal.calories.toString());
-    _proteinsController = TextEditingController(text: currentMeal.proteins.toString());
+    _caloriesController =
+        TextEditingController(text: currentMeal.calories.toString());
+    _proteinsController =
+        TextEditingController(text: currentMeal.proteins.toString());
     _fatsController = TextEditingController(text: currentMeal.fats.toString());
-    _carbsController = TextEditingController(text: currentMeal.carbs.toString());
+    _carbsController =
+        TextEditingController(text: currentMeal.carbs.toString());
   }
 
   @override
@@ -85,7 +88,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       // Upload new photo if one was selected
       if (_newPhotoPath != null) {
         final fileName = 'meal_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        photoUrl = await supabaseService.uploadMealPhoto(_newPhotoPath!, fileName);
+        photoUrl =
+            await supabaseService.uploadMealPhoto(_newPhotoPath!, fileName);
       }
 
       final updatedMeal = Meal(
@@ -101,7 +105,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
         createdAt: currentMeal.createdAt,
       );
 
-      await supabaseService.updateMeal(currentMeal.id!, updatedMeal.toSupabase());
+      await supabaseService.updateMeal(
+          currentMeal.id!, updatedMeal.toSupabase());
 
       setState(() {
         currentMeal = updatedMeal;
@@ -136,7 +141,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Meal'),
-        content: const Text('Are you sure you want to delete this meal? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to delete this meal? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -257,7 +263,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.softGray,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
+                    border:
+                        Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
                   ),
                   child: currentMeal.photoUrl != null
                       ? ClipRRect(
@@ -270,7 +277,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.fastfood, size: 48, color: AppTheme.charcoal),
+                                    Icon(Icons.fastfood,
+                                        size: 48, color: AppTheme.charcoal),
                                     SizedBox(height: 8),
                                     Text('No photo available'),
                                   ],
@@ -279,7 +287,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                             },
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
-                              return const Center(child: CircularProgressIndicator());
+                              return const Center(
+                                  child: CircularProgressIndicator());
                             },
                           ),
                         )
@@ -287,7 +296,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.fastfood, size: 48, color: AppTheme.charcoal),
+                              Icon(Icons.fastfood,
+                                  size: 48, color: AppTheme.charcoal),
                               SizedBox(height: 8),
                               Text('No photo available'),
                             ],
@@ -314,10 +324,12 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                 const SizedBox(height: 16),
                 _buildInfoRow('Name', currentMeal.name),
                 const SizedBox(height: 12),
-                _buildInfoRow('Date', '${currentMeal.date.day}/${currentMeal.date.month}/${currentMeal.date.year}'),
+                _buildInfoRow('Date',
+                    '${currentMeal.date.day}/${currentMeal.date.month}/${currentMeal.date.year}'),
                 if (currentMeal.createdAt != null) ...[
                   const SizedBox(height: 12),
-                  _buildInfoRow('Created', '${currentMeal.createdAt!.day}/${currentMeal.createdAt!.month}/${currentMeal.createdAt!.year} at ${currentMeal.createdAt!.hour}:${currentMeal.createdAt!.minute.toString().padLeft(2, '0')}'),
+                  _buildInfoRow('Created',
+                      '${currentMeal.createdAt!.day}/${currentMeal.createdAt!.month}/${currentMeal.createdAt!.year} at ${currentMeal.createdAt!.hour}:${currentMeal.createdAt!.minute.toString().padLeft(2, '0')}'),
                 ],
               ],
             ),
@@ -337,13 +349,17 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 16),
-                _buildNutritionCard('Calories', '${currentMeal.calories}', 'kcal', AppTheme.primaryGreen),
+                _buildNutritionCard('Calories', '${currentMeal.calories}',
+                    'kcal', AppTheme.primaryGreen),
                 const SizedBox(height: 12),
-                _buildNutritionCard('Proteins', currentMeal.proteins.toStringAsFixed(1), 'g', Colors.red),
+                _buildNutritionCard('Proteins',
+                    currentMeal.proteins.toStringAsFixed(1), 'g', Colors.red),
                 const SizedBox(height: 12),
-                _buildNutritionCard('Carbohydrates', currentMeal.carbs.toStringAsFixed(1), 'g', Colors.orange),
+                _buildNutritionCard('Carbohydrates',
+                    currentMeal.carbs.toStringAsFixed(1), 'g', Colors.orange),
                 const SizedBox(height: 12),
-                _buildNutritionCard('Fats', currentMeal.fats.toStringAsFixed(1), 'g', Colors.blue),
+                _buildNutritionCard('Fats', currentMeal.fats.toStringAsFixed(1),
+                    'g', Colors.blue),
               ],
             ),
           ),
@@ -376,7 +392,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                     decoration: BoxDecoration(
                       color: AppTheme.softGray,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
+                      border:
+                          Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
                     ),
                     child: _newPhotoPath != null
                         ? ClipRRect(
@@ -385,7 +402,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                               File(_newPhotoPath!),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
-                                return const Center(child: Text('Error loading new photo'));
+                                return const Center(
+                                    child: Text('Error loading new photo'));
                               },
                             ),
                           )
@@ -398,9 +416,12 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Center(
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.fastfood, size: 48, color: AppTheme.charcoal),
+                                          Icon(Icons.fastfood,
+                                              size: 48,
+                                              color: AppTheme.charcoal),
                                           SizedBox(height: 8),
                                           Text('No photo available'),
                                         ],
@@ -413,7 +434,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.fastfood, size: 48, color: AppTheme.charcoal),
+                                    Icon(Icons.fastfood,
+                                        size: 48, color: AppTheme.charcoal),
                                     SizedBox(height: 8),
                                     Text('No photo available'),
                                   ],
@@ -424,7 +446,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                   OutlinedButton.icon(
                     onPressed: _pickNewPhoto,
                     icon: const Icon(Icons.camera_alt),
-                    label: Text(_newPhotoPath != null ? 'Change Photo' : 'Update Photo'),
+                    label: Text(_newPhotoPath != null
+                        ? 'Change Photo'
+                        : 'Update Photo'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.all(16),
                     ),
@@ -485,7 +509,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       labelText: 'Proteins (g)',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter proteins';
@@ -503,7 +528,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       labelText: 'Fats (g)',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter fats';
@@ -521,7 +547,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       labelText: 'Carbs (g)',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter carbs';
@@ -559,7 +586,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     );
   }
 
-  Widget _buildNutritionCard(String label, String value, String unit, Color color) {
+  Widget _buildNutritionCard(
+      String label, String value, String unit, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

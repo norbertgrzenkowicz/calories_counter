@@ -41,13 +41,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<FlSpot> _getChartData() {
     DateTime oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
     List<FlSpot> spots = [];
-    
+
     for (int i = 0; i <= 30; i++) {
       DateTime day = oneMonthAgo.add(Duration(days: i));
       int calories = _getCaloriesForDay(day);
       spots.add(FlSpot(i.toDouble(), calories.toDouble()));
     }
-    
+
     return spots;
   }
 
@@ -56,11 +56,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _selectedDay = selectedDay;
       _focusedDay = focusedDay;
     });
-    
+
     Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
-    DateTime dayKey = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    DateTime dayKey =
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     List<Meal>? mealsForDay = mealsByDay[dayKey];
-    
+
     if (mealsForDay != null && mealsForDay.isNotEmpty) {
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -76,7 +77,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
-    
+
     return Scaffold(
       backgroundColor: AppTheme.creamWhite,
       appBar: AppBar(
@@ -122,7 +123,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         return Positioned(
                           bottom: 1,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
                               color: AppTheme.primaryGreen,
                               borderRadius: BorderRadius.circular(8),
@@ -191,7 +193,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   reservedSize: 20,
                                   getTitlesWidget: (value, meta) {
                                     if (value.toInt() % 5 == 0) {
-                                      DateTime date = DateTime.now().subtract(Duration(days: 30 - value.toInt()));
+                                      DateTime date = DateTime.now().subtract(
+                                          Duration(days: 30 - value.toInt()));
                                       return Text(
                                         '${date.day}/${date.month}',
                                         style: const TextStyle(fontSize: 8),
@@ -201,8 +204,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   },
                                 ),
                               ),
-                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              topTitles: const AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: const AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false)),
                             ),
                             gridData: FlGridData(
                               show: true,
@@ -217,7 +222,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                             borderData: FlBorderData(
                               show: true,
-                              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                              border: Border.all(
+                                  color: Colors.grey.withOpacity(0.3)),
                             ),
                           ),
                         ),

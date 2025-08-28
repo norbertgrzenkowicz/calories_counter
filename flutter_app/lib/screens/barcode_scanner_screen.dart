@@ -12,10 +12,10 @@ class BarcodeScannerScreen extends StatefulWidget {
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   MobileScannerController controller = MobileScannerController(
     formats: [
-      BarcodeFormat.ean13,    // Most food products
-      BarcodeFormat.ean8,     // Smaller food items
-      BarcodeFormat.upcA,     // US food products
-      BarcodeFormat.upcE,     // Compact US barcodes
+      BarcodeFormat.ean13, // Most food products
+      BarcodeFormat.ean8, // Smaller food items
+      BarcodeFormat.upcA, // US food products
+      BarcodeFormat.upcE, // Compact US barcodes
     ],
     detectionSpeed: DetectionSpeed.noDuplicates,
     detectionTimeoutMs: 250,
@@ -34,9 +34,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   void _onBarcodeDetect(BarcodeCapture capture) {
     if (!_isScanning) return;
-    
+
     final List<Barcode> barcodes = capture.barcodes;
-    
+
     if (barcodes.isNotEmpty) {
       final barcode = barcodes.first;
       if (barcode.rawValue != null) {
@@ -44,7 +44,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           _isScanning = false;
           _scannedBarcode = barcode.rawValue!;
         });
-        
+
         // Return the scanned barcode to the previous screen
         Navigator.pop(context, barcode.rawValue!);
       }
@@ -83,7 +83,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             controller: controller,
             onDetect: _onBarcodeDetect,
           ),
-          
+
           // Scanning overlay with cutout
           Container(
             decoration: ShapeDecoration(
@@ -96,7 +96,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
             ),
           ),
-          
+
           // Instructions
           Positioned(
             bottom: 100,
@@ -157,7 +157,8 @@ class QrScannerOverlayShape extends ShapeBorder {
       return Path()
         ..moveTo(rect.left, rect.bottom)
         ..lineTo(rect.left, rect.top + borderRadius)
-        ..quadraticBezierTo(rect.left, rect.top, rect.left + borderRadius, rect.top)
+        ..quadraticBezierTo(
+            rect.left, rect.top, rect.left + borderRadius, rect.top)
         ..lineTo(rect.right, rect.top);
     }
 
@@ -165,7 +166,8 @@ class QrScannerOverlayShape extends ShapeBorder {
       return Path()
         ..moveTo(rect.left, rect.top)
         ..lineTo(rect.right - borderRadius, rect.top)
-        ..quadraticBezierTo(rect.right, rect.top, rect.right, rect.top + borderRadius)
+        ..quadraticBezierTo(
+            rect.right, rect.top, rect.right, rect.top + borderRadius)
         ..lineTo(rect.right, rect.bottom);
     }
 
@@ -183,7 +185,8 @@ class QrScannerOverlayShape extends ShapeBorder {
       return Path()
         ..moveTo(rect.right, rect.bottom)
         ..lineTo(rect.left + borderRadius, rect.bottom)
-        ..quadraticBezierTo(rect.left, rect.bottom, rect.left, rect.bottom - borderRadius)
+        ..quadraticBezierTo(
+            rect.left, rect.bottom, rect.left, rect.bottom - borderRadius)
         ..lineTo(rect.left, rect.top);
     }
 
@@ -192,7 +195,8 @@ class QrScannerOverlayShape extends ShapeBorder {
     final height = rect.height;
     final borderHeightSize = height / 2;
     final cutOutWidth = cutOutSize < width ? cutOutSize : width - borderWidth;
-    final cutOutHeight = cutOutSize < height ? cutOutSize : height - borderWidth;
+    final cutOutHeight =
+        cutOutSize < height ? cutOutSize : height - borderWidth;
 
     final cutOutRect = Rect.fromLTWH(
       rect.left + (width - cutOutWidth) / 2 + borderWidth / 2,
@@ -234,7 +238,9 @@ class QrScannerOverlayShape extends ShapeBorder {
       Path()..addRect(rect),
       Path.combine(
         PathOperation.union,
-        Path()..addRRect(RRect.fromRectAndRadius(cutOutRect, Radius.circular(borderRadius))),
+        Path()
+          ..addRRect(RRect.fromRectAndRadius(
+              cutOutRect, Radius.circular(borderRadius))),
         Path.combine(
           PathOperation.union,
           Path.combine(

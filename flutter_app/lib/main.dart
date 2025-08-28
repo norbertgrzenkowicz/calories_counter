@@ -32,7 +32,7 @@ void main() async {
 
 class FoodScannerApp extends StatelessWidget {
   final List<CameraDescription> cameras;
-  
+
   const FoodScannerApp({super.key, required this.cameras});
 
   @override

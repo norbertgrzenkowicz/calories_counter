@@ -31,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _registerWithSupabase() async {
     final email = _emailController.text.trim();
     AppLogger.logUserAction('user_registration_attempt');
-    
+
     try {
       final response = await _supabaseService.client.auth.signUp(
         email: email,
@@ -40,11 +40,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.user != null) {
         AppLogger.logUserAction('user_registration_successful');
-        
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registration successful! Please check your email to verify your account.'),
+            content: Text(
+                'Registration successful! Please check your email to verify your account.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -61,7 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } on AuthException catch (e) {
       AppLogger.error('Registration failed - AuthException', e);
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -71,7 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } catch (e) {
       AppLogger.error('Registration failed - Unexpected error', e);
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -99,7 +100,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (_passwordController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters long')),
+        const SnackBar(
+            content: Text('Password must be at least 6 characters long')),
       );
       return false;
     }

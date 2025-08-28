@@ -46,7 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    
+
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -56,18 +56,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
       return;
     }
-    
+
     AppLogger.logUserAction('login_attempt');
-    
+
     try {
       await ref.read(authNotifierProvider.notifier).signIn(email, password);
-      
+
       // Check if login was successful
       final authState = ref.read(authNotifierProvider);
       if (authState.isAuthenticated && mounted) {
         AppLogger.logUserAction('login_successful');
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => DashboardScreenRiverpod(cameras: _cameras)),
+          MaterialPageRoute(
+              builder: (context) => DashboardScreenRiverpod(cameras: _cameras)),
         );
       }
     } catch (e) {
@@ -84,7 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
-    
+
     // Listen for auth state changes and show errors
     ref.listen(authNotifierProvider, (previous, next) {
       if (next.error != null) {

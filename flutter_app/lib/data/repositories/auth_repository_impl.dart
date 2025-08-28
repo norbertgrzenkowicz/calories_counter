@@ -14,7 +14,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<String>> signIn(String email, String password) async {
     try {
       AppLogger.info('Attempting user sign in');
-      
+
       final response = await _supabaseService.client.auth.signInWithPassword(
         email: email,
         password: password,
@@ -32,7 +32,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     } on AuthException catch (e) {
       AppLogger.error('Authentication failed', e);
-      
+
       // Map Supabase auth errors to our error types
       if (e.statusCode == '400') {
         return Result.failure(
@@ -59,7 +59,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<String>> signUp(String email, String password) async {
     try {
       AppLogger.info('Attempting user registration');
-      
+
       final response = await _supabaseService.client.auth.signUp(
         email: email,
         password: password,
@@ -77,7 +77,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     } on AuthException catch (e) {
       AppLogger.error('Registration failed', e);
-      
+
       // Map Supabase auth errors to our error types
       if (e.statusCode == '400') {
         return Result.failure(
@@ -142,9 +142,9 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<void>> refreshToken() async {
     try {
       AppLogger.debug('Refreshing authentication token');
-      
+
       await _supabaseService.client.auth.refreshSession();
-      
+
       if (_supabaseService.getCurrentUserId() != null) {
         AppLogger.info('Token refreshed successfully');
         return const Result.success(null);
@@ -171,12 +171,12 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<void>> deleteAccount() async {
     try {
       AppLogger.info('Attempting account deletion');
-      
+
       // Note: Supabase doesn't have a built-in deleteUser method in the client
       // This would typically require an admin API call or edge function
       // For now, we'll sign out the user and let them contact support
       await signOut();
-      
+
       AppLogger.warning('Account deletion requires manual process');
       return const Result.failure(
         AppError.server('Account deletion requires contacting support'),

@@ -13,14 +13,16 @@ import 'weight_tracking_screen.dart';
 
 class DashboardScreenRiverpod extends ConsumerStatefulWidget {
   final List<CameraDescription> cameras;
-  
+
   const DashboardScreenRiverpod({super.key, required this.cameras});
 
   @override
-  ConsumerState<DashboardScreenRiverpod> createState() => _DashboardScreenRiverpodState();
+  ConsumerState<DashboardScreenRiverpod> createState() =>
+      _DashboardScreenRiverpodState();
 }
 
-class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpod> {
+class _DashboardScreenRiverpodState
+    extends ConsumerState<DashboardScreenRiverpod> {
   int _selectedIndex = 0;
   DateTime _selectedDate = DateTime.now();
 
@@ -35,7 +37,7 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
     setState(() {
       _selectedIndex = index;
     });
-    
+
     switch (index) {
       case 0:
         _openWeightTracking();
@@ -73,7 +75,7 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
     final result = await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
-    
+
     // Refresh profile when returning from profile screen
     if (result != null && mounted) {
       ref.invalidate(profileNotifierProvider);
@@ -82,27 +84,29 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
 
   void _goToPreviousDay() {
     setState(() {
-      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
+      _selectedDate = DateTime(
+          _selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
     });
   }
 
   void _goToNextDay() {
     setState(() {
-      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
+      _selectedDate = DateTime(
+          _selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
     });
   }
 
   bool _isToday() {
     final today = DateTime.now();
-    return _selectedDate.year == today.year && 
-           _selectedDate.month == today.month && 
-           _selectedDate.day == today.day;
+    return _selectedDate.year == today.year &&
+        _selectedDate.month == today.month &&
+        _selectedDate.day == today.day;
   }
 
   void _signOut() async {
     try {
       await ref.read(authNotifierProvider.notifier).signOut();
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -126,7 +130,8 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
     final authState = ref.watch(authNotifierProvider);
     final mealsAsync = ref.watch(mealsNotifierProvider(_selectedDate));
     final profileAsync = ref.watch(profileNotifierProvider);
-    final dailyNutrition = ref.watch(dailyNutritionTotalsProvider(_selectedDate));
+    final dailyNutrition =
+        ref.watch(dailyNutritionTotalsProvider(_selectedDate));
     final hasProfile = ref.watch(hasProfileProvider);
     final calorieTarget = ref.watch(dailyCalorieTargetProvider);
 
@@ -152,7 +157,8 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
     return Scaffold(
       backgroundColor: AppTheme.creamWhite,
       appBar: AppBar(
-        title: const Text('Yapper', style: TextStyle(fontWeight: FontWeight.bold)),
+        title:
+            const Text('Yapper', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.primaryGreen,
         foregroundColor: Colors.white,
         actions: [
@@ -224,10 +230,14 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNutritionItem('Calories', nutrition['calories'].toString(), '$calorieTarget'),
-          _buildNutritionItem('Protein', '${nutrition['proteins']?.toStringAsFixed(1) ?? '0.0'}g', ''),
-          _buildNutritionItem('Carbs', '${nutrition['carbs']?.toStringAsFixed(1) ?? '0.0'}g', ''),
-          _buildNutritionItem('Fat', '${nutrition['fats']?.toStringAsFixed(1) ?? '0.0'}g', ''),
+          _buildNutritionItem(
+              'Calories', nutrition['calories'].toString(), '$calorieTarget'),
+          _buildNutritionItem('Protein',
+              '${nutrition['proteins']?.toStringAsFixed(1) ?? '0.0'}g', ''),
+          _buildNutritionItem('Carbs',
+              '${nutrition['carbs']?.toStringAsFixed(1) ?? '0.0'}g', ''),
+          _buildNutritionItem(
+              'Fat', '${nutrition['fats']?.toStringAsFixed(1) ?? '0.0'}g', ''),
         ],
       ),
     );
@@ -269,7 +279,8 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
             Text('Error loading meals: $error'),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => ref.invalidate(mealsNotifierProvider(_selectedDate)),
+              onPressed: () =>
+                  ref.invalidate(mealsNotifierProvider(_selectedDate)),
               child: const Text('Retry'),
             ),
           ],
@@ -321,7 +332,7 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => 
+                  errorBuilder: (context, error, stackTrace) =>
                       const Icon(Icons.restaurant, size: 50),
                 ),
               )
@@ -377,7 +388,7 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
 
   void _showProfilePrompt() {
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -405,9 +416,11 @@ class _DashboardScreenRiverpodState extends ConsumerState<DashboardScreenRiverpo
 
   void _deleteMeal(int? mealId) async {
     if (mealId == null) return;
-    
+
     try {
-      await ref.read(mealsNotifierProvider(_selectedDate).notifier).deleteMeal(mealId);
+      await ref
+          .read(mealsNotifierProvider(_selectedDate).notifier)
+          .deleteMeal(mealId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

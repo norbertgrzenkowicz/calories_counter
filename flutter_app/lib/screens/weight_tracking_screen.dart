@@ -15,14 +15,14 @@ class WeightTrackingScreen extends StatefulWidget {
 class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
   final _weightController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   List<WeightHistory> _weightHistory = [];
   UserProfile? _userProfile;
   String _selectedMeasurementTime = 'morning';
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   bool _isLoadingHistory = true;
-  
+
   final List<String> _measurementTimes = ['morning', 'afternoon', 'evening'];
 
   @override
@@ -41,24 +41,25 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
   // Helper function to parse weight with both comma and dot decimal separators
   double? _parseWeight(String text) {
     if (text.isEmpty) return null;
-    
+
     // Replace comma with dot for parsing
     String normalizedText = text.replaceAll(',', '.');
-    
+
     // Handle multiple dots (invalid input)
     if (normalizedText.split('.').length > 2) return null;
-    
+
     return double.tryParse(normalizedText);
   }
 
   void _loadData() async {
     setState(() => _isLoadingHistory = true);
-    
+
     try {
       final profileService = ProfileService();
       final profile = await profileService.getUserProfile();
-      final history = await profileService.getWeightHistory(limit: 30); // Last 30 entries
-      
+      final history =
+          await profileService.getWeightHistory(limit: 30); // Last 30 entries
+
       setState(() {
         _userProfile = profile;
         _weightHistory = history;
@@ -81,7 +82,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now(),
     );
-    
+
     if (date != null) {
       setState(() => _selectedDate = date);
     }
@@ -107,25 +108,27 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
 
     try {
       final profileService = ProfileService();
-      
+
       final weightEntry = WeightHistory(
         weightKg: weight,
         recordedDate: _selectedDate,
         measurementTime: _selectedMeasurementTime,
-        notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
       );
 
       await profileService.addWeightEntry(weightEntry);
-      
+
       // Clear form
       _weightController.clear();
       _notesController.clear();
       _selectedDate = DateTime.now();
       _selectedMeasurementTime = 'morning';
-      
+
       // Reload data
       _loadData();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -151,7 +154,9 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
   void _showProgressAnalysis() {
     if (_weightHistory.length < 2 || _userProfile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Need at least 2 weight entries and a complete profile for analysis')),
+        const SnackBar(
+            content: Text(
+                'Need at least 2 weight entries and a complete profile for analysis')),
       );
       return;
     }
@@ -175,18 +180,25 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (analysis['hasProgress'] == true) ...[
-                _buildAnalysisRow('Actual Weight Change', '${analysis['actualWeightChange'].toStringAsFixed(1)} kg'),
-                _buildAnalysisRow('Expected Weight Change', '${analysis['expectedWeightChange'].toStringAsFixed(1)} kg'),
-                _buildAnalysisRow('Progress', '${analysis['progressPercentage'].toStringAsFixed(0)}%'),
-                _buildAnalysisRow('Weekly Actual', '${analysis['weeklyActualChange'].toStringAsFixed(2)} kg/week'),
-                _buildAnalysisRow('Weekly Expected', '${analysis['weeklyExpectedChange'].toStringAsFixed(2)} kg/week'),
+                _buildAnalysisRow('Actual Weight Change',
+                    '${analysis['actualWeightChange'].toStringAsFixed(1)} kg'),
+                _buildAnalysisRow('Expected Weight Change',
+                    '${analysis['expectedWeightChange'].toStringAsFixed(1)} kg'),
+                _buildAnalysisRow('Progress',
+                    '${analysis['progressPercentage'].toStringAsFixed(0)}%'),
+                _buildAnalysisRow('Weekly Actual',
+                    '${analysis['weeklyActualChange'].toStringAsFixed(2)} kg/week'),
+                _buildAnalysisRow('Weekly Expected',
+                    '${analysis['weeklyExpectedChange'].toStringAsFixed(2)} kg/week'),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(analysis['progressStatus']).withOpacity(0.1),
+                    color: _getStatusColor(analysis['progressStatus'])
+                        .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _getStatusColor(analysis['progressStatus'])),
+                    border: Border.all(
+                        color: _getStatusColor(analysis['progressStatus'])),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,13 +235,15 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
   }
 
   void _showDeleteConfirmation(WeightHistory entry) {
-    final dateString = '${entry.recordedDate.day}/${entry.recordedDate.month}/${entry.recordedDate.year}';
-    
+    final dateString =
+        '${entry.recordedDate.day}/${entry.recordedDate.month}/${entry.recordedDate.year}';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Weight Entry'),
-        content: Text('Are you sure you want to delete the weight entry from $dateString?'),
+        content: Text(
+            'Are you sure you want to delete the weight entry from $dateString?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -262,9 +276,9 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
     try {
       final profileService = ProfileService();
       await profileService.deleteWeightEntry(entry.id!);
-      
+
       _loadData();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -292,7 +306,11 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(value,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -338,7 +356,9 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: _weightHistory.length >= 2 && _userProfile != null ? _showProgressAnalysis : null,
+            onPressed: _weightHistory.length >= 2 && _userProfile != null
+                ? _showProgressAnalysis
+                : null,
             icon: const Icon(Icons.analytics),
             tooltip: 'Progress Analysis',
           ),
@@ -352,121 +372,131 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                  // Add Weight Entry Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Add Weight Entry',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                    // Add Weight Entry Card
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add Weight Entry',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          
-                          // Weight Input
-                          TextFormField(
-                            controller: _weightController,
-                            decoration: const InputDecoration(
-                              labelText: 'Weight (kg)',
-                              hintText: 'e.g., 70.5 or 70,5',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.monitor_weight),
-                              suffixText: 'kg',
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Date Selection
-                          InkWell(
-                            onTap: _selectDate,
-                            child: InputDecorator(
+                            const SizedBox(height: 20),
+
+                            // Weight Input
+                            TextFormField(
+                              controller: _weightController,
                               decoration: const InputDecoration(
-                                labelText: 'Date',
+                                labelText: 'Weight (kg)',
+                                hintText: 'e.g., 70.5 or 70,5',
                                 border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.calendar_today),
+                                prefixIcon: Icon(Icons.monitor_weight),
+                                suffixText: 'kg',
                               ),
-                              child: Text(
-                                '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Date Selection
+                            InkWell(
+                              onTap: _selectDate,
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Date',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Measurement Time
-                          DropdownButtonFormField<String>(
-                            value: _selectedMeasurementTime,
-                            decoration: const InputDecoration(
-                              labelText: 'Measurement Time',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.access_time),
+                            const SizedBox(height: 16),
+
+                            // Measurement Time
+                            DropdownButtonFormField<String>(
+                              value: _selectedMeasurementTime,
+                              decoration: const InputDecoration(
+                                labelText: 'Measurement Time',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.access_time),
+                              ),
+                              items: _measurementTimes.map((time) {
+                                return DropdownMenuItem(
+                                  value: time,
+                                  child: Text(time.replaceFirst(
+                                      time[0], time[0].toUpperCase())),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(
+                                    () => _selectedMeasurementTime = value!);
+                              },
                             ),
-                            items: _measurementTimes.map((time) {
-                              return DropdownMenuItem(
-                                value: time,
-                                child: Text(time.replaceFirst(time[0], time[0].toUpperCase())),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() => _selectedMeasurementTime = value!);
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Notes
-                          TextFormField(
-                            controller: _notesController,
-                            decoration: const InputDecoration(
-                              labelText: 'Notes (optional)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.note),
-                              hintText: 'e.g., after workout, before breakfast',
+                            const SizedBox(height: 16),
+
+                            // Notes
+                            TextFormField(
+                              controller: _notesController,
+                              decoration: const InputDecoration(
+                                labelText: 'Notes (optional)',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.note),
+                                hintText:
+                                    'e.g., after workout, before breakfast',
+                              ),
+                              maxLines: 2,
                             ),
-                            maxLines: 2,
-                          ),
-                          const SizedBox(height: 20),
-                          
-                          // Add Button
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _addWeightEntry,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryGreen,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.all(16),
-                              disabledBackgroundColor: Colors.grey.shade400,
+                            const SizedBox(height: 20),
+
+                            // Add Button
+                            ElevatedButton(
+                              onPressed: _isLoading ? null : _addWeightEntry,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryGreen,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.all(16),
+                                disabledBackgroundColor: Colors.grey.shade400,
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Add Weight Entry'),
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text('Add Weight Entry'),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Weight History
-                  Text(
-                    'Weight History',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+
+                    const SizedBox(height: 20),
+
+                    // Weight History
+                    Text(
+                      'Weight History',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  _weightHistory.isEmpty
+                    const SizedBox(height: 12),
+
+                    _weightHistory.isEmpty
                         ? Card(
                             child: Center(
                               child: Padding(
@@ -482,16 +512,22 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                     const SizedBox(height: 16),
                                     Text(
                                       'No weight entries yet',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        color: Colors.grey.shade600,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            color: Colors.grey.shade600,
+                                          ),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       'Add your first weight entry above to start tracking your progress',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.grey.shade500,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Colors.grey.shade500,
+                                          ),
                                       textAlign: TextAlign.center,
                                     ),
                                   ],
@@ -505,7 +541,8 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                 margin: const EdgeInsets.only(bottom: 8),
                                 child: ListTile(
                                   leading: CircleAvatar(
-                                    backgroundColor: AppTheme.primaryGreen.withOpacity(0.1),
+                                    backgroundColor:
+                                        AppTheme.primaryGreen.withOpacity(0.1),
                                     child: Icon(
                                       Icons.monitor_weight,
                                       color: AppTheme.primaryGreen,
@@ -517,11 +554,13 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                       Expanded(
                                         child: Text(
                                           '${entry.weightKg.toStringAsFixed(1)} kg',
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                       IconButton(
-                                        onPressed: () => _showDeleteConfirmation(entry),
+                                        onPressed: () =>
+                                            _showDeleteConfirmation(entry),
                                         icon: const Icon(Icons.close, size: 20),
                                         color: Colors.red.shade600,
                                         padding: EdgeInsets.zero,
@@ -534,7 +573,8 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                     ],
                                   ),
                                   subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '${entry.recordedDate.day}/${entry.recordedDate.month}/${entry.recordedDate.year} - ${entry.measurementTimeDisplayName}',
@@ -556,23 +596,29 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                     children: [
                                       if (entry.weightChangeKg != null) ...[
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: entry.weightChangeColor == 'positive'
+                                            color: entry.weightChangeColor ==
+                                                    'positive'
                                                 ? Colors.green.shade50
-                                                : entry.weightChangeColor == 'negative'
+                                                : entry.weightChangeColor ==
+                                                        'negative'
                                                     ? Colors.red.shade50
                                                     : Colors.grey.shade50,
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: Text(
                                             entry.weightChangeDescription,
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: entry.weightChangeColor == 'positive'
+                                              color: entry.weightChangeColor ==
+                                                      'positive'
                                                   ? Colors.green.shade700
-                                                  : entry.weightChangeColor == 'negative'
+                                                  : entry.weightChangeColor ==
+                                                          'negative'
                                                       ? Colors.red.shade700
                                                       : Colors.grey.shade700,
                                             ),
@@ -582,10 +628,12 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                       if (entry.isInitialPhase) ...[
                                         const SizedBox(height: 4),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 1),
                                           decoration: BoxDecoration(
                                             color: Colors.blue.shade50,
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
                                           ),
                                           child: Text(
                                             'Initial Phase',
@@ -602,8 +650,8 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                               );
                             }).toList(),
                           ),
-                  const SizedBox(height: 80), // Space for bottom padding
-                ],
+                    const SizedBox(height: 80), // Space for bottom padding
+                  ],
                 ),
               ),
             ),

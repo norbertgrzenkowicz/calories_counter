@@ -43,7 +43,7 @@ class AuthNotifier extends _$AuthNotifier {
     // Initialize with current user if available
     final authRepository = ref.read(authRepositoryProvider);
     final currentUserId = authRepository.getCurrentUserId();
-    
+
     return AuthState(
       userId: currentUserId,
       isAuthenticated: currentUserId != null,
@@ -53,10 +53,10 @@ class AuthNotifier extends _$AuthNotifier {
   /// Sign in user with email and password
   Future<void> signIn(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final authRepository = ref.read(authRepositoryProvider);
     final result = await authRepository.signIn(email, password);
-    
+
     result.when(
       success: (userId) {
         state = state.copyWith(
@@ -79,10 +79,10 @@ class AuthNotifier extends _$AuthNotifier {
   /// Sign up new user with email and password
   Future<void> signUp(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final authRepository = ref.read(authRepositoryProvider);
     final result = await authRepository.signUp(email, password);
-    
+
     result.when(
       success: (userId) {
         state = state.copyWith(
@@ -105,10 +105,10 @@ class AuthNotifier extends _$AuthNotifier {
   /// Sign out current user
   Future<void> signOut() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final authRepository = ref.read(authRepositoryProvider);
     final result = await authRepository.signOut();
-    
+
     result.when(
       success: (_) {
         state = const AuthState(isAuthenticated: false);
@@ -133,7 +133,7 @@ class AuthNotifier extends _$AuthNotifier {
   void refreshAuthState() {
     final authRepository = ref.read(authRepositoryProvider);
     final currentUserId = authRepository.getCurrentUserId();
-    
+
     state = state.copyWith(
       userId: currentUserId,
       isAuthenticated: currentUserId != null,

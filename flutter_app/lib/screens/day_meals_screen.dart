@@ -41,11 +41,14 @@ class DayMealsScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     _buildNutritionBar(context, '$totalCalories kcal', 1.0),
                     const SizedBox(height: 16),
-                    _buildNutritionBar(context, '${totalProteins.toStringAsFixed(1)}g Proteins', 0.8),
+                    _buildNutritionBar(context,
+                        '${totalProteins.toStringAsFixed(1)}g Proteins', 0.8),
                     const SizedBox(height: 16),
-                    _buildNutritionBar(context, '${totalCarbs.toStringAsFixed(1)}g Carbs', 0.6),
+                    _buildNutritionBar(context,
+                        '${totalCarbs.toStringAsFixed(1)}g Carbs', 0.6),
                     const SizedBox(height: 16),
-                    _buildNutritionBar(context, '${totalFats.toStringAsFixed(1)}g Fats', 0.4),
+                    _buildNutritionBar(
+                        context, '${totalFats.toStringAsFixed(1)}g Fats', 0.4),
                   ],
                 ),
               ),
@@ -92,9 +95,11 @@ class DayMealsScreen extends StatelessWidget {
                                   meal.photoUrl!,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.fastfood, color: AppTheme.charcoal);
+                                    return const Icon(Icons.fastfood,
+                                        color: AppTheme.charcoal);
                                   },
-                                  loadingBuilder: (context, child, loadingProgress) {
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
                                     if (loadingProgress == null) return child;
                                     return const Center(
                                       child: CircularProgressIndicator(),
@@ -102,7 +107,8 @@ class DayMealsScreen extends StatelessWidget {
                                   },
                                 ),
                               )
-                            : const Icon(Icons.fastfood, color: AppTheme.charcoal),
+                            : const Icon(Icons.fastfood,
+                                color: AppTheme.charcoal),
                       ),
                       title: Text(meal.name),
                       subtitle: Text('${meal.calories} kcal'),
@@ -110,9 +116,12 @@ class DayMealsScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('P: ${meal.proteins.toStringAsFixed(1)}g', style: const TextStyle(fontSize: 10)),
-                          Text('C: ${meal.carbs.toStringAsFixed(1)}g', style: const TextStyle(fontSize: 10)),
-                          Text('F: ${meal.fats.toStringAsFixed(1)}g', style: const TextStyle(fontSize: 10)),
+                          Text('P: ${meal.proteins.toStringAsFixed(1)}g',
+                              style: const TextStyle(fontSize: 10)),
+                          Text('C: ${meal.carbs.toStringAsFixed(1)}g',
+                              style: const TextStyle(fontSize: 10)),
+                          Text('F: ${meal.fats.toStringAsFixed(1)}g',
+                              style: const TextStyle(fontSize: 10)),
                         ],
                       ),
                     ),
@@ -126,7 +135,8 @@ class DayMealsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNutritionBar(BuildContext context, String label, double progress) {
+  Widget _buildNutritionBar(
+      BuildContext context, String label, double progress) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -138,7 +148,8 @@ class DayMealsScreen extends StatelessWidget {
         LinearProgressIndicator(
           value: progress,
           backgroundColor: AppTheme.softGray,
-          valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
+          valueColor:
+              const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
           minHeight: 8,
         ),
       ],

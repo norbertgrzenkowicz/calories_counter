@@ -26,6 +26,7 @@ final openFoodFactsServiceProvider = Provider<OpenFoodFactsService>((ref) {
 });
 
 /// Provider for NutritionCalculatorService
-final nutritionCalculatorServiceProvider = Provider<NutritionCalculatorService>((ref) {
+final nutritionCalculatorServiceProvider =
+    Provider<NutritionCalculatorService>((ref) {
   return NutritionCalculatorService();
 });

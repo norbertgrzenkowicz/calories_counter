@@ -16,7 +16,7 @@ import 'meal_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
-  
+
   const DashboardScreen({super.key, required this.cameras});
 
   @override
@@ -43,12 +43,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final profileService = ProfileService();
       final profile = await profileService.getUserProfile();
-      
+
       setState(() {
         _userProfile = profile;
         _isLoadingProfile = false;
       });
-      
+
       // If no profile exists, prompt user to create one
       if (profile == null && mounted) {
         _showProfilePrompt();
@@ -89,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
-    
+
     // Reload profile after returning from profile screen
     if (result != null || mounted) {
       _loadUserProfile();
@@ -102,10 +102,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!supabaseService.isInitialized) {
         return [];
       }
-      
+
       final response = await supabaseService.getAllUserMeals();
-      final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
-      
+      final meals =
+          response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+
       return meals;
     } catch (e) {
       // Error loading meals from Supabase, return empty list
@@ -117,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _selectedIndex = index;
     });
-    
+
     if (index == 0) {
       _openWeightTracking();
     } else if (index == 1) {
@@ -129,23 +130,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _goToPreviousDay() {
     setState(() {
-      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
+      _selectedDate = DateTime(
+          _selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
       _meals = _getMealsFromSupabase();
     });
   }
 
   void _goToNextDay() {
     setState(() {
-      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
+      _selectedDate = DateTime(
+          _selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
       _meals = _getMealsFromSupabase();
     });
   }
 
   bool _isToday() {
     final today = DateTime.now();
-    return _selectedDate.year == today.year && 
-           _selectedDate.month == today.month && 
-           _selectedDate.day == today.day;
+    return _selectedDate.year == today.year &&
+        _selectedDate.month == today.month &&
+        _selectedDate.day == today.day;
   }
 
   String _getFormattedDate() {
@@ -159,8 +162,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final meals = await _meals;
     return meals.where((meal) {
       return meal.date.year == _selectedDate.year &&
-             meal.date.month == _selectedDate.month &&
-             meal.date.day == _selectedDate.day;
+          meal.date.month == _selectedDate.month &&
+          meal.date.day == _selectedDate.day;
     }).toList();
   }
 
@@ -170,15 +173,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Navigate to meal detail screen
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => MealDetailScreen(
-          meal: meals[mealIndex],
-          onMealUpdated: () {
-            setState(() {
-              // Refresh the data when meal is updated or deleted
-              _meals = _getMealsFromSupabase();
-            });
-          },
-        )),
+        MaterialPageRoute(
+            builder: (context) => MealDetailScreen(
+                  meal: meals[mealIndex],
+                  onMealUpdated: () {
+                    setState(() {
+                      // Refresh the data when meal is updated or deleted
+                      _meals = _getMealsFromSupabase();
+                    });
+                  },
+                )),
       );
     }
     // Remove the else block - don't show any message for empty meal slots
@@ -188,15 +192,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Navigate directly to meal detail screen with the actual meal object
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => MealDetailScreen(
-        meal: meal,
-        onMealUpdated: () {
-          setState(() {
-            // Refresh the data when meal is updated or deleted
-            _meals = _getMealsFromSupabase();
-          });
-        },
-      )),
+      MaterialPageRoute(
+          builder: (context) => MealDetailScreen(
+                meal: meal,
+                onMealUpdated: () {
+                  setState(() {
+                    // Refresh the data when meal is updated or deleted
+                    _meals = _getMealsFromSupabase();
+                  });
+                },
+              )),
     );
   }
 
@@ -215,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context) => const WeightTrackingScreen(),
       ),
     );
-    
+
     // Reload profile after returning from weight tracking (in case weight changed)
     if (result != null || mounted) {
       _loadUserProfile();
@@ -329,7 +334,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         }
-        
+
         if (snapshot.hasError) {
           return const Card(
             child: Padding(
@@ -340,26 +345,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
 
         final selectedDateMeals = snapshot.data ?? [];
-        final totalCalories = selectedDateMeals.fold(0, (sum, meal) => sum + meal.calories);
-        final totalProteins = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.proteins);
-        final totalCarbs = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.carbs);
-        final totalFats = selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.fats);
-        
+        final totalCalories =
+            selectedDateMeals.fold(0, (sum, meal) => sum + meal.calories);
+        final totalProteins =
+            selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.proteins);
+        final totalCarbs =
+            selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.carbs);
+        final totalFats =
+            selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.fats);
+
         // Get dynamic targets from user profile or use defaults
         int targetCalories = 2000;
         double targetProteins = 150.0;
         double targetCarbs = 250.0;
         double targetFats = 65.0;
-        
-        if (_userProfile != null && _userProfile!.hasRequiredDataForCalculations) {
-          final nutritionProfile = NutritionCalculatorService.calculateCompleteNutritionProfile(_userProfile!);
+
+        if (_userProfile != null &&
+            _userProfile!.hasRequiredDataForCalculations) {
+          final nutritionProfile =
+              NutritionCalculatorService.calculateCompleteNutritionProfile(
+                  _userProfile!);
           targetCalories = nutritionProfile['targetCalories'] ?? 2000;
-          final macros = nutritionProfile['macros'] as Map<String, double>? ?? {};
+          final macros =
+              nutritionProfile['macros'] as Map<String, double>? ?? {};
           targetProteins = macros['protein'] ?? 150.0;
           targetCarbs = macros['carbs'] ?? 250.0;
           targetFats = macros['fat'] ?? 65.0;
         }
-        
+
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -373,14 +386,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Text(
                       'Daily Nutrition',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
-                    if (_userProfile == null || !_userProfile!.hasRequiredDataForCalculations) ...[
+                    if (_userProfile == null ||
+                        !_userProfile!.hasRequiredDataForCalculations) ...[
                       GestureDetector(
                         onTap: _navigateToProfile,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.orange.shade100,
                             borderRadius: BorderRadius.circular(12),
@@ -409,7 +424,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ] else ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.green.shade100,
                           borderRadius: BorderRadius.circular(12),
@@ -439,7 +455,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Nutrition bars
                 _buildNutritionBar(
                   '$totalCalories kcal / ${targetCalories.round()} kcal',
@@ -465,9 +481,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   targetFats > 0 ? totalFats / targetFats : 0,
                   remaining: targetFats - totalFats,
                 ),
-                
+
                 // Goal information if profile exists
-                if (_userProfile != null && _userProfile!.hasRequiredDataForCalculations) ...[
+                if (_userProfile != null &&
+                    _userProfile!.hasRequiredDataForCalculations) ...[
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -485,10 +502,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(width: 8),
                         Text(
                           'Goal: ${_userProfile!.goalDisplayName}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.charcoal,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.charcoal,
+                                  ),
                         ),
                       ],
                     ),
@@ -503,7 +521,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildNutritionBar(
-    String label, 
+    String label,
     double progress, {
     bool isCalories = false,
     double? remaining,
@@ -528,25 +546,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ),
             if (remaining != null) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: remaining > 0 ? Colors.blue.shade50 : Colors.orange.shade50,
+                  color: remaining > 0
+                      ? Colors.blue.shade50
+                      : Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  remaining > 0 
+                  remaining > 0
                       ? '${remaining.toStringAsFixed(isCalories ? 0 : 1)}${isCalories ? ' kcal' : 'g'} left'
                       : '${(-remaining).toStringAsFixed(isCalories ? 0 : 1)}${isCalories ? ' kcal' : 'g'} over',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: remaining > 0 ? Colors.blue.shade700 : Colors.orange.shade700,
+                    color: remaining > 0
+                        ? Colors.blue.shade700
+                        : Colors.orange.shade700,
                   ),
                 ),
               ),
@@ -568,7 +590,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: LinearProgressIndicator(
                   value: 1.0,
                   backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(progressColor.withOpacity(0.3)),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      progressColor.withOpacity(0.3)),
                   minHeight: 8,
                 ),
               ),
@@ -579,9 +602,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Text(
           '${(progress * 100).toStringAsFixed(0)}% of target',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey.shade600,
-            fontSize: 11,
-          ),
+                color: Colors.grey.shade600,
+                fontSize: 11,
+              ),
         ),
       ],
     );
@@ -630,15 +653,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'No meals added today',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppTheme.charcoal.withOpacity(0.7),
-              ),
+                    color: AppTheme.charcoal.withOpacity(0.7),
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Tap the + button to add your first meal',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.charcoal.withOpacity(0.5),
-              ),
+                    color: AppTheme.charcoal.withOpacity(0.5),
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -661,7 +684,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }).toList(),
     );
   }
-
 
   Widget _buildActualMealCard(int index, Meal meal) {
     return GestureDetector(
@@ -692,7 +714,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.fastfood, size: 24, color: AppTheme.charcoal),
+                                  Icon(Icons.fastfood,
+                                      size: 24, color: AppTheme.charcoal),
                                   SizedBox(height: 4),
                                   Text(
                                     'No photo',
@@ -717,7 +740,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.fastfood, size: 24, color: AppTheme.charcoal),
+                            Icon(Icons.fastfood,
+                                size: 24, color: AppTheme.charcoal),
                             SizedBox(height: 4),
                             Text(
                               'No photo',
@@ -802,7 +826,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text(
             'Add Meal',
             style: TextStyle(
-              color: isSelected ? AppTheme.primaryGreen : AppTheme.charcoal.withOpacity(0.6),
+              color: isSelected
+                  ? AppTheme.primaryGreen
+                  : AppTheme.charcoal.withOpacity(0.6),
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
@@ -821,14 +847,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Icon(
             icon,
-            color: isSelected ? AppTheme.primaryGreen : AppTheme.charcoal.withOpacity(0.6),
+            color: isSelected
+                ? AppTheme.primaryGreen
+                : AppTheme.charcoal.withOpacity(0.6),
             size: 24,
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppTheme.primaryGreen : AppTheme.charcoal.withOpacity(0.6),
+              color: isSelected
+                  ? AppTheme.primaryGreen
+                  : AppTheme.charcoal.withOpacity(0.6),
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),

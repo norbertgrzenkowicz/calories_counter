@@ -32,19 +32,21 @@ class ProfileRepositoryImpl implements ProfileRepository {
       return Result.success(createdProfile);
     } catch (e) {
       AppLogger.error('Failed to create user profile', e);
-      
-      if (e.toString().contains('duplicate key') || e.toString().contains('already exists')) {
+
+      if (e.toString().contains('duplicate key') ||
+          e.toString().contains('already exists')) {
         return const Result.failure(
           AppError.conflict('Profile already exists for this user'),
         );
       }
-      
-      if (e.toString().contains('validation') || e.toString().contains('constraint')) {
+
+      if (e.toString().contains('validation') ||
+          e.toString().contains('constraint')) {
         return Result.failure(
           AppError.validation('Invalid profile data: ${e.toString()}'),
         );
       }
-      
+
       return Result.failure(
         AppError.unknown('Failed to create profile: ${e.toString()}'),
       );
@@ -59,19 +61,21 @@ class ProfileRepositoryImpl implements ProfileRepository {
       return Result.success(updatedProfile);
     } catch (e) {
       AppLogger.error('Failed to update user profile', e);
-      
-      if (e.toString().contains('not found') || e.toString().contains('no rows')) {
+
+      if (e.toString().contains('not found') ||
+          e.toString().contains('no rows')) {
         return const Result.failure(
           AppError.notFound('Profile not found'),
         );
       }
-      
-      if (e.toString().contains('validation') || e.toString().contains('constraint')) {
+
+      if (e.toString().contains('validation') ||
+          e.toString().contains('constraint')) {
         return Result.failure(
           AppError.validation('Invalid profile data: ${e.toString()}'),
         );
       }
-      
+
       return Result.failure(
         AppError.unknown('Failed to update profile: ${e.toString()}'),
       );
@@ -86,13 +90,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
       return const Result.success(null);
     } catch (e) {
       AppLogger.error('Failed to delete user profile', e);
-      
-      if (e.toString().contains('not found') || e.toString().contains('no rows')) {
+
+      if (e.toString().contains('not found') ||
+          e.toString().contains('no rows')) {
         return const Result.failure(
           AppError.notFound('Profile not found'),
         );
       }
-      
+
       return Result.failure(
         AppError.unknown('Failed to delete profile: ${e.toString()}'),
       );
@@ -117,19 +122,20 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Result<int>> calculateDailyCalorieTarget() async {
     try {
       final profile = await _profileService.getUserProfile();
-      
+
       if (profile == null) {
         return const Result.failure(
           AppError.notFound('Profile not found'),
         );
       }
-      
+
       if (!profile.hasRequiredDataForCalculations) {
         return const Result.failure(
-          AppError.validation('Insufficient profile data for calorie calculation'),
+          AppError.validation(
+              'Insufficient profile data for calorie calculation'),
         );
       }
-      
+
       final calorieTarget = profile.calculateTargetCalories();
       AppLogger.debug('Calculated daily calorie target: $calorieTarget');
       return Result.success(calorieTarget);
@@ -145,23 +151,24 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Result<double>> calculateBMI() async {
     try {
       final profile = await _profileService.getUserProfile();
-      
+
       if (profile == null) {
         return const Result.failure(
           AppError.notFound('Profile not found'),
         );
       }
-      
+
       if (profile.heightCm <= 0 || profile.currentWeightKg <= 0) {
         return const Result.failure(
-          AppError.validation('Height and weight are required for BMI calculation'),
+          AppError.validation(
+              'Height and weight are required for BMI calculation'),
         );
       }
-      
+
       // BMI = weight(kg) / height(m)^2
       final heightInMeters = profile.heightCm / 100;
       final bmi = profile.currentWeightKg / (heightInMeters * heightInMeters);
-      
+
       AppLogger.debug('Calculated BMI: ${bmi.toStringAsFixed(1)}');
       return Result.success(bmi);
     } catch (e) {
@@ -176,21 +183,23 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Result<Map<String, double>>> getRecommendedMacros() async {
     try {
       final profile = await _profileService.getUserProfile();
-      
+
       if (profile == null) {
         return const Result.failure(
           AppError.notFound('Profile not found'),
         );
       }
-      
+
       if (!profile.hasRequiredDataForCalculations) {
         return const Result.failure(
-          AppError.validation('Insufficient profile data for macro calculation'),
+          AppError.validation(
+              'Insufficient profile data for macro calculation'),
         );
       }
-      
+
       final macros = profile.calculateTargetMacros();
-      AppLogger.debug('Calculated recommended macros: P:${macros['protein']?.toStringAsFixed(1)}g C:${macros['carbs']?.toStringAsFixed(1)}g F:${macros['fat']?.toStringAsFixed(1)}g');
+      AppLogger.debug(
+          'Calculated recommended macros: P:${macros['protein']?.toStringAsFixed(1)}g C:${macros['carbs']?.toStringAsFixed(1)}g F:${macros['fat']?.toStringAsFixed(1)}g');
       return Result.success(macros);
     } catch (e) {
       AppLogger.error('Failed to calculate recommended macros', e);
@@ -209,13 +218,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }) async {
     try {
       final profile = await _profileService.getUserProfile();
-      
+
       if (profile == null) {
         return const Result.failure(
           AppError.notFound('Profile not found'),
         );
       }
-      
+
       // Update the profile with new nutrition targets
       final updatedProfile = profile.copyWith(
         targetCalories: dailyCalorieTarget,
@@ -224,8 +233,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
         targetFatsG: fatTarget,
         updatedAt: DateTime.now(),
       );
-      
-      final savedProfile = await _profileService.saveUserProfile(updatedProfile);
+
+      final savedProfile =
+          await _profileService.saveUserProfile(updatedProfile);
       AppLogger.info('Updated nutrition targets');
       return Result.success(savedProfile);
     } catch (e) {
@@ -240,13 +250,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Result<UserProfile>> updateActivityLevel(String activityLevel) async {
     try {
       final profile = await _profileService.getUserProfile();
-      
+
       if (profile == null) {
         return const Result.failure(
           AppError.notFound('Profile not found'),
         );
       }
-      
+
       // Parse activity level to numeric value
       double activityFactor;
       switch (activityLevel.toLowerCase()) {
@@ -273,35 +283,49 @@ class ProfileRepositoryImpl implements ProfileRepository {
             AppError.validation('Invalid activity level: $activityLevel'),
           );
       }
-      
+
       // Update profile with new activity level and recalculate targets
       final updatedProfile = profile.copyWith(
         activityLevel: activityFactor,
         updatedAt: DateTime.now(),
       );
-      
+
       // Recalculate nutrition targets based on new activity level
       int newCalorieTarget = 0;
-      Map<String, double> newMacros = {'protein': 0.0, 'carbs': 0.0, 'fat': 0.0};
-      
+      Map<String, double> newMacros = {
+        'protein': 0.0,
+        'carbs': 0.0,
+        'fat': 0.0
+      };
+
       if (updatedProfile.hasRequiredDataForCalculations) {
         try {
           newCalorieTarget = updatedProfile.calculateTargetCalories();
           newMacros = updatedProfile.calculateTargetMacros();
         } catch (calculationError) {
-          AppLogger.warning('Failed to recalculate targets, using existing values: $calculationError');
+          AppLogger.warning(
+              'Failed to recalculate targets, using existing values: $calculationError');
         }
       }
-      
+
       final finalProfile = updatedProfile.copyWith(
-        targetCalories: newCalorieTarget > 0 ? newCalorieTarget : updatedProfile.targetCalories,
-        targetProteinG: newMacros['protein']! > 0 ? newMacros['protein'] : updatedProfile.targetProteinG,
-        targetCarbsG: newMacros['carbs']! > 0 ? newMacros['carbs'] : updatedProfile.targetCarbsG,
-        targetFatsG: newMacros['fat']! > 0 ? newMacros['fat'] : updatedProfile.targetFatsG,
+        targetCalories: newCalorieTarget > 0
+            ? newCalorieTarget
+            : updatedProfile.targetCalories,
+        targetProteinG: newMacros['protein']! > 0
+            ? newMacros['protein']
+            : updatedProfile.targetProteinG,
+        targetCarbsG: newMacros['carbs']! > 0
+            ? newMacros['carbs']
+            : updatedProfile.targetCarbsG,
+        targetFatsG: newMacros['fat']! > 0
+            ? newMacros['fat']
+            : updatedProfile.targetFatsG,
       );
-      
+
       final savedProfile = await _profileService.saveUserProfile(finalProfile);
-      AppLogger.info('Updated activity level to $activityLevel and recalculated targets');
+      AppLogger.info(
+          'Updated activity level to $activityLevel and recalculated targets');
       return Result.success(savedProfile);
     } catch (e) {
       AppLogger.error('Failed to update activity level', e);
