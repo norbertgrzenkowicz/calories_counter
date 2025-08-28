@@ -22,22 +22,24 @@ class MealRepositoryImpl implements MealRepository {
       }
 
       final dateString = date.toIso8601String().split('T')[0];
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .select('*')
           .eq('uid', userId)
-          .eq('logged_date', dateString)
+          .eq('date', dateString)
           .order('created_at', ascending: false);
 
-      final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
-      
+      final meals =
+          response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+
       AppLogger.debug('Fetched ${meals.length} meals for date $dateString');
       return Result.success(meals);
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error fetching meals by date: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error fetching meals by date', e);
@@ -48,7 +50,8 @@ class MealRepositoryImpl implements MealRepository {
   }
 
   @override
-  Future<Result<List<Meal>>> getMealsByDateRange(DateTime startDate, DateTime endDate) async {
+  Future<Result<List<Meal>>> getMealsByDateRange(
+      DateTime startDate, DateTime endDate) async {
     try {
       final userId = _supabaseService.getCurrentUserId();
       if (userId == null) {
@@ -59,24 +62,28 @@ class MealRepositoryImpl implements MealRepository {
 
       final startDateString = startDate.toIso8601String().split('T')[0];
       final endDateString = endDate.toIso8601String().split('T')[0];
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .select('*')
           .eq('uid', userId)
-          .gte('logged_date', startDateString)
-          .lte('logged_date', endDateString)
-          .order('logged_date', ascending: false)
+          .gte('date', startDateString)
+          .lte('date', endDateString)
+          .order('date', ascending: false)
           .order('created_at', ascending: false);
 
-      final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
-      
-      AppLogger.debug('Fetched ${meals.length} meals for date range $startDateString to $endDateString');
+      final meals =
+          response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+
+      AppLogger.debug(
+          'Fetched ${meals.length} meals for date range $startDateString to $endDateString');
       return Result.success(meals);
     } on PostgrestException catch (e) {
-      AppLogger.error('Supabase error fetching meals by date range: ${e.message}');
+      AppLogger.error(
+          'Supabase error fetching meals by date range: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error fetching meals by date range', e);
@@ -95,7 +102,7 @@ class MealRepositoryImpl implements MealRepository {
           AppError.authentication('User not authenticated'),
         );
       }
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .select('*')
@@ -103,14 +110,16 @@ class MealRepositoryImpl implements MealRepository {
           .order('logged_date', ascending: false)
           .order('created_at', ascending: false);
 
-      final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
-      
+      final meals =
+          response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+
       AppLogger.debug('Fetched ${meals.length} total meals for user');
       return Result.success(meals);
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error fetching all user meals: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error fetching all user meals', e);
@@ -129,7 +138,7 @@ class MealRepositoryImpl implements MealRepository {
           AppError.authentication('User not authenticated'),
         );
       }
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .select('*')
@@ -149,7 +158,8 @@ class MealRepositoryImpl implements MealRepository {
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error fetching meal by ID: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error fetching meal by ID', e);
@@ -185,7 +195,8 @@ class MealRepositoryImpl implements MealRepository {
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error adding meal: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error adding meal', e);
@@ -212,7 +223,7 @@ class MealRepositoryImpl implements MealRepository {
       }
 
       final mealData = meal.toSupabase();
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .update(mealData)
@@ -227,7 +238,8 @@ class MealRepositoryImpl implements MealRepository {
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error updating meal: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error updating meal', e);
@@ -258,7 +270,8 @@ class MealRepositoryImpl implements MealRepository {
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error deleting meal: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error deleting meal', e);
@@ -269,7 +282,8 @@ class MealRepositoryImpl implements MealRepository {
   }
 
   @override
-  Future<Result<String>> uploadMealPhoto(String filePath, String fileName) async {
+  Future<Result<String>> uploadMealPhoto(
+      String filePath, String fileName) async {
     try {
       final userId = _supabaseService.getCurrentUserId();
       if (userId == null) {
@@ -318,7 +332,7 @@ class MealRepositoryImpl implements MealRepository {
       // Extract storage path from public URL
       final uri = Uri.parse(photoUrl);
       final pathSegments = uri.pathSegments;
-      
+
       // Find the index of 'meal-photos' bucket in path
       final bucketIndex = pathSegments.indexOf('meal-photos');
       if (bucketIndex == -1 || bucketIndex >= pathSegments.length - 1) {
@@ -350,7 +364,8 @@ class MealRepositoryImpl implements MealRepository {
   }
 
   @override
-  Future<Result<Map<String, num>>> getNutritionTotalsByDate(DateTime date) async {
+  Future<Result<Map<String, num>>> getNutritionTotalsByDate(
+      DateTime date) async {
     try {
       final userId = _supabaseService.getCurrentUserId();
       if (userId == null) {
@@ -360,12 +375,12 @@ class MealRepositoryImpl implements MealRepository {
       }
 
       final dateString = date.toIso8601String().split('T')[0];
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .select('calories, proteins, carbs, fats, sugars, fiber, sodium')
           .eq('uid', userId)
-          .eq('logged_date', dateString);
+          .eq('date', dateString);
 
       // Calculate totals
       num totalCalories = 0;
@@ -396,24 +411,28 @@ class MealRepositoryImpl implements MealRepository {
         'sodium': totalSodium,
       };
 
-      AppLogger.debug('Calculated nutrition totals for $dateString: $totalCalories calories');
+      AppLogger.debug(
+          'Calculated nutrition totals for $dateString: $totalCalories calories');
       return Result.success(totals);
     } on PostgrestException catch (e) {
-      AppLogger.error('Supabase error calculating nutrition totals: ${e.message}');
+      AppLogger.error(
+          'Supabase error calculating nutrition totals: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error calculating nutrition totals', e);
       return Result.failure(
-        AppError.unknown('Failed to calculate nutrition totals: ${e.toString()}'),
+        AppError.unknown(
+            'Failed to calculate nutrition totals: ${e.toString()}'),
       );
     }
   }
 
   @override
   Future<Result<Map<DateTime, Map<String, num>>>> getNutritionTotalsByDateRange(
-    DateTime startDate, 
+    DateTime startDate,
     DateTime endDate,
   ) async {
     try {
@@ -426,10 +445,11 @@ class MealRepositoryImpl implements MealRepository {
 
       final startDateString = startDate.toIso8601String().split('T')[0];
       final endDateString = endDate.toIso8601String().split('T')[0];
-      
+
       final response = await _supabaseService.client
           .from('meals')
-          .select('logged_date, calories, proteins, carbs, fats, sugars, fiber, sodium')
+          .select(
+              'logged_date, calories, proteins, carbs, fats, sugars, fiber, sodium')
           .eq('uid', userId)
           .gte('logged_date', startDateString)
           .lte('logged_date', endDateString)
@@ -441,7 +461,7 @@ class MealRepositoryImpl implements MealRepository {
       for (final meal in response) {
         final dateString = meal['logged_date'] as String;
         final date = DateTime.parse(dateString);
-        
+
         if (!dailyTotals.containsKey(date)) {
           dailyTotals[date] = {
             'calories': 0,
@@ -455,26 +475,38 @@ class MealRepositoryImpl implements MealRepository {
         }
 
         final dayTotals = dailyTotals[date]!;
-        dayTotals['calories'] = (dayTotals['calories']! as num) + ((meal['calories'] as num?) ?? 0);
-        dayTotals['proteins'] = (dayTotals['proteins']! as num) + ((meal['proteins'] as num?) ?? 0);
-        dayTotals['carbs'] = (dayTotals['carbs']! as num) + ((meal['carbs'] as num?) ?? 0);
-        dayTotals['fats'] = (dayTotals['fats']! as num) + ((meal['fats'] as num?) ?? 0);
-        dayTotals['sugars'] = (dayTotals['sugars']! as num) + ((meal['sugars'] as num?) ?? 0);
-        dayTotals['fiber'] = (dayTotals['fiber']! as num) + ((meal['fiber'] as num?) ?? 0);
-        dayTotals['sodium'] = (dayTotals['sodium']! as num) + ((meal['sodium'] as num?) ?? 0);
+        dayTotals['calories'] =
+            (dayTotals['calories']! as num) + ((meal['calories'] as num?) ?? 0);
+        dayTotals['proteins'] =
+            (dayTotals['proteins']! as num) + ((meal['proteins'] as num?) ?? 0);
+        dayTotals['carbs'] =
+            (dayTotals['carbs']! as num) + ((meal['carbs'] as num?) ?? 0);
+        dayTotals['fats'] =
+            (dayTotals['fats']! as num) + ((meal['fats'] as num?) ?? 0);
+        dayTotals['sugars'] =
+            (dayTotals['sugars']! as num) + ((meal['sugars'] as num?) ?? 0);
+        dayTotals['fiber'] =
+            (dayTotals['fiber']! as num) + ((meal['fiber'] as num?) ?? 0);
+        dayTotals['sodium'] =
+            (dayTotals['sodium']! as num) + ((meal['sodium'] as num?) ?? 0);
       }
 
-      AppLogger.debug('Calculated nutrition totals for ${dailyTotals.length} days');
+      AppLogger.debug(
+          'Calculated nutrition totals for ${dailyTotals.length} days');
       return Result.success(dailyTotals);
     } on PostgrestException catch (e) {
-      AppLogger.error('Supabase error calculating nutrition totals by date range: ${e.message}');
+      AppLogger.error(
+          'Supabase error calculating nutrition totals by date range: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
-      AppLogger.error('Unexpected error calculating nutrition totals by date range', e);
+      AppLogger.error(
+          'Unexpected error calculating nutrition totals by date range', e);
       return Result.failure(
-        AppError.unknown('Failed to calculate nutrition totals: ${e.toString()}'),
+        AppError.unknown(
+            'Failed to calculate nutrition totals: ${e.toString()}'),
       );
     }
   }
@@ -492,7 +524,7 @@ class MealRepositoryImpl implements MealRepository {
       if (query.trim().isEmpty) {
         return const Result.success([]);
       }
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .select('*')
@@ -501,14 +533,16 @@ class MealRepositoryImpl implements MealRepository {
           .order('created_at', ascending: false)
           .limit(50); // Limit results to prevent excessive data
 
-      final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
-      
+      final meals =
+          response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+
       AppLogger.debug('Found ${meals.length} meals matching query: $query');
       return Result.success(meals);
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error searching meals: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error searching meals', e);
@@ -527,7 +561,7 @@ class MealRepositoryImpl implements MealRepository {
           AppError.authentication('User not authenticated'),
         );
       }
-      
+
       final response = await _supabaseService.client
           .from('meals')
           .select('*')
@@ -535,14 +569,16 @@ class MealRepositoryImpl implements MealRepository {
           .order('created_at', ascending: false)
           .limit(limit);
 
-      final meals = response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
-      
+      final meals =
+          response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+
       AppLogger.debug('Fetched ${meals.length} recent meals');
       return Result.success(meals);
     } on PostgrestException catch (e) {
       AppLogger.error('Supabase error fetching recent meals: ${e.message}');
       return Result.failure(
-        AppError.server('Database error: ${e.message}', statusCode: e.code != null ? int.tryParse(e.code!) : null),
+        AppError.server('Database error: ${e.message}',
+            statusCode: e.code != null ? int.tryParse(e.code!) : null),
       );
     } catch (e) {
       AppLogger.error('Unexpected error fetching recent meals', e);
