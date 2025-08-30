@@ -10,6 +10,7 @@ import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'add_meal_screen.dart';
 import 'weight_tracking_screen.dart';
+import 'settings_screen.dart';
 
 class DashboardScreenRiverpod extends ConsumerStatefulWidget {
   final List<CameraDescription> cameras;
@@ -168,6 +169,7 @@ class _DashboardScreenRiverpodState
           ),
         ],
       ),
+      drawer: _buildDrawer(),
       body: Column(
         children: [
           _buildDateSelector(),
@@ -440,5 +442,51 @@ class _DashboardScreenRiverpodState
         );
       }
     }
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: AppTheme.primaryGreen,
+            ),
+            child: const Text(
+              'Yapper',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              _navigateToSettings();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Sign Out'),
+            onTap: () {
+              Navigator.pop(context);
+              _signOut();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (context) => const SettingsScreen()),
+    );
   }
 }
