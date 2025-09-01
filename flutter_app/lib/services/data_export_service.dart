@@ -51,11 +51,7 @@ class DataExportService {
 
       if (exportFile != null) {
         // Share the file with the user
-        await Share.shareXFiles(
-          [XFile(exportFile.path)],
-          text: 'Your Yapper weight history export',
-          subject: 'Weight History Export',
-        );
+        await Share.shareXFiles([XFile(exportFile.path)]);
         
         AppLogger.info('Export completed successfully: ${exportFile.path}');
         return true;
