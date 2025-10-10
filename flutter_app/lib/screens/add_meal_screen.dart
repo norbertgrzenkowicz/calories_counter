@@ -54,8 +54,47 @@ class _AddMealScreenState extends State<AddMealScreen> {
   }
 
   Future<void> _addPhoto() async {
+    final source = await _showPhotoSourceDialog();
+    if (source != null) {
+      await _pickImageFromSource(source);
+    }
+  }
+
+  Future<ImageSource?> _showPhotoSourceDialog() async {
+    return showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Photo Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take Photo'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImageFromSource(ImageSource source) async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await picker.pickImage(source: source);
 
     if (pickedFile != null) {
       AppLogger.debug('Photo selected for upload: ${pickedFile.path}');
@@ -113,7 +152,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
       );
 
       if (response.statusCode == 200) {
-        final analysisData = jsonDecode(response.body);
+        final analysisData = jsonDecode(response.body) as Map<String, dynamic>;
         setState(() {
           _analysisResult = analysisData;
           _hasAnalyzedPhoto = true;
@@ -370,7 +409,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: Text(
             'Add Meal - ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}'),
@@ -665,8 +704,8 @@ class _AddMealScreenState extends State<AddMealScreen> {
                   onPressed: _isSubmitting ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        _isSubmitting ? Colors.grey : AppTheme.primaryGreen,
-                    foregroundColor: Colors.white,
+                        _isSubmitting ? Colors.grey : AppTheme.neonGreen,
+                    foregroundColor: AppTheme.darkBackground,
                     padding: const EdgeInsets.all(16),
                   ),
                   child: _isSubmitting

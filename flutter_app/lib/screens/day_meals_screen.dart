@@ -17,7 +17,7 @@ class DayMealsScreen extends StatelessWidget {
     double totalFats = meals.fold(0, (sum, meal) => sum + meal.fats);
 
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: Text('${date.day}/${date.month}/${date.year}'),
         backgroundColor: Colors.transparent,
@@ -85,7 +85,7 @@ class DayMealsScreen extends StatelessWidget {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: AppTheme.softGray,
+                          color: AppTheme.cardBackground,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: meal.photoUrl != null
@@ -96,7 +96,7 @@ class DayMealsScreen extends StatelessWidget {
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Icon(Icons.fastfood,
-                                        color: AppTheme.charcoal);
+                                        color: AppTheme.textSecondary);
                                   },
                                   loadingBuilder:
                                       (context, child, loadingProgress) {
@@ -108,7 +108,7 @@ class DayMealsScreen extends StatelessWidget {
                                 ),
                               )
                             : const Icon(Icons.fastfood,
-                                color: AppTheme.charcoal),
+                                color: AppTheme.textSecondary),
                       ),
                       title: Text(meal.name),
                       subtitle: Text('${meal.calories} kcal'),
@@ -147,9 +147,9 @@ class DayMealsScreen extends StatelessWidget {
         const SizedBox(height: 8),
         LinearProgressIndicator(
           value: progress,
-          backgroundColor: AppTheme.softGray,
+          backgroundColor: AppTheme.borderColor,
           valueColor:
-              const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
+              const AlwaysStoppedAnimation<Color>(AppTheme.neonGreen),
           minHeight: 8,
         ),
       ],

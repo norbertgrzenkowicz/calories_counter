@@ -10,10 +10,10 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: AppTheme.primaryGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.neonGreen,
+        foregroundColor: AppTheme.darkBackground,
       ),
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -83,17 +83,17 @@ class SettingsScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.grey,
+              color: AppTheme.textSecondary,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cardBackground,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -112,7 +112,7 @@ class SettingsScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryGreen),
+      leading: Icon(icon, color: AppTheme.neonGreen),
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
@@ -131,7 +131,7 @@ class SettingsScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Coming soon!'),
-        backgroundColor: AppTheme.primaryGreen,
+        backgroundColor: AppTheme.neonGreen,
       ),
     );
   }

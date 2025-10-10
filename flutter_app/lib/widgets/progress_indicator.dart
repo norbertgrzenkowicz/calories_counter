@@ -27,14 +27,14 @@ class CustomProgressIndicator extends StatelessWidget {
               Text(
                 '${currentStep + 1}',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.primaryGreen,
+                      color: AppTheme.neonGreen,
                       fontWeight: FontWeight.bold,
                     ),
               ),
               Text(
                 ' of $totalSteps',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.charcoal.withOpacity(0.6),
+                      color: AppTheme.textSecondary,
                     ),
               ),
             ],
@@ -46,7 +46,7 @@ class CustomProgressIndicator extends StatelessWidget {
             height: 4,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(2),
-              color: AppTheme.softGray,
+              color: AppTheme.borderColor,
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
@@ -55,7 +55,7 @@ class CustomProgressIndicator extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(2),
                   gradient: const LinearGradient(
-                    colors: [AppTheme.primaryGreen, AppTheme.accentOrange],
+                    colors: [AppTheme.neonGreen, AppTheme.neonOrange],
                   ),
                 ),
               ),
@@ -69,7 +69,7 @@ class CustomProgressIndicator extends StatelessWidget {
               stepLabels[currentStep],
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppTheme.charcoal.withOpacity(0.7),
+                    color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
             ),

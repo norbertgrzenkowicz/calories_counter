@@ -156,12 +156,12 @@ class _DashboardScreenRiverpodState
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title:
             const Text('Yapper', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.primaryGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.neonGreen,
+        foregroundColor: AppTheme.darkBackground,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -180,8 +180,8 @@ class _DashboardScreenRiverpodState
       bottomNavigationBar: _buildBottomNavigation(),
       floatingActionButton: FloatingActionButton(
         onPressed: _addMeal,
-        backgroundColor: AppTheme.primaryGreen,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppTheme.neonGreen,
+        child: const Icon(Icons.add, color: AppTheme.darkBackground),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -253,17 +253,17 @@ class _DashboardScreenRiverpodState
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryGreen,
+            color: AppTheme.neonGreen,
           ),
         ),
         if (target.isNotEmpty)
           Text(
             'of $target',
-            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
           ),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
         ),
       ],
     );
@@ -383,7 +383,7 @@ class _DashboardScreenRiverpodState
         ),
       ],
       currentIndex: _selectedIndex,
-      selectedItemColor: AppTheme.primaryGreen,
+      selectedItemColor: AppTheme.neonGreen,
       onTap: _onItemTapped,
     );
   }
@@ -427,7 +427,7 @@ class _DashboardScreenRiverpodState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Meal deleted successfully'),
-            backgroundColor: AppTheme.primaryGreen,
+            backgroundColor: AppTheme.neonGreen,
           ),
         );
       }
@@ -451,12 +451,12 @@ class _DashboardScreenRiverpodState
         children: [
           DrawerHeader(
             decoration: const BoxDecoration(
-              color: AppTheme.primaryGreen,
+              color: AppTheme.neonGreen,
             ),
             child: const Text(
               'Yapper',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.darkBackground,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),

@@ -192,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     if (_isLoadingProfile) {
       return Scaffold(
-        backgroundColor: AppTheme.creamWhite,
+        backgroundColor: AppTheme.darkBackground,
         appBar: AppBar(
           title: const Text('Your Profile'),
           backgroundColor: Colors.transparent,
@@ -203,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: const Text('Your Profile'),
         backgroundColor: Colors.transparent,
@@ -414,12 +414,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onSelected: (selected) {
                                 setState(() => _selectedGoal = goal);
                               },
-                              selectedColor: AppTheme.primaryGreen,
-                              backgroundColor: AppTheme.softGray,
+                              selectedColor: AppTheme.neonGreen,
+                              backgroundColor: AppTheme.borderColor,
                               labelStyle: TextStyle(
                                 color: isSelected
-                                    ? Colors.white
-                                    : AppTheme.charcoal,
+                                    ? AppTheme.darkBackground
+                                    : AppTheme.textPrimary,
                                 fontWeight: isSelected
                                     ? FontWeight.w600
                                     : FontWeight.normal,
@@ -489,12 +489,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? AppTheme.primaryGreen.withOpacity(0.1)
+                                      ? AppTheme.neonGreen.withOpacity(0.1)
                                       : Colors.transparent,
                                   border: Border.all(
                                     color: isSelected
-                                        ? AppTheme.primaryGreen
-                                        : Colors.grey.shade300,
+                                        ? AppTheme.neonGreen
+                                        : AppTheme.borderColor,
                                     width: isSelected ? 2 : 1,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -506,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       groupValue: _selectedActivityKey,
                                       onChanged: (value) => setState(
                                           () => _selectedActivityKey = value!),
-                                      activeColor: AppTheme.primaryGreen,
+                                      activeColor: AppTheme.neonGreen,
                                     ),
                                     Expanded(
                                       child: Column(
@@ -555,8 +555,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryGreen,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppTheme.neonGreen,
+                    foregroundColor: AppTheme.darkBackground,
                     padding: const EdgeInsets.all(16),
                     disabledBackgroundColor: Colors.grey.shade400,
                   ),

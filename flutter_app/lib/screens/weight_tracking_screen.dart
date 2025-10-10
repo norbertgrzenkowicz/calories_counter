@@ -349,7 +349,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: const Text('Weight Tracking'),
         backgroundColor: Colors.transparent,
@@ -462,8 +462,8 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                             ElevatedButton(
                               onPressed: _isLoading ? null : _addWeightEntry,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryGreen,
-                                foregroundColor: Colors.white,
+                                backgroundColor: AppTheme.neonGreen,
+                                foregroundColor: AppTheme.darkBackground,
                                 padding: const EdgeInsets.all(16),
                                 disabledBackgroundColor: Colors.grey.shade400,
                               ),
@@ -542,10 +542,10 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                 child: ListTile(
                                   leading: CircleAvatar(
                                     backgroundColor:
-                                        AppTheme.primaryGreen.withOpacity(0.1),
+                                        AppTheme.neonGreen.withOpacity(0.1),
                                     child: Icon(
                                       Icons.monitor_weight,
-                                      color: AppTheme.primaryGreen,
+                                      color: AppTheme.neonGreen,
                                       size: 20,
                                     ),
                                   ),

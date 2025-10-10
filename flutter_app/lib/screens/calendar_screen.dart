@@ -79,7 +79,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
 
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: const Text('Calendar'),
         backgroundColor: Colors.transparent,
@@ -126,13 +126,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryGreen,
+                              color: AppTheme.neonGreen,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '${calories}kcal',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.darkBackground,
                                 fontSize: 8,
                               ),
                             ),
@@ -165,12 +165,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               LineChartBarData(
                                 spots: _getChartData(),
                                 isCurved: true,
-                                color: AppTheme.primaryGreen,
+                                color: AppTheme.neonGreen,
                                 barWidth: 3,
                                 dotData: const FlDotData(show: false),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                                  color: AppTheme.neonGreen.withOpacity(0.3),
                                 ),
                               ),
                             ],

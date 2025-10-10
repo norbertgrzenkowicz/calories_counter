@@ -197,7 +197,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Meal' : 'Meal Details'),
         backgroundColor: Colors.transparent,
@@ -261,10 +261,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                   width: double.infinity,
                   height: 200,
                   decoration: BoxDecoration(
-                    color: AppTheme.softGray,
+                    color: AppTheme.cardBackground,
                     borderRadius: BorderRadius.circular(8),
                     border:
-                        Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
+                        Border.all(color: AppTheme.borderColor),
                   ),
                   child: currentMeal.photoUrl != null
                       ? ClipRRect(
@@ -278,9 +278,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(Icons.fastfood,
-                                        size: 48, color: AppTheme.charcoal),
+                                        size: 48, color: AppTheme.textSecondary),
                                     SizedBox(height: 8),
-                                    Text('No photo available'),
+                                    Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
                                   ],
                                 ),
                               );
@@ -297,9 +297,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.fastfood,
-                                  size: 48, color: AppTheme.charcoal),
+                                  size: 48, color: AppTheme.textSecondary),
                               SizedBox(height: 8),
-                              Text('No photo available'),
+                              Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
                             ],
                           ),
                         ),
@@ -350,16 +350,16 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 _buildNutritionCard('Calories', '${currentMeal.calories}',
-                    'kcal', AppTheme.primaryGreen),
+                    'kcal', AppTheme.neonGreen),
                 const SizedBox(height: 12),
                 _buildNutritionCard('Proteins',
-                    currentMeal.proteins.toStringAsFixed(1), 'g', Colors.red),
+                    currentMeal.proteins.toStringAsFixed(1), 'g', AppTheme.neonRed),
                 const SizedBox(height: 12),
                 _buildNutritionCard('Carbohydrates',
-                    currentMeal.carbs.toStringAsFixed(1), 'g', Colors.orange),
+                    currentMeal.carbs.toStringAsFixed(1), 'g', AppTheme.neonOrange),
                 const SizedBox(height: 12),
                 _buildNutritionCard('Fats', currentMeal.fats.toStringAsFixed(1),
-                    'g', Colors.blue),
+                    'g', AppTheme.neonBlue),
               ],
             ),
           ),
@@ -390,10 +390,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                     width: double.infinity,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: AppTheme.softGray,
+                      color: AppTheme.cardBackground,
                       borderRadius: BorderRadius.circular(8),
                       border:
-                          Border.all(color: AppTheme.charcoal.withOpacity(0.2)),
+                          Border.all(color: AppTheme.borderColor),
                     ),
                     child: _newPhotoPath != null
                         ? ClipRRect(
@@ -421,9 +421,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                                         children: [
                                           Icon(Icons.fastfood,
                                               size: 48,
-                                              color: AppTheme.charcoal),
+                                              color: AppTheme.textSecondary),
                                           SizedBox(height: 8),
-                                          Text('No photo available'),
+                                          Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
                                         ],
                                       ),
                                     );
@@ -435,9 +435,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(Icons.fastfood,
-                                        size: 48, color: AppTheme.charcoal),
+                                        size: 48, color: AppTheme.textSecondary),
                                     SizedBox(height: 8),
-                                    Text('No photo available'),
+                                    Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
                                   ],
                                 ),
                               ),

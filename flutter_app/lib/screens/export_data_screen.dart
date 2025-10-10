@@ -36,10 +36,10 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Export Data'),
-        backgroundColor: AppTheme.primaryGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.neonGreen,
+        foregroundColor: AppTheme.darkBackground,
       ),
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       body: _isExporting ? _buildExportingView() : _buildExportForm(),
     );
   }
@@ -50,7 +50,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.neonGreen),
           ),
           SizedBox(height: 16),
           Text(
@@ -58,13 +58,14 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
+              color: AppTheme.textPrimary,
             ),
           ),
           SizedBox(height: 8),
           Text(
             'This may take a few moments',
             style: TextStyle(
-              color: Colors.grey,
+              color: AppTheme.textSecondary,
             ),
           ),
         ],
@@ -110,17 +111,18 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
             ),
           ),
         ),
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cardBackground,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -147,14 +149,14 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
               _includeWeightHistory = value ?? false;
             });
           },
-          activeColor: AppTheme.primaryGreen,
+          activeColor: AppTheme.neonGreen,
         ),
         CheckboxListTile(
           title: const Text('Meal History'),
           subtitle: const Text('Coming soon - meal tracking data'),
           value: _includeMealHistory,
           onChanged: null, // Disabled for now
-          activeColor: AppTheme.primaryGreen,
+          activeColor: AppTheme.neonGreen,
         ),
       ],
     );
@@ -172,7 +174,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
               _selectAllData = value ?? false;
             });
           },
-          activeColor: AppTheme.primaryGreen,
+          activeColor: AppTheme.neonGreen,
         ),
         if (!_selectAllData) ...[
           const SizedBox(height: 16),
@@ -210,7 +212,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: AppTheme.borderColor),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -220,7 +222,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: AppTheme.textSecondary,
               ),
             ),
             const SizedBox(height: 4),
@@ -228,7 +230,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
               date != null
                   ? '${date.day}/${date.month}/${date.year}'
                   : 'Select date',
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16, color: AppTheme.textPrimary),
             ),
           ],
         ),
@@ -288,11 +290,11 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             border: Border.all(
-              color: isSelected ? AppTheme.primaryGreen : Colors.grey.shade300,
+              color: isSelected ? AppTheme.neonGreen : AppTheme.borderColor,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(8),
-            color: isSelected ? AppTheme.primaryGreen.withValues(alpha: 0.1) : null,
+            color: isSelected ? AppTheme.neonGreen.withValues(alpha: 0.1) : null,
           ),
           child: Row(
             children: [
@@ -306,10 +308,10 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
                     });
                   }
                 },
-                activeColor: AppTheme.primaryGreen,
+                activeColor: AppTheme.neonGreen,
               ),
               const SizedBox(width: 12),
-              Icon(icon, color: AppTheme.primaryGreen),
+              Icon(icon, color: AppTheme.neonGreen),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -320,7 +322,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: isSelected ? AppTheme.primaryGreen : null,
+                        color: isSelected ? AppTheme.neonGreen : AppTheme.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -328,7 +330,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
                       description,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
@@ -351,8 +353,8 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
       child: ElevatedButton(
         onPressed: canExport ? _exportData : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryGreen,
-          foregroundColor: Colors.white,
+          backgroundColor: AppTheme.neonGreen,
+          foregroundColor: AppTheme.darkBackground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -378,7 +380,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppTheme.primaryGreen,
+              primary: AppTheme.neonGreen,
             ),
           ),
           child: child!,
@@ -434,7 +436,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Data exported successfully!'),
-            backgroundColor: AppTheme.primaryGreen,
+            backgroundColor: AppTheme.neonGreen,
           ),
         );
       } else if (mounted) {

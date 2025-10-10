@@ -98,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     });
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),
@@ -111,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.charcoal,
+                      color: AppTheme.textPrimary,
                     ),
               ),
               const SizedBox(height: 8),
@@ -119,7 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 'Log in to continue your journey.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppTheme.charcoal.withOpacity(0.7),
+                      color: AppTheme.textSecondary,
                     ),
               ),
               const SizedBox(height: 48),
@@ -161,18 +161,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: labelText,
-        prefixIcon: Icon(icon, color: AppTheme.primaryGreen),
+        prefixIcon: Icon(icon, color: AppTheme.neonGreen),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.softGray),
+          borderSide: const BorderSide(color: AppTheme.borderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.softGray),
+          borderSide: const BorderSide(color: AppTheme.borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+          borderSide: const BorderSide(color: AppTheme.neonGreen, width: 2),
         ),
       ),
     );
@@ -184,14 +184,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       children: [
         const Text(
           "Don't have an account?",
-          style: TextStyle(color: AppTheme.charcoal),
+          style: TextStyle(color: AppTheme.textPrimary),
         ),
         TextButton(
           onPressed: _goToRegisterScreen,
           child: const Text(
             'Register',
             style: TextStyle(
-              color: AppTheme.primaryGreen,
+              color: AppTheme.neonGreen,
               fontWeight: FontWeight.bold,
             ),
           ),

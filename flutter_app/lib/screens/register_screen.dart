@@ -137,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.creamWhite,
+      backgroundColor: AppTheme.darkBackground,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),
@@ -150,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.charcoal,
+                      color: AppTheme.textPrimary,
                     ),
               ),
               const SizedBox(height: 8),
@@ -158,7 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 'Start your journey with us today.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppTheme.charcoal.withOpacity(0.7),
+                      color: AppTheme.textSecondary,
                     ),
               ),
               const SizedBox(height: 48),
@@ -207,18 +207,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: labelText,
-        prefixIcon: Icon(icon, color: AppTheme.primaryGreen),
+        prefixIcon: Icon(icon, color: AppTheme.neonGreen),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.softGray),
+          borderSide: const BorderSide(color: AppTheme.borderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.softGray),
+          borderSide: const BorderSide(color: AppTheme.borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+          borderSide: const BorderSide(color: AppTheme.neonGreen, width: 2),
         ),
       ),
     );
@@ -230,14 +230,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         const Text(
           'Already have an account?',
-          style: TextStyle(color: AppTheme.charcoal),
+          style: TextStyle(color: AppTheme.textPrimary),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text(
             'Log In',
             style: TextStyle(
-              color: AppTheme.primaryGreen,
+              color: AppTheme.neonGreen,
               fontWeight: FontWeight.bold,
             ),
           ),

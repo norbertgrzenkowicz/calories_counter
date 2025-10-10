@@ -24,19 +24,19 @@ class CustomCard extends StatelessWidget {
           margin ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Container(
         decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white,
+          color: backgroundColor ?? AppTheme.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             // Subtle shadow for depth
             BoxShadow(
-              color: AppTheme.charcoal.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.3),
               offset: const Offset(0, 2),
               blurRadius: 12,
               spreadRadius: 0,
             ),
-            // Additional soft shadow for macOS-like depth
+            // Additional soft shadow for dark mode depth
             BoxShadow(
-              color: AppTheme.charcoal.withOpacity(0.04),
+              color: Colors.black.withOpacity(0.2),
               offset: const Offset(0, 8),
               blurRadius: 24,
               spreadRadius: 0,

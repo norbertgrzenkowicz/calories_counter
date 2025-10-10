@@ -53,11 +53,11 @@ class _CustomLoadingDialogState extends State<CustomLoadingDialog>
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.charcoal.withOpacity(0.15),
+              color: Colors.black.withOpacity(0.4),
               offset: const Offset(0, 8),
               blurRadius: 24,
               spreadRadius: 0,
@@ -81,7 +81,7 @@ class _CustomLoadingDialogState extends State<CustomLoadingDialog>
                   ),
                   child: const Icon(
                     Icons.explore_rounded,
-                    color: Colors.white,
+                    color: AppTheme.darkBackground,
                     size: 32,
                   ),
                 ),
@@ -103,7 +103,7 @@ class _CustomLoadingDialogState extends State<CustomLoadingDialog>
             Text(
               widget.message,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppTheme.charcoal,
+                    color: AppTheme.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
               textAlign: TextAlign.center,
@@ -112,7 +112,7 @@ class _CustomLoadingDialogState extends State<CustomLoadingDialog>
             Text(
               'We\'re curating amazing local spots just for you',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.charcoal.withOpacity(0.7),
+                    color: AppTheme.textSecondary,
                   ),
               textAlign: TextAlign.center,
             ),

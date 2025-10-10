@@ -88,7 +88,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           Container(
             decoration: ShapeDecoration(
               shape: QrScannerOverlayShape(
-                borderColor: AppTheme.primaryGreen,
+                borderColor: AppTheme.neonGreen,
                 borderRadius: 10,
                 borderLength: 30,
                 borderWidth: 10,

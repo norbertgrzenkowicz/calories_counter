@@ -2,27 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Huckberry-inspired color palette for adventure/travel
-  static const Color primaryGreen = Color(0xFF2F5233); // Pine green
-  static const Color forestGreen = Color(0xFF1B4332); // Darker forest green
-  static const Color warmBrown = Color(0xFF8B4513); // Adventure brown
-  static const Color creamWhite = Color(0xFFFAF7F2); // Warm cream
-  static const Color softGray = Color(0xFFE8E5E0); // Light gray
-  static const Color charcoal = Color(0xFF2C2C2C); // Dark text
-  static const Color accentOrange = Color(0xFFD4811C); // Warm accent
+  // Dark mode minimalistic palette with premium feel
+  static const Color darkBackground = Color(0xFF0A0A0A); // Pure dark background
+  static const Color cardBackground = Color(0xFF1A1A1A); // Elevated surfaces
+  static const Color borderColor = Color(0xFF2A2A2A); // Subtle borders
+  static const Color textPrimary = Color(0xFFFFFFFF); // White text
+  static const Color textSecondary = Color(0xFFB0B0B0); // Gray text
+  static const Color textTertiary = Color(0xFF707070); // Dimmed text
+
+  // Bright sporty accent colors - used sparingly for macros/goals
+  static const Color neonRed = Color(0xFFFF0055); // Protein
+  static const Color neonYellow = Color(0xFFFFFF00); // Carbs
+  static const Color neonBlue = Color(0xFF00E5FF); // Fats
+  static const Color neonGreen = Color(0xFF00FF88); // Success/Calories
+  static const Color neonOrange = Color(0xFFFF6B00); // Warning
 
   // Gradient definitions
   static const LinearGradient backgroundGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [creamWhite, softGray],
+    colors: [darkBackground, Color(0xFF0F0F0F)],
     stops: [0.0, 1.0],
   );
 
   static const LinearGradient buttonGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryGreen, forestGreen],
+    colors: [Color(0xFF2A2A2A), Color(0xFF1F1F1F)],
     stops: [0.0, 1.0],
   );
 
@@ -30,50 +36,51 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryGreen,
-        brightness: Brightness.light,
-        primary: primaryGreen,
-        surface: creamWhite,
-        background: creamWhite,
+        seedColor: neonGreen,
+        brightness: Brightness.dark,
+        primary: textPrimary,
+        surface: cardBackground,
+        background: darkBackground,
       ),
+      scaffoldBackgroundColor: darkBackground,
 
-      // Custom typography with modern serif headlines and clean body text
+      // Custom typography - Clean, modern, minimalistic
       textTheme: TextTheme(
-        // Headlines - Modern serif for sophistication
-        displayLarge: GoogleFonts.crimsonText(
+        // Headlines - Clean sans-serif for modern feel
+        displayLarge: GoogleFonts.inter(
           fontSize: 32,
           fontWeight: FontWeight.bold,
-          color: charcoal,
+          color: textPrimary,
           letterSpacing: -0.5,
         ),
-        displayMedium: GoogleFonts.crimsonText(
+        displayMedium: GoogleFonts.inter(
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: charcoal,
+          color: textPrimary,
           letterSpacing: -0.3,
         ),
-        headlineLarge: GoogleFonts.crimsonText(
+        headlineLarge: GoogleFonts.inter(
           fontSize: 24,
           fontWeight: FontWeight.bold,
-          color: charcoal,
+          color: textPrimary,
         ),
-        headlineMedium: GoogleFonts.crimsonText(
+        headlineMedium: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: charcoal,
+          color: textPrimary,
         ),
 
         // Body text - Clean and readable
         bodyLarge: GoogleFonts.inter(
           fontSize: 16,
           fontWeight: FontWeight.normal,
-          color: charcoal,
+          color: textPrimary,
           height: 1.5,
         ),
         bodyMedium: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.normal,
-          color: charcoal,
+          color: textSecondary,
           height: 1.4,
         ),
 
@@ -81,39 +88,41 @@ class AppTheme {
         labelLarge: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: charcoal,
+          color: textPrimary,
           letterSpacing: 0.1,
         ),
         labelMedium: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: charcoal.withOpacity(0.7),
+          color: textSecondary,
           letterSpacing: 0.5,
         ),
       ),
 
-      // Custom AppBar theme for macOS-like headers
+      // Custom AppBar theme
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.crimsonText(
+        iconTheme: const IconThemeData(color: textPrimary),
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: charcoal,
+          color: textPrimary,
         ),
       ),
 
       // Custom button themes
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryGreen,
-          foregroundColor: Colors.white,
+          backgroundColor: cardBackground,
+          foregroundColor: textPrimary,
           elevation: 0,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: borderColor, width: 1),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           textStyle: GoogleFonts.inter(
@@ -128,28 +137,28 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: softGray, width: 1),
+          borderSide: const BorderSide(color: borderColor, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: softGray, width: 1),
+          borderSide: const BorderSide(color: borderColor, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryGreen, width: 2),
+          borderSide: const BorderSide(color: textPrimary, width: 2),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: cardBackground,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
         hintStyle: GoogleFonts.inter(
-          color: charcoal.withOpacity(0.5),
+          color: textTertiary,
           fontSize: 14,
         ),
         labelStyle: GoogleFonts.inter(
-          color: charcoal.withOpacity(0.7),
+          color: textSecondary,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
@@ -159,8 +168,17 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: Colors.white,
-        shadowColor: charcoal.withOpacity(0.08),
+        color: cardBackground,
+        shadowColor: Colors.transparent,
+      ),
+
+      // Icon theme
+      iconTheme: const IconThemeData(color: textPrimary),
+
+      // Divider theme
+      dividerTheme: const DividerThemeData(
+        color: borderColor,
+        thickness: 1,
       ),
     );
   }

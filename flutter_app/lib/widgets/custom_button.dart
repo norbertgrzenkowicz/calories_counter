@@ -72,14 +72,14 @@ class _CustomButtonState extends State<CustomButton>
               height: 56,
               decoration: BoxDecoration(
                 gradient: widget.isSecondary ? null : AppTheme.buttonGradient,
-                color: widget.isSecondary ? Colors.white : null,
+                color: widget.isSecondary ? AppTheme.cardBackground : null,
                 borderRadius: BorderRadius.circular(16),
                 border: widget.isSecondary
-                    ? Border.all(color: AppTheme.softGray, width: 1.5)
+                    ? Border.all(color: AppTheme.borderColor, width: 1.5)
                     : null,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.charcoal.withOpacity(0.1),
+                    color: Colors.black.withOpacity(0.3),
                     offset: const Offset(0, 4),
                     blurRadius: 12,
                     spreadRadius: 0,
@@ -107,8 +107,8 @@ class _CustomButtonState extends State<CustomButton>
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 widget.isSecondary
-                                    ? AppTheme.primaryGreen
-                                    : Colors.white,
+                                    ? AppTheme.neonGreen
+                                    : AppTheme.textPrimary,
                               ),
                             ),
                           )
@@ -118,8 +118,8 @@ class _CustomButtonState extends State<CustomButton>
                               widget.icon,
                               size: 20,
                               color: widget.isSecondary
-                                  ? AppTheme.primaryGreen
-                                  : Colors.white,
+                                  ? AppTheme.neonGreen
+                                  : AppTheme.darkBackground,
                             ),
                             const SizedBox(width: 8),
                           ],
@@ -129,8 +129,8 @@ class _CustomButtonState extends State<CustomButton>
                               context,
                             ).textTheme.labelLarge?.copyWith(
                                   color: widget.isSecondary
-                                      ? AppTheme.primaryGreen
-                                      : Colors.white,
+                                      ? AppTheme.neonGreen
+                                      : AppTheme.darkBackground,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
