@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:food_scanner/screens/login_screen.dart';
@@ -6,8 +7,13 @@ import 'package:food_scanner/services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../models/user_profile.dart';
+import '../models/chat_message.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
+import '../services/chat_service.dart';
+import '../widgets/compact_nutrition_bars.dart';
+import '../widgets/chat_input_bar.dart';
+import '../widgets/chat_message_bubble.dart';
 import 'profile_screen.dart';
 import 'calendar_screen.dart';
 import 'add_meal_screen.dart';
@@ -29,6 +35,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late DateTime _selectedDate;
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
+
+  // Chat-related state
+  final List<ChatMessage> _chatMessages = [];
+  final ChatService _chatService = ChatService();
+  bool _isProcessingMessage = false;
+  final ScrollController _chatScrollController = ScrollController();
 
   @override
   void initState() {
@@ -242,6 +254,181 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _addMealWithNutrition(Map<String, int> nutritionData) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddMealScreen(
+          selectedDate: _selectedDate,
+          onMealAdded: () {
+            setState(() {
+              _meals = _getMealsFromSupabase();
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  // Chat message handlers
+  void _handleSendText(String text) async {
+    if (text.trim().isEmpty) return;
+
+    // Add user message
+    final userMessage = ChatMessage.user(
+      content: text,
+      type: MessageType.text,
+    );
+
+    setState(() {
+      _chatMessages.add(userMessage);
+      _isProcessingMessage = true;
+    });
+
+    _scrollToBottom();
+
+    try {
+      // Call API
+      final nutritionData = await _chatService.analyzeFoodFromText(text);
+
+      // Add AI response
+      final aiMessage = ChatMessage.aiResponse(
+        content: 'Food analyzed successfully',
+        nutritionData: nutritionData,
+      );
+
+      setState(() {
+        _chatMessages.add(aiMessage);
+        _isProcessingMessage = false;
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _isProcessingMessage = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to analyze food: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleSendImage(File imageFile) async {
+    // Add user message
+    final userMessage = ChatMessage.user(
+      content: imageFile.path,
+      type: MessageType.image,
+    );
+
+    setState(() {
+      _chatMessages.add(userMessage);
+      _isProcessingMessage = true;
+    });
+
+    _scrollToBottom();
+
+    try {
+      // Call API
+      final nutritionData = await _chatService.analyzeFoodFromImage(imageFile);
+
+      // Add AI response
+      final aiMessage = ChatMessage.aiResponse(
+        content: 'Food analyzed from image',
+        nutritionData: nutritionData,
+      );
+
+      setState(() {
+        _chatMessages.add(aiMessage);
+        _isProcessingMessage = false;
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _isProcessingMessage = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to analyze image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleSendAudio(File audioFile, String format) async {
+    // Add user message
+    final userMessage = ChatMessage.user(
+      content: audioFile.path,
+      type: MessageType.audio,
+    );
+
+    setState(() {
+      _chatMessages.add(userMessage);
+      _isProcessingMessage = true;
+    });
+
+    _scrollToBottom();
+
+    try {
+      // Call API
+      final nutritionData =
+          await _chatService.analyzeFoodFromAudio(audioFile, format);
+
+      // Add AI response
+      final aiMessage = ChatMessage.aiResponse(
+        content: 'Food analyzed from audio',
+        nutritionData: nutritionData,
+      );
+
+      setState(() {
+        _chatMessages.add(aiMessage);
+        _isProcessingMessage = false;
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _isProcessingMessage = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to analyze audio: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_chatScrollController.hasClients) {
+        _chatScrollController.animateTo(
+          _chatScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _chatScrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -295,21 +482,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 16),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
+      body: Column(
+        children: [
+          // Chat messages area
+          Expanded(
+            child: _buildChatMessages(),
+          ),
+          // Compact nutrition bars at bottom
+          FutureBuilder<List<Meal>>(
+            future: _getMealsForSelectedDate(),
+            builder: (context, snapshot) {
+              final meals = snapshot.data ?? [];
+              return CompactNutritionBars(
+                meals: meals,
+                userProfile: _userProfile,
+              );
+            },
+          ),
+          // Chat input bar
+          ChatInputBar(
+            onSendText: _handleSendText,
+            onSendImage: _handleSendImage,
+            onSendAudio: _handleSendAudio,
+            isProcessing: _isProcessingMessage,
+          ),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  Widget _buildChatMessages() {
+    if (_chatMessages.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildNutritionSummary(),
-              const SizedBox(height: 32),
-              _buildMealsSection(),
-              const SizedBox(height: 80), // Space for bottom navigation
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppTheme.neonGreen.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.chat_bubble_outline,
+                  size: 64,
+                  color: AppTheme.neonGreen,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Start tracking your food!',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Describe what you ate, take a photo, or record audio.\nOur AI will analyze the nutrition for you.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: _buildBottomNavigation(),
+      );
+    }
+
+    return ListView.builder(
+      controller: _chatScrollController,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      itemCount: _chatMessages.length,
+      itemBuilder: (context, index) {
+        final message = _chatMessages[index];
+        return ChatMessageBubble(
+          message: message,
+          onAddToMeals: message.nutritionData != null
+              ? () => _addMealWithNutrition(message.nutritionData!)
+              : null,
+        );
+      },
     );
   }
 
@@ -365,7 +623,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final nutritionProfile =
               NutritionCalculatorService.calculateCompleteNutritionProfile(
                   _userProfile!);
-          targetCalories = nutritionProfile['targetCalories'] ?? 2000;
+          targetCalories = (nutritionProfile['targetCalories'] as int?) ?? 2000;
           final macros =
               nutritionProfile['macros'] as Map<String, double>? ?? {};
           targetProteins = macros['protein'] ?? 150.0;
