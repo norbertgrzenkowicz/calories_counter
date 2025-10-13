@@ -36,6 +36,7 @@ class AudioRequest(BaseModel):
     format: Optional[str] = "mp3"
 
 class FoodAnalysisResponse(BaseModel):
+    meal_name: str
     calories: int
     protein: int
     carbs: int
@@ -50,6 +51,7 @@ async def analyze_food_image(request: ImageRequest):
     nutrition = predict_nutrition(request.image)
 
     return FoodAnalysisResponse(
+        meal_name=nutrition['meal_name'],
         calories=nutrition['calories'],
         protein=nutrition['protein'],
         carbs=nutrition['carbs'],
@@ -65,6 +67,7 @@ async def analyze_food_text(request: TextRequest):
     nutrition = predict_nutrition_from_text(request.text)
 
     return FoodAnalysisResponse(
+        meal_name=nutrition['meal_name'],
         calories=nutrition['calories'],
         protein=nutrition['protein'],
         carbs=nutrition['carbs'],
@@ -80,6 +83,7 @@ async def analyze_food_audio(request: AudioRequest):
     nutrition = predict_nutrition_from_audio(request.audio, request.format)
 
     return FoodAnalysisResponse(
+        meal_name=nutrition['meal_name'],
         calories=nutrition['calories'],
         protein=nutrition['protein'],
         carbs=nutrition['carbs'],
@@ -106,6 +110,7 @@ def parse_nutrition_json(raw_content: str) -> dict:
 
     result = json.loads(json_content)
     return {
+        'meal_name': result.get('meal_name', 'Unknown Meal'),
         'calories': int(result.get('calories', 0)),
         'protein': int(result.get('protein', 0)),
         'carbs': int(result.get('carbs', 0)),
@@ -120,12 +125,12 @@ def predict_nutrition(image_data: str) -> dict:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a nutrition expert. Analyze food images and estimate nutritional values. Account for perspective distortion, plate size variations, camera angles, lighting conditions, and portion visibility. Consider that food may be partially hidden, stacked, or viewed from different angles. Return only a JSON object with calories, protein, carbs, and fats as integers (grams for macronutrients)."
+                    "content": "You are a nutrition expert. Analyze food images and estimate nutritional values. Account for perspective distortion, plate size variations, camera angles, lighting conditions, and portion visibility. Consider that food may be partially hidden, stacked, or viewed from different angles. Generate a descriptive meal name based on what you see. Return only a JSON object with meal_name (string), calories, protein, carbs, and fats as integers (grams for macronutrients)."
                 },
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Estimate the nutritional content of this food. Consider perspective, portion size, and any visual distortions. Return JSON format: {\"calories\": number, \"protein\": grams, \"carbs\": grams, \"fats\": grams}"},
+                        {"type": "text", "text": "Estimate the nutritional content of this food and give it a descriptive name. Consider perspective, portion size, and any visual distortions. Return JSON format: {\"meal_name\": \"descriptive name\", \"calories\": number, \"protein\": grams, \"carbs\": grams, \"fats\": grams}"},
                         {
                             "type": "image_url",
                             "image_url": {
@@ -135,11 +140,11 @@ def predict_nutrition(image_data: str) -> dict:
                     ]
                 }
             ],
-            max_tokens=100
+            max_tokens=150
         )
     except Exception as e:
         print(f"OpenAI API error: {e}")
-        return {'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
+        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
 
     try:
         raw_content = response.choices[0].message.content.strip()
@@ -147,7 +152,7 @@ def predict_nutrition(image_data: str) -> dict:
     except (ValueError, json.JSONDecodeError) as e:
         print(f"JSON parsing error: {e}")
         print(f"Raw content: {response.choices[0].message.content}")
-        return {'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
+        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
 
 def predict_nutrition_from_text(text_description: str) -> dict:
     """Predict nutrition from text description of food"""
@@ -157,18 +162,18 @@ def predict_nutrition_from_text(text_description: str) -> dict:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a nutrition expert. Analyze text descriptions of food and ingredients to estimate nutritional values. Parse quantities, ingredient names, and cooking methods. Use standard nutrition databases knowledge to calculate totals. Return only a JSON object with calories, protein, carbs, and fats as integers (grams for macronutrients)."
+                    "content": "You are a nutrition expert. Analyze text descriptions of food and ingredients to estimate nutritional values. Parse quantities, ingredient names, and cooking methods. Use standard nutrition databases knowledge to calculate totals. Generate a descriptive meal name based on the ingredients. Return only a JSON object with meal_name (string), calories, protein, carbs, and fats as integers (grams for macronutrients)."
                 },
                 {
                     "role": "user",
-                    "content": f"Estimate the total nutritional content of this food description: \"{text_description}\". Return JSON format: {{\"calories\": number, \"protein\": grams, \"carbs\": grams, \"fats\": grams}}"
+                    "content": f"Estimate the total nutritional content of this food description and give it a descriptive name: \"{text_description}\". Return JSON format: {{\"meal_name\": \"descriptive name\", \"calories\": number, \"protein\": grams, \"carbs\": grams, \"fats\": grams}}"
                 }
             ],
-            max_tokens=100
+            max_tokens=150
         )
     except Exception as e:
         print(f"OpenAI API error: {e}")
-        return {'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
+        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
 
     try:
         raw_content = response.choices[0].message.content.strip()
@@ -176,7 +181,7 @@ def predict_nutrition_from_text(text_description: str) -> dict:
     except (ValueError, json.JSONDecodeError) as e:
         print(f"JSON parsing error: {e}")
         print(f"Raw content: {response.choices[0].message.content}")
-        return {'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
+        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
 
 def predict_nutrition_from_audio(audio_data: str, audio_format: str = "mp3") -> dict:
     """Predict nutrition from base64-encoded audio by transcribing then analyzing"""
@@ -202,7 +207,7 @@ def predict_nutrition_from_audio(audio_data: str, audio_format: str = "mp3") -> 
 
     except Exception as e:
         print(f"Audio processing error: {e}")
-        return {'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
+        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
 
 if __name__ == "__main__":
     import uvicorn

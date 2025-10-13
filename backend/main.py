@@ -51,6 +51,7 @@ def yapper_api(request):
             # Return nutrition data if analysis was performed
             if nutrition:
                 response_data = {
+                    'meal_name': nutrition['meal_name'],
                     'calories': nutrition['calories'],
                     'protein': nutrition['protein'],
                     'carbs': nutrition['carbs'],
