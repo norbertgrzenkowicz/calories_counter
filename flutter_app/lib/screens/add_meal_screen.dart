@@ -15,9 +15,20 @@ import 'barcode_scanner_screen.dart';
 class AddMealScreen extends StatefulWidget {
   final Function() onMealAdded;
   final DateTime selectedDate;
+  final int? initialCalories;
+  final int? initialProtein;
+  final int? initialCarbs;
+  final int? initialFats;
 
-  const AddMealScreen(
-      {super.key, required this.onMealAdded, required this.selectedDate});
+  const AddMealScreen({
+    super.key,
+    required this.onMealAdded,
+    required this.selectedDate,
+    this.initialCalories,
+    this.initialProtein,
+    this.initialCarbs,
+    this.initialFats,
+  });
 
   @override
   State<AddMealScreen> createState() => _AddMealScreenState();
@@ -42,6 +53,25 @@ class _AddMealScreenState extends State<AddMealScreen> {
   // API endpoint using cloud function
   static const String _apiBaseUrl =
       'https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api';
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Pre-fill nutrition values if provided from chat
+    if (widget.initialCalories != null) {
+      _caloriesController.text = widget.initialCalories.toString();
+    }
+    if (widget.initialProtein != null) {
+      _proteinsController.text = widget.initialProtein.toString();
+    }
+    if (widget.initialCarbs != null) {
+      _carbsController.text = widget.initialCarbs.toString();
+    }
+    if (widget.initialFats != null) {
+      _fatsController.text = widget.initialFats.toString();
+    }
+  }
 
   @override
   void dispose() {

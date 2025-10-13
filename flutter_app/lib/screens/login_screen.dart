@@ -3,7 +3,7 @@ import '../core/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_scanner/screens/register_screen.dart';
-import 'package:food_scanner/screens/dashboard_screen_riverpod.dart';
+import 'package:food_scanner/screens/dashboard_screen.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
 import 'package:food_scanner/providers/auth_provider.dart';
@@ -68,7 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         AppLogger.logUserAction('login_successful');
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-              builder: (context) => DashboardScreenRiverpod(cameras: _cameras)),
+              builder: (context) => DashboardScreen(cameras: _cameras)),
         );
       }
     } catch (e) {

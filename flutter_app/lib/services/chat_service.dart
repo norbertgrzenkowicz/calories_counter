@@ -8,8 +8,8 @@ class ChatService {
       'https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api';
 
   /// Analyze food from text description
-  /// Returns nutrition data: {calories, protein, carbs, fats}
-  Future<Map<String, int>> analyzeFoodFromText(String text) async {
+  /// Returns nutrition data: {meal_name, calories, protein, carbs, fats}
+  Future<Map<String, dynamic>> analyzeFoodFromText(String text) async {
     try {
       AppLogger.debug('Analyzing food from text: $text');
 
@@ -24,6 +24,7 @@ class ChatService {
         AppLogger.debug('Text analysis successful: $data');
 
         return {
+          'meal_name': data['meal_name'] as String? ?? 'My Meal',
           'calories': data['calories'] as int,
           'protein': data['protein'] as int,
           'carbs': data['carbs'] as int,
@@ -40,8 +41,8 @@ class ChatService {
   }
 
   /// Analyze food from image file
-  /// Returns nutrition data: {calories, protein, carbs, fats}
-  Future<Map<String, int>> analyzeFoodFromImage(File imageFile) async {
+  /// Returns nutrition data: {meal_name, calories, protein, carbs, fats}
+  Future<Map<String, dynamic>> analyzeFoodFromImage(File imageFile) async {
     try {
       AppLogger.debug('Analyzing food from image: ${imageFile.path}');
 
@@ -63,6 +64,7 @@ class ChatService {
         AppLogger.debug('Image analysis successful: $data');
 
         return {
+          'meal_name': data['meal_name'] as String? ?? 'My Meal',
           'calories': data['calories'] as int,
           'protein': data['protein'] as int,
           'carbs': data['carbs'] as int,
@@ -79,8 +81,8 @@ class ChatService {
   }
 
   /// Analyze food from audio file
-  /// Returns nutrition data: {calories, protein, carbs, fats}
-  Future<Map<String, int>> analyzeFoodFromAudio(
+  /// Returns nutrition data: {meal_name, calories, protein, carbs, fats}
+  Future<Map<String, dynamic>> analyzeFoodFromAudio(
       File audioFile, String format) async {
     try {
       AppLogger.debug(
@@ -104,6 +106,7 @@ class ChatService {
         AppLogger.debug('Audio analysis successful: $data');
 
         return {
+          'meal_name': data['meal_name'] as String? ?? 'My Meal',
           'calories': data['calories'] as int,
           'protein': data['protein'] as int,
           'carbs': data['carbs'] as int,

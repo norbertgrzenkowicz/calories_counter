@@ -254,19 +254,151 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _addMealWithNutrition(Map<String, int> nutritionData) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AddMealScreen(
-          selectedDate: _selectedDate,
-          onMealAdded: () {
-            setState(() {
-              _meals = _getMealsFromSupabase();
-            });
-          },
+  void _addMealWithNutrition(String messageId, Map<String, dynamic> nutritionData) async {
+    // Get meal name from API response
+    final mealName = nutritionData['meal_name'] as String? ?? 'My Meal';
+
+    try {
+      final supabaseService = SupabaseService();
+      if (!supabaseService.isInitialized) {
+        throw Exception('Database not initialized');
+      }
+
+      // Create meal object
+      final meal = Meal(
+        name: mealName,
+        calories: nutritionData['calories'] ?? 0,
+        proteins: (nutritionData['protein'] ?? 0).toDouble(),
+        carbs: (nutritionData['carbs'] ?? 0).toDouble(),
+        fats: (nutritionData['fats'] ?? 0).toDouble(),
+        photoUrl: null,
+        date: _selectedDate,
+      );
+
+      // Save to database
+      await supabaseService.addMeal(meal.toSupabase());
+
+      // Update message state to mark as added
+      final messageIndex = _chatMessages.indexWhere((m) => m.id == messageId);
+      if (messageIndex != -1) {
+        setState(() {
+          _chatMessages[messageIndex] = _chatMessages[messageIndex].copyWith(
+            isAdded: true,
+          );
+          _meals = _getMealsFromSupabase();
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✓ Added: $mealName'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add meal: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _discardMessage(String messageId) async {
+    // Find the message to get its meal name
+    final message = _chatMessages.firstWhere((m) => m.id == messageId);
+    final defaultMealName = message.nutritionData?['meal_name'] as String? ?? 'My Meal';
+
+    final mealNameController = TextEditingController(text: defaultMealName);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        title: const Text('Discard Meal'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter a name for this discarded meal:',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: mealNameController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Meal Name',
+                hintText: 'e.g., Pizza',
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.done,
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.neonRed,
+              foregroundColor: AppTheme.darkBackground,
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
       ),
     );
+
+    if (confirmed == true && mounted) {
+      final mealName = mealNameController.text.trim();
+
+      if (mealName.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Meal name cannot be empty'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        mealNameController.dispose();
+        return;
+      }
+
+      // Find and update the message
+      final messageIndex = _chatMessages.indexWhere((m) => m.id == messageId);
+      if (messageIndex != -1) {
+        setState(() {
+          _chatMessages[messageIndex] = _chatMessages[messageIndex].copyWith(
+            isDiscarded: true,
+            mealName: mealName,
+          );
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Meal "$mealName" discarded'),
+              backgroundColor: AppTheme.textTertiary,
+            ),
+          );
+        }
+      }
+    }
+
+    mealNameController.dispose();
   }
 
   // Chat message handlers
@@ -563,8 +695,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final message = _chatMessages[index];
         return ChatMessageBubble(
           message: message,
-          onAddToMeals: message.nutritionData != null
-              ? () => _addMealWithNutrition(message.nutritionData!)
+          onAddToMeals: message.nutritionData != null && !message.isDiscarded && !message.isAdded
+              ? () => _addMealWithNutrition(message.id, message.nutritionData!)
+              : null,
+          onDiscard: message.nutritionData != null && !message.isDiscarded && !message.isAdded
+              ? () => _discardMessage(message.id)
               : null,
         );
       },

@@ -6,11 +6,13 @@ import '../models/chat_message.dart';
 class ChatMessageBubble extends StatelessWidget {
   final ChatMessage message;
   final VoidCallback? onAddToMeals;
+  final VoidCallback? onDiscard;
 
   const ChatMessageBubble({
     super.key,
     required this.message,
     this.onAddToMeals,
+    this.onDiscard,
   });
 
   @override
@@ -118,6 +120,16 @@ class ChatMessageBubble extends StatelessWidget {
   }
 
   Widget _buildAIMessage(BuildContext context) {
+    // If message is discarded, show compact version
+    if (message.isDiscarded) {
+      return _buildDiscardedMessage();
+    }
+
+    // If message is added, show compact added version
+    if (message.isAdded) {
+      return _buildAddedMessage();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
@@ -125,76 +137,218 @@ class ChatMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Flexible(
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.borderColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.neonGreen.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.psychology,
+                              color: AppTheme.neonGreen,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'AI Analysis',
+                            style: TextStyle(
+                              color: AppTheme.neonGreen,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (message.nutritionData != null) ...[
+                        _buildNutritionInfo(),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: onAddToMeals,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add to Today\'s Meals'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.neonGreen,
+                              foregroundColor: AppTheme.darkBackground,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Text(
+                          message.content,
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                // X button in upper right corner (only for messages with nutrition data)
+                if (message.nutritionData != null && onDiscard != null)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onDiscard,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.darkBackground.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: AppTheme.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiscardedMessage() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.borderColor.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.borderColor.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.block,
+                  size: 14,
+                  color: AppTheme.textTertiary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Discarded: ${message.mealName ?? "Meal"}',
+                  style: const TextStyle(
+                    color: AppTheme.textTertiary,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddedMessage() {
+    final nutrition = message.nutritionData!;
+    final mealName = nutrition['meal_name'] as String? ?? 'Meal';
+    final calories = nutrition['calories'] ?? 0;
+    final protein = nutrition['protein'] ?? 0;
+    final carbs = nutrition['carbs'] ?? 0;
+    final fats = nutrition['fats'] ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Flexible(
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
+                color: AppTheme.neonGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.borderColor,
+                  color: AppTheme.neonGreen.withOpacity(0.3),
                   width: 1,
                 ),
               ),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.neonGreen.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.psychology,
-                          color: AppTheme.neonGreen,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'AI Analysis',
-                        style: TextStyle(
-                          color: AppTheme.neonGreen,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.neonGreen.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: AppTheme.neonGreen,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  if (message.nutritionData != null) ...[
-                    _buildNutritionInfo(),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: onAddToMeals,
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add to Today\'s Meals'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.neonGreen,
-                          foregroundColor: AppTheme.darkBackground,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '✓ Added: $mealName',
+                          style: const TextStyle(
+                            color: AppTheme.neonGreen,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$calories cal • ${protein}g protein • ${carbs}g carbs • ${fats}g fat',
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
-                  ] else ...[
-                    Text(
-                      message.content,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                  ),
                 ],
               ),
             ),

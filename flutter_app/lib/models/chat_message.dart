@@ -12,7 +12,10 @@ class ChatMessage {
   final MessageType type;
   final DateTime timestamp;
   final bool isUser; // true for user messages, false for AI responses
-  final Map<String, int>? nutritionData; // Only for AI responses
+  final Map<String, dynamic>? nutritionData; // Only for AI responses (includes meal_name, calories, protein, carbs, fats)
+  final bool isDiscarded; // true if the message has been discarded
+  final bool isAdded; // true if the meal has been added to today's meals
+  final String? mealName; // Name of the meal (set when discarded)
 
   ChatMessage({
     String? id,
@@ -21,6 +24,9 @@ class ChatMessage {
     DateTime? timestamp,
     required this.isUser,
     this.nutritionData,
+    this.isDiscarded = false,
+    this.isAdded = false,
+    this.mealName,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -39,7 +45,7 @@ class ChatMessage {
   /// Create an AI response message with nutrition data
   factory ChatMessage.aiResponse({
     required String content,
-    required Map<String, int> nutritionData,
+    required Map<String, dynamic> nutritionData,
   }) {
     return ChatMessage(
       content: content,
@@ -71,6 +77,31 @@ class ChatMessage {
     final fats = nutritionData!['fats'] ?? 0;
 
     return '$calories cal • ${protein}g protein • ${carbs}g carbs • ${fats}g fat';
+  }
+
+  /// Create a copy with updated fields
+  ChatMessage copyWith({
+    String? id,
+    String? content,
+    MessageType? type,
+    DateTime? timestamp,
+    bool? isUser,
+    Map<String, dynamic>? nutritionData,
+    bool? isDiscarded,
+    bool? isAdded,
+    String? mealName,
+  }) {
+    return ChatMessage(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      type: type ?? this.type,
+      timestamp: timestamp ?? this.timestamp,
+      isUser: isUser ?? this.isUser,
+      nutritionData: nutritionData ?? this.nutritionData,
+      isDiscarded: isDiscarded ?? this.isDiscarded,
+      isAdded: isAdded ?? this.isAdded,
+      mealName: mealName ?? this.mealName,
+    );
   }
 
   @override

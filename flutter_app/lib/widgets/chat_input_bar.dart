@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
 import '../theme/app_theme.dart';
 import '../core/app_logger.dart';
 
@@ -26,14 +24,10 @@ class ChatInputBar extends StatefulWidget {
 
 class _ChatInputBarState extends State<ChatInputBar> {
   final TextEditingController _textController = TextEditingController();
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  bool _isRecording = false;
-  String? _recordingPath;
 
   @override
   void dispose() {
     _textController.dispose();
-    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -98,81 +92,16 @@ class _ChatInputBarState extends State<ChatInputBar> {
     );
   }
 
+  // Audio recording temporarily disabled due to package compatibility issues
   Future<void> _handleAudioRecording() async {
     if (widget.isProcessing) return;
 
-    if (_isRecording) {
-      // Stop recording
-      await _stopRecording();
-    } else {
-      // Start recording
-      await _startRecording();
-    }
-  }
-
-  Future<void> _startRecording() async {
-    try {
-      // Request permission
-      if (await _audioRecorder.hasPermission()) {
-        // Get temporary directory
-        final directory = await getTemporaryDirectory();
-        final filePath =
-            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-        // Start recording
-        await _audioRecorder.start(
-          const RecordConfig(
-            encoder: AudioEncoder.aacLc,
-          ),
-          path: filePath,
-        );
-
-        setState(() {
-          _isRecording = true;
-          _recordingPath = filePath;
-        });
-
-        AppLogger.debug('Recording started: $filePath');
-      } else {
-        throw Exception('Microphone permission denied');
-      }
-    } catch (e) {
-      AppLogger.error('Start recording error', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start recording: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _stopRecording() async {
-    try {
-      final path = await _audioRecorder.stop();
-
-      setState(() {
-        _isRecording = false;
-      });
-
-      if (path != null) {
-        AppLogger.debug('Recording stopped: $path');
-        // Send audio file (format: m4a)
-        widget.onSendAudio(File(path), 'm4a');
-      }
-    } catch (e) {
-      AppLogger.error('Stop recording error', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to stop recording: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Audio recording temporarily unavailable'),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 
   void _handleSendText() {
@@ -208,18 +137,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
             ),
             tooltip: 'Add image',
           ),
-          // Audio button
+          // Audio button (temporarily disabled)
           IconButton(
             onPressed: widget.isProcessing ? null : _handleAudioRecording,
             icon: Icon(
-              _isRecording ? Icons.stop : Icons.mic,
-              color: _isRecording
-                  ? AppTheme.neonRed
-                  : (widget.isProcessing
-                      ? AppTheme.textTertiary
-                      : AppTheme.neonYellow),
+              Icons.mic_off,
+              color: AppTheme.textTertiary,
             ),
-            tooltip: _isRecording ? 'Stop recording' : 'Record audio',
+            tooltip: 'Audio recording unavailable',
           ),
           // Text input
           Expanded(
