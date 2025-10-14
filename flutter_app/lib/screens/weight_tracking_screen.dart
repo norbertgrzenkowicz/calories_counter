@@ -118,7 +118,16 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
             : null,
       );
 
+      // Add weight entry to history
       await profileService.addWeightEntry(weightEntry);
+
+      // Update current weight in profile and recalculate calories
+      if (_userProfile != null) {
+        final updatedProfile = _userProfile!.copyWith(
+          currentWeightKg: weight,
+        );
+        await profileService.saveUserProfile(updatedProfile);
+      }
 
       // Clear form
       _weightController.clear();
@@ -275,7 +284,21 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
 
     try {
       final profileService = ProfileService();
+
+      // Delete the weight entry
       await profileService.deleteWeightEntry(entry.id!);
+
+      // Get the updated weight history (after deletion)
+      final updatedHistory = await profileService.getWeightHistory(limit: 1);
+
+      // Update profile with the most recent weight (if any)
+      if (_userProfile != null && updatedHistory.isNotEmpty) {
+        final mostRecentWeight = updatedHistory.first.weightKg;
+        final updatedProfile = _userProfile!.copyWith(
+          currentWeightKg: mostRecentWeight,
+        );
+        await profileService.saveUserProfile(updatedProfile);
+      }
 
       _loadData();
 
