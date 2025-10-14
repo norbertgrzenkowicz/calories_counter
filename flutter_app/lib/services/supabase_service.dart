@@ -635,4 +635,224 @@ class SupabaseService {
       return null;
     }
   }
+
+  // ========== CHAT MESSAGES METHODS ==========
+
+  /// Get chat messages for a specific date and current user
+  Future<List<Map<String, dynamic>>> getChatMessagesByDate(
+      DateTime date) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Format date as YYYY-MM-DD for DATE comparison
+      final dateStr = date.toIso8601String().split('T')[0];
+
+      developer.log('Fetching chat messages for user: $userId on date: $dateStr',
+          name: 'SupabaseService');
+
+      final response = await client
+          .from('chat_messages')
+          .select('*')
+          .eq('uid', userId)
+          .eq('date', dateStr)
+          .order('timestamp', ascending: true);
+
+      developer.log('Fetched ${response.length} chat messages for date',
+          name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to fetch chat messages by date: $e',
+          name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  /// Save a new chat message to database
+  Future<Map<String, dynamic>> saveChatMessage(
+      Map<String, dynamic> messageData) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Saving chat message: ${messageData['message_id']}',
+          name: 'SupabaseService');
+
+      final response = await client
+          .from('chat_messages')
+          .insert(messageData)
+          .select()
+          .single();
+
+      developer.log('Chat message saved successfully', name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to save chat message: $e',
+          name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  /// Update an existing chat message
+  Future<Map<String, dynamic>> updateChatMessage(
+      String messageId, Map<String, dynamic> updates) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Updating chat message: $messageId',
+          name: 'SupabaseService');
+
+      final response = await client
+          .from('chat_messages')
+          .update(updates)
+          .eq('message_id', messageId)
+          .eq('uid', userId)
+          .select()
+          .single();
+
+      developer.log('Chat message updated successfully',
+          name: 'SupabaseService');
+      return response;
+    } catch (e) {
+      developer.log('Failed to update chat message: $e',
+          name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  /// Delete a chat message
+  Future<void> deleteChatMessage(String messageId) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Deleting chat message: $messageId',
+          name: 'SupabaseService');
+
+      await client
+          .from('chat_messages')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('uid', userId);
+
+      developer.log('Chat message deleted successfully',
+          name: 'SupabaseService');
+    } catch (e) {
+      developer.log('Failed to delete chat message: $e',
+          name: 'SupabaseService');
+      rethrow;
+    }
+  }
+
+  /// Upload chat media (image or audio) to Supabase Storage
+  /// Returns the public/signed URL of the uploaded file
+  Future<String?> uploadChatMedia(
+      File file, String messageId, String mediaType) async {
+    try {
+      if (!isInitialized) {
+        throw Exception('Supabase not initialized');
+      }
+
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Get file extension
+      final fileName = file.path.split('/').last;
+      final extension = fileName.split('.').last;
+
+      // Create storage path: chat/{uid}/{date}/{messageId}.{ext}
+      final now = DateTime.now();
+      final dateStr = now.toIso8601String().split('T')[0]; // YYYY-MM-DD
+      final storagePath =
+          'chat/$userId/$dateStr/$messageId.$extension';
+
+      developer.log('Uploading chat $mediaType to: $storagePath',
+          name: 'SupabaseService');
+      AppLogger.debug('Uploading chat media: $storagePath');
+      AppLogger.debug('File exists: ${file.existsSync()}');
+
+      // Upload file to storage (reusing meal-photos bucket)
+      await client.storage.from('meal-photos').upload(storagePath, file);
+
+      // Try to get public URL first, fall back to signed URL if needed
+      try {
+        final publicUrl =
+            client.storage.from('meal-photos').getPublicUrl(storagePath);
+
+        developer.log('Chat media uploaded successfully: $publicUrl',
+            name: 'SupabaseService');
+
+        return publicUrl;
+      } catch (publicUrlError) {
+        // Fall back to signed URL (24 hours validity)
+        developer.log('Public URL failed, trying signed URL: $publicUrlError',
+            name: 'SupabaseService');
+
+        final signedUrl = await client.storage
+            .from('meal-photos')
+            .createSignedUrl(storagePath, 86400); // 24 hours
+
+        developer.log('Chat media uploaded with signed URL: $signedUrl',
+            name: 'SupabaseService');
+
+        return signedUrl;
+      }
+    } catch (e) {
+      developer.log('Failed to upload chat media: $e',
+          name: 'SupabaseService');
+      AppLogger.error('Chat media upload failed', e);
+      // Don't rethrow - media upload failure should not prevent message creation
+      return null;
+    }
+  }
+
+  /// Delete chat media from storage
+  Future<void> deleteChatMedia(String mediaUrl) async {
+    try {
+      if (!isInitialized) return;
+
+      // Extract path from URL
+      final uri = Uri.parse(mediaUrl);
+      final pathSegments = uri.pathSegments;
+      if (pathSegments.length >= 3) {
+        final storagePath = pathSegments.sublist(2).join('/');
+
+        await client.storage.from('meal-photos').remove([storagePath]);
+
+        developer.log('Chat media deleted from storage: $storagePath',
+            name: 'SupabaseService');
+      }
+    } catch (e) {
+      developer.log('Failed to delete chat media: $e',
+          name: 'SupabaseService');
+      // Don't rethrow - media deletion failure should not prevent other operations
+    }
+  }
 }

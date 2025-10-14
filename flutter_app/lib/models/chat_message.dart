@@ -104,6 +104,68 @@ class ChatMessage {
     );
   }
 
+  /// Convert to Supabase format for database storage
+  Map<String, dynamic> toSupabase({required String userId, required DateTime date}) {
+    return {
+      'uid': userId,
+      'message_id': id,
+      'content': content,
+      'message_type': type.name, // 'text', 'image', or 'audio'
+      'is_user': isUser,
+      'nutrition_data': nutritionData,
+      'is_discarded': isDiscarded,
+      'is_added': isAdded,
+      'meal_name': mealName,
+      'date': date.toIso8601String().split('T')[0], // Store as DATE only (YYYY-MM-DD)
+      'timestamp': timestamp.toIso8601String(), // Store full timestamp
+    };
+  }
+
+  /// Create ChatMessage from Supabase data
+  factory ChatMessage.fromSupabase(Map<String, dynamic> data) {
+    // Parse message type
+    final messageTypeStr = data['message_type'] as String;
+    MessageType messageType;
+    switch (messageTypeStr) {
+      case 'image':
+        messageType = MessageType.image;
+        break;
+      case 'audio':
+        messageType = MessageType.audio;
+        break;
+      default:
+        messageType = MessageType.text;
+    }
+
+    // Parse timestamp
+    DateTime timestamp;
+    try {
+      timestamp = DateTime.parse(data['timestamp'] as String);
+    } catch (e) {
+      timestamp = DateTime.now();
+    }
+
+    // Parse nutrition data (stored as JSONB)
+    Map<String, dynamic>? nutritionData;
+    if (data['nutrition_data'] != null) {
+      nutritionData = data['nutrition_data'] is String
+          ? {} // Handle edge case
+          : Map<String, dynamic>.from(data['nutrition_data'] as Map);
+    }
+
+    return ChatMessage(
+      id: data['message_id'] as String,
+      content: data['content'] as String? ?? '',
+      type: messageType,
+      timestamp: timestamp,
+      isUser: data['is_user'] as bool? ?? false,
+      nutritionData: nutritionData,
+      isDiscarded: data['is_discarded'] as bool? ?? false,
+      isAdded: data['is_added'] as bool? ?? false,
+      mealName: data['meal_name'] as String?,
+    );
+  }
+
   @override
   String toString() {
     return 'ChatMessage(id: $id, type: $type, isUser: $isUser, content: ${content.length > 50 ? '${content.substring(0, 50)}...' : content})';

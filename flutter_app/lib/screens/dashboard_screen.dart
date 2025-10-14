@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:food_scanner/screens/login_screen.dart';
 import 'package:food_scanner/services/supabase_service.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
@@ -45,10 +47,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    // Always start on today (fresh start feeling)
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
     _meals = _getMealsFromSupabase();
     _loadUserProfile();
+    _loadChatMessages();
   }
 
   void _loadUserProfile() async {
@@ -68,6 +72,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       setState(() => _isLoadingProfile = false);
       // Error loading user profile, continue with default behavior
+    }
+  }
+
+  /// Load chat messages from database for the selected date
+  void _loadChatMessages() async {
+    try {
+      final supabaseService = SupabaseService();
+      if (!supabaseService.isInitialized) {
+        return;
+      }
+
+      final response =
+          await supabaseService.getChatMessagesByDate(_selectedDate);
+      final messages = response
+          .map<ChatMessage>((data) => ChatMessage.fromSupabase(data))
+          .toList();
+
+      setState(() {
+        _chatMessages.clear();
+        _chatMessages.addAll(messages);
+      });
+
+      // Scroll to bottom after loading messages
+      _scrollToBottom();
+    } catch (e) {
+      // Error loading messages, continue with empty chat
+      print('Error loading chat messages: $e');
     }
   }
 
@@ -146,6 +177,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
       _meals = _getMealsFromSupabase();
     });
+    _loadChatMessages(); // Reload messages for the new date
   }
 
   void _goToNextDay() {
@@ -154,6 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
       _meals = _getMealsFromSupabase();
     });
+    _loadChatMessages(); // Reload messages for the new date
   }
 
   bool _isToday() {
@@ -287,6 +320,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
           _meals = _getMealsFromSupabase();
         });
+
+        // Update message in database
+        await _updateChatMessage(messageId, {'is_added': true});
       }
 
       if (mounted) {
@@ -387,6 +423,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         });
 
+        // Update message in database
+        await _updateChatMessage(messageId, {
+          'is_discarded': true,
+          'meal_name': mealName,
+        });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -416,6 +458,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _isProcessingMessage = true;
     });
 
+    // Save user message to database
+    await _saveChatMessage(userMessage);
+
     _scrollToBottom();
 
     try {
@@ -432,6 +477,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _chatMessages.add(aiMessage);
         _isProcessingMessage = false;
       });
+
+      // Save AI message to database
+      await _saveChatMessage(aiMessage);
 
       _scrollToBottom();
     } catch (e) {
@@ -451,7 +499,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _handleSendImage(File imageFile) async {
-    // Add user message
+    // Create user message with temporary local path
     final userMessage = ChatMessage.user(
       content: imageFile.path,
       type: MessageType.image,
@@ -465,7 +513,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _scrollToBottom();
 
     try {
-      // Call API
+      // Compress image
+      final compressedImage = await _compressImage(imageFile);
+      final fileToUpload = compressedImage ?? imageFile;
+
+      // Upload to Supabase Storage
+      final supabaseService = SupabaseService();
+      final uploadedUrl = await supabaseService.uploadChatMedia(
+        fileToUpload,
+        userMessage.id,
+        'image',
+      );
+
+      // Update message with storage URL if upload succeeded
+      final finalUserMessage = uploadedUrl != null
+          ? userMessage.copyWith(content: uploadedUrl)
+          : userMessage;
+
+      // Update in UI
+      final messageIndex =
+          _chatMessages.indexWhere((m) => m.id == userMessage.id);
+      if (messageIndex != -1) {
+        setState(() {
+          _chatMessages[messageIndex] = finalUserMessage;
+        });
+      }
+
+      // Save user message to database (with storage URL)
+      await _saveChatMessage(finalUserMessage);
+
+      // Call API for analysis (use original file for better analysis)
       final nutritionData = await _chatService.analyzeFoodFromImage(imageFile);
 
       // Add AI response
@@ -478,6 +555,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _chatMessages.add(aiMessage);
         _isProcessingMessage = false;
       });
+
+      // Save AI message to database
+      await _saveChatMessage(aiMessage);
 
       _scrollToBottom();
     } catch (e) {
@@ -497,7 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _handleSendAudio(File audioFile, String format) async {
-    // Add user message
+    // Create user message with temporary local path
     final userMessage = ChatMessage.user(
       content: audioFile.path,
       type: MessageType.audio,
@@ -511,7 +591,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _scrollToBottom();
 
     try {
-      // Call API
+      // Upload to Supabase Storage
+      final supabaseService = SupabaseService();
+      final uploadedUrl = await supabaseService.uploadChatMedia(
+        audioFile,
+        userMessage.id,
+        'audio',
+      );
+
+      // Update message with storage URL if upload succeeded
+      final finalUserMessage = uploadedUrl != null
+          ? userMessage.copyWith(content: uploadedUrl)
+          : userMessage;
+
+      // Update in UI
+      final messageIndex =
+          _chatMessages.indexWhere((m) => m.id == userMessage.id);
+      if (messageIndex != -1) {
+        setState(() {
+          _chatMessages[messageIndex] = finalUserMessage;
+        });
+      }
+
+      // Save user message to database (with storage URL)
+      await _saveChatMessage(finalUserMessage);
+
+      // Call API for analysis
       final nutritionData =
           await _chatService.analyzeFoodFromAudio(audioFile, format);
 
@@ -525,6 +630,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _chatMessages.add(aiMessage);
         _isProcessingMessage = false;
       });
+
+      // Save AI message to database
+      await _saveChatMessage(aiMessage);
 
       _scrollToBottom();
     } catch (e) {
@@ -555,6 +663,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  /// Compress image to reduce storage usage (target: ~200KB)
+  Future<File?> _compressImage(File file) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final targetPath =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_compressed.jpg';
+
+      final result = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
+        targetPath,
+        quality: 85,
+        minWidth: 1024,
+        minHeight: 1024,
+      );
+
+      if (result != null) {
+        return File(result.path);
+      }
+      return file; // Return original if compression fails
+    } catch (e) {
+      print('Image compression failed: $e');
+      return file; // Return original if compression fails
+    }
+  }
+
+  /// Save a chat message to database
+  Future<void> _saveChatMessage(ChatMessage message) async {
+    try {
+      final supabaseService = SupabaseService();
+      if (!supabaseService.isInitialized) {
+        return;
+      }
+
+      final userId = supabaseService.getCurrentUserId();
+      if (userId == null) {
+        return;
+      }
+
+      final messageData = message.toSupabase(
+        userId: userId,
+        date: _selectedDate,
+      );
+
+      await supabaseService.saveChatMessage(messageData);
+    } catch (e) {
+      print('Error saving chat message: $e');
+      // Don't throw - continue even if save fails
+    }
+  }
+
+  /// Update a chat message in database
+  Future<void> _updateChatMessage(String messageId,
+      Map<String, dynamic> updates) async {
+    try {
+      final supabaseService = SupabaseService();
+      if (!supabaseService.isInitialized) {
+        return;
+      }
+
+      await supabaseService.updateChatMessage(messageId, updates);
+    } catch (e) {
+      print('Error updating chat message: $e');
+      // Don't throw - continue even if update fails
+    }
+  }
+
   @override
   void dispose() {
     _chatScrollController.dispose();
@@ -573,7 +747,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: const Icon(Icons.arrow_back_ios),
           tooltip: 'Previous Day',
         ),
-        title: Text(_getFormattedDate()),
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _isToday()
+                ? AppTheme.neonGreen.withOpacity(0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _isToday()
+                  ? AppTheme.neonGreen.withOpacity(0.3)
+                  : Colors.transparent,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isToday())
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.neonGreen,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              Text(
+                _getFormattedDate(),
+                style: TextStyle(
+                  color: _isToday() ? AppTheme.neonGreen : AppTheme.textPrimary,
+                  fontWeight: _isToday() ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
         centerTitle: true,
         actions: [
           if (!_isToday())
