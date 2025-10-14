@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_theme.dart';
 import '../models/weight_history.dart';
 import '../models/user_profile.dart';
@@ -369,6 +370,357 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
     }
   }
 
+  Widget _buildWeightChart() {
+    if (_weightHistory.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Icon(
+                Icons.show_chart,
+                size: 48,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Weight Chart',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Add weight entries to see your progress chart',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade500,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Sort weight history by date (oldest first) for the chart
+    final sortedHistory = List<WeightHistory>.from(_weightHistory)
+      ..sort((a, b) => a.recordedDate.compareTo(b.recordedDate));
+
+    // Create spots for the line chart
+    final spots = <FlSpot>[];
+    for (int i = 0; i < sortedHistory.length; i++) {
+      spots.add(FlSpot(i.toDouble(), sortedHistory[i].weightKg));
+    }
+
+    // Calculate min and max weight for Y axis
+    final weights = sortedHistory.map((e) => e.weightKg).toList();
+    final minWeight = weights.reduce((a, b) => a < b ? a : b);
+    final maxWeight = weights.reduce((a, b) => a > b ? a : b);
+    final weightRange = maxWeight - minWeight;
+    final yMin = minWeight - (weightRange * 0.1).clamp(0.5, 5.0);
+    final yMax = maxWeight + (weightRange * 0.1).clamp(0.5, 5.0);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.show_chart,
+                  color: AppTheme.neonGreen,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Weight Progress',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: (yMax - yMin) / 5,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: Colors.grey.withOpacity(0.2),
+                        strokeWidth: 1,
+                      );
+                    },
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        interval: (sortedHistory.length / 5).ceilToDouble(),
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < sortedHistory.length) {
+                            final date = sortedHistory[index].recordedDate;
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                '${date.day}/${date.month}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: (yMax - yMin) / 5,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            '${value.toStringAsFixed(1)} kg',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(
+                      color: Colors.grey.withOpacity(0.2),
+                    ),
+                  ),
+                  minX: 0,
+                  maxX: (sortedHistory.length - 1).toDouble(),
+                  minY: yMin,
+                  maxY: yMax,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color: AppTheme.neonGreen,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: AppTheme.neonGreen,
+                            strokeWidth: 2,
+                            strokeColor: AppTheme.darkBackground,
+                          );
+                        },
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: AppTheme.neonGreen.withOpacity(0.1),
+                      ),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    enabled: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (touchedSpot) =>
+                          AppTheme.darkBackground.withOpacity(0.8),
+                      tooltipRoundedRadius: 8,
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          final index = spot.x.toInt();
+                          if (index >= 0 && index < sortedHistory.length) {
+                            final entry = sortedHistory[index];
+                            final date = entry.recordedDate;
+                            return LineTooltipItem(
+                              '${entry.weightKg.toStringAsFixed(1)} kg\n${date.day}/${date.month}/${date.year}',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            );
+                          }
+                          return null;
+                        }).toList();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressAnalysisCard() {
+    if (_weightHistory.length < 2 || _userProfile == null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Icon(
+                Icons.analytics_outlined,
+                size: 48,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Progress Analysis',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Add at least 2 weight entries to see your progress analysis',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade500,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final targetCalories = _userProfile!.calculateTargetCalories();
+    final tdee = _userProfile!.calculateTDEE();
+    final dailyDeficit = tdee - targetCalories;
+
+    final analysis = NutritionCalculatorService.analyzeWeightProgress(
+      weightHistory: _weightHistory,
+      dailyCalorieDeficit: dailyDeficit,
+    );
+
+    if (analysis['hasProgress'] != true) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Unable to analyze progress',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                analysis['error'] ?? 'Unknown error',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade500,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.analytics,
+                  color: AppTheme.neonGreen,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Progress Analysis',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildAnalysisRow('Actual Weight Change',
+                '${analysis['actualWeightChange'].toStringAsFixed(1)} kg'),
+            _buildAnalysisRow('Expected Weight Change',
+                '${analysis['expectedWeightChange'].toStringAsFixed(1)} kg'),
+            _buildAnalysisRow('Progress',
+                '${analysis['progressPercentage'].toStringAsFixed(0)}%'),
+            _buildAnalysisRow('Weekly Actual',
+                '${analysis['weeklyActualChange'].toStringAsFixed(2)} kg/week'),
+            _buildAnalysisRow('Weekly Expected',
+                '${analysis['weeklyExpectedChange'].toStringAsFixed(2)} kg/week'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _getStatusColor(analysis['progressStatus'])
+                    .withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: _getStatusColor(analysis['progressStatus'])),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Status: ${_getStatusTitle(analysis['progressStatus'])}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _getStatusColor(analysis['progressStatus']),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    analysis['recommendation'],
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -377,15 +729,6 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
         title: const Text('Weight Tracking'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _weightHistory.length >= 2 && _userProfile != null
-                ? _showProgressAnalysis
-                : null,
-            icon: const Icon(Icons.analytics),
-            tooltip: 'Progress Analysis',
-          ),
-        ],
       ),
       body: _isLoadingHistory
           ? const Center(child: CircularProgressIndicator())
@@ -507,6 +850,16 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 20),
+
+                    // Weight Chart
+                    _buildWeightChart(),
+
+                    const SizedBox(height: 20),
+
+                    // Progress Analysis Card
+                    _buildProgressAnalysisCard(),
 
                     const SizedBox(height: 20),
 
