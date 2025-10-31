@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Header, Request
+from fastapi import APIRouter, HTTPException, Header, Request, Depends
 from pydantic import BaseModel
 from typing import Optional
 import stripe
 import os
 from stripe_service import StripeService
+from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 webhook_router = APIRouter(prefix="/stripe", tags=["stripe"])
@@ -11,17 +12,12 @@ webhook_router = APIRouter(prefix="/stripe", tags=["stripe"])
 
 # Request/Response Models
 class CreateCheckoutRequest(BaseModel):
-    user_id: str
     tier: str  # 'monthly' or 'yearly'
 
 
 class CreateCheckoutResponse(BaseModel):
     checkout_url: str
     session_id: str
-
-
-class CreatePortalRequest(BaseModel):
-    user_id: str
 
 
 class CreatePortalResponse(BaseModel):
@@ -38,9 +34,13 @@ class SubscriptionStatusResponse(BaseModel):
 
 # Endpoints
 @router.post("/create-checkout", response_model=CreateCheckoutResponse)
-async def create_checkout_session(request: CreateCheckoutRequest):
+async def create_checkout_session(
+    request: CreateCheckoutRequest,
+    user_id: str = Depends(get_current_user)
+):
     """
     Create a Stripe Checkout session for subscription purchase
+    Requires authentication via Bearer token
     """
     try:
         # Get price ID based on tier
@@ -59,9 +59,9 @@ async def create_checkout_session(request: CreateCheckoutRequest):
                 detail=f"Price ID not configured for tier: {request.tier}"
             )
 
-        # Create checkout session
+        # Create checkout session using authenticated user_id
         result = StripeService.create_checkout_session(
-            user_id=request.user_id,
+            user_id=user_id,
             price_id=price_id,
             tier=request.tier
         )
@@ -77,12 +77,13 @@ async def create_checkout_session(request: CreateCheckoutRequest):
 
 
 @router.post("/create-portal", response_model=CreatePortalResponse)
-async def create_customer_portal_session(request: CreatePortalRequest):
+async def create_customer_portal_session(user_id: str = Depends(get_current_user)):
     """
     Create a Stripe Customer Portal session for subscription management
+    Requires authentication via Bearer token
     """
     try:
-        result = StripeService.create_customer_portal_session(user_id=request.user_id)
+        result = StripeService.create_customer_portal_session(user_id=user_id)
 
         return CreatePortalResponse(portal_url=result['portal_url'])
 
@@ -91,10 +92,11 @@ async def create_customer_portal_session(request: CreatePortalRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/status/{user_id}", response_model=SubscriptionStatusResponse)
-async def get_subscription_status(user_id: str):
+@router.get("/status", response_model=SubscriptionStatusResponse)
+async def get_subscription_status(user_id: str = Depends(get_current_user)):
     """
-    Get current subscription status for a user
+    Get current subscription status for authenticated user
+    Requires authentication via Bearer token
     """
     try:
         status = StripeService.get_subscription_status(user_id)

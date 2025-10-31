@@ -130,14 +130,11 @@ class StripeService:
 
         # Check if profile exists
         if not response.data or len(response.data) == 0:
-            # Create default profile first
-            print(f"User profile not found for {user_id}, creating default profile")
-            StripeService._create_default_user_profile(user_id)
-            user_data = {'email': None, 'full_name': None}
-        else:
-            user_data = response.data[0]
-            if user_data.get('stripe_customer_id'):
-                return user_data['stripe_customer_id']
+            raise Exception(f"User profile not found for {user_id}. User must complete signup before subscribing.")
+
+        user_data = response.data[0]
+        if user_data.get('stripe_customer_id'):
+            return user_data['stripe_customer_id']
 
         # Create new Stripe customer
         customer = stripe.Customer.create(
@@ -320,9 +317,9 @@ class StripeService:
 
             # Check if user profile exists
             if not response.data or len(response.data) == 0:
-                # User profile doesn't exist yet - create it with free tier
-                print(f"User profile not found for {user_id}, creating default profile")
-                StripeService._create_default_user_profile(user_id)
+                # User profile doesn't exist - return free tier status
+                # Profile should be created during user signup in the Flutter app
+                print(f"User profile not found for {user_id}, returning free tier status")
                 return {
                     'status': 'free',
                     'tier': None,
@@ -362,27 +359,3 @@ class StripeService:
                 'has_access': False
             }
 
-    @staticmethod
-    def _create_default_user_profile(user_id: str) -> None:
-        """
-        Create a default user profile with free tier status
-
-        Args:
-            user_id: Supabase user ID
-        """
-        try:
-            if supabase is None:
-                print("Cannot create user profile - Supabase not initialized")
-                return
-
-            supabase.table('user_profiles').insert({
-                'uid': user_id,
-                'subscription_status': 'free',
-                'subscription_tier': None,
-                'trial_ends_at': None,
-                'subscription_end_date': None,
-            }).execute()
-            print(f"Created default user profile for {user_id}")
-        except Exception as e:
-            print(f"Error creating default user profile: {e}")
-            # Don't rethrow - we'll handle the free tier status in the return value

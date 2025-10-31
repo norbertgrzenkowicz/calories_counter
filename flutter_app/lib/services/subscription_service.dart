@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_logger.dart';
 import '../models/subscription.dart';
 
@@ -9,23 +10,34 @@ class SubscriptionService {
       'https://yapper-backend-789863392317.us-central1.run.app';
 
   // Local backend for testing (comment out for production)
-  // static const String _apiBaseUrl = 'http://192.168.1.12:5001';
+  // static const String _apiBaseUrl = 'http://192.168.1.12:8080';
+
+  /// Get auth headers with Bearer token
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      throw Exception('User not authenticated');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${session.accessToken}',
+    };
+  }
 
   /// Create a Stripe Checkout session
   /// Returns checkout URL and session ID
   Future<Map<String, String>> createCheckoutSession({
-    required String userId,
     required String tier, // 'monthly' or 'yearly'
   }) async {
     try {
-      AppLogger.debug(
-          'Creating checkout session for user $userId, tier: $tier');
+      AppLogger.debug('Creating checkout session for tier: $tier');
 
+      final headers = await _getAuthHeaders();
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/subscription/create-checkout'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
-          'user_id': userId,
           'tier': tier,
         }),
       );
@@ -52,18 +64,14 @@ class SubscriptionService {
 
   /// Create a Stripe Customer Portal session
   /// Returns portal URL for managing subscription
-  Future<String> createCustomerPortalSession({
-    required String userId,
-  }) async {
+  Future<String> createCustomerPortalSession() async {
     try {
-      AppLogger.debug('Creating customer portal session for user $userId');
+      AppLogger.debug('Creating customer portal session');
 
+      final headers = await _getAuthHeaders();
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/subscription/create-portal'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'user_id': userId,
-        }),
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -83,17 +91,16 @@ class SubscriptionService {
     }
   }
 
-  /// Get current subscription status for a user
+  /// Get current subscription status for authenticated user
   /// Returns Subscription object
-  Future<Subscription> getSubscriptionStatus({
-    required String userId,
-  }) async {
+  Future<Subscription> getSubscriptionStatus() async {
     try {
-      AppLogger.debug('Getting subscription status for user $userId');
+      AppLogger.debug('Getting subscription status');
 
+      final headers = await _getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$_apiBaseUrl/subscription/status/$userId'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$_apiBaseUrl/subscription/status'),
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -112,9 +119,9 @@ class SubscriptionService {
   }
 
   /// Check if user has access (has active subscription or trial)
-  Future<bool> hasAccess({required String userId}) async {
+  Future<bool> hasAccess() async {
     try {
-      final subscription = await getSubscriptionStatus(userId: userId);
+      final subscription = await getSubscriptionStatus();
       return subscription.hasAccess;
     } catch (e) {
       AppLogger.error('Check access error', e);

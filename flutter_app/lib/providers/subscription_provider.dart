@@ -68,8 +68,7 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
 
     try {
       final subscriptionService = ref.read(subscriptionServiceProvider);
-      final subscription =
-          await subscriptionService.getSubscriptionStatus(userId: userId);
+      final subscription = await subscriptionService.getSubscriptionStatus();
 
       state = SubscriptionState(
         subscription: subscription,
@@ -99,7 +98,6 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
     try {
       final subscriptionService = ref.read(subscriptionServiceProvider);
       final result = await subscriptionService.createCheckoutSession(
-        userId: userId,
         tier: tier.name,
       );
 
@@ -129,9 +127,7 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
 
     try {
       final subscriptionService = ref.read(subscriptionServiceProvider);
-      final portalUrl = await subscriptionService.createCustomerPortalSession(
-        userId: userId,
-      );
+      final portalUrl = await subscriptionService.createCustomerPortalSession();
 
       state = state.copyWith(isLoading: false);
 
