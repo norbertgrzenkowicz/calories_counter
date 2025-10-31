@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -8,6 +8,11 @@ import re
 import base64
 import io
 from openai import OpenAI
+from dotenv import load_dotenv
+from subscription_routes import router as subscription_router, webhook_router
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI()
 
@@ -18,6 +23,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include subscription routes
+app.include_router(subscription_router)
+app.include_router(webhook_router)
 
 api_key = os.getenv('OPENAI_API_KEY')
 if not api_key:
@@ -43,8 +52,8 @@ class FoodAnalysisResponse(BaseModel):
     fats: int
 
 @app.post("/analyze_food/image", response_model=FoodAnalysisResponse)
-async def analyze_food_image(request: ImageRequest):
-    """Analyze food from image"""
+async def analyze_food_image(request: ImageRequest, user_id: str = Header(..., alias="X-User-ID")):
+    """Analyze food from image (free feature)"""
     if not request.image:
         raise HTTPException(status_code=400, detail="No image provided")
 
@@ -59,8 +68,8 @@ async def analyze_food_image(request: ImageRequest):
     )
 
 @app.post("/analyze_food/text", response_model=FoodAnalysisResponse)
-async def analyze_food_text(request: TextRequest):
-    """Analyze food from text description"""
+async def analyze_food_text(request: TextRequest, user_id: str = Header(..., alias="X-User-ID")):
+    """Analyze food from text description (free feature)"""
     if not request.text or not request.text.strip():
         raise HTTPException(status_code=400, detail="No text description provided")
 
@@ -75,8 +84,8 @@ async def analyze_food_text(request: TextRequest):
     )
 
 @app.post("/analyze_food/audio", response_model=FoodAnalysisResponse)
-async def analyze_food_audio(request: AudioRequest):
-    """Analyze food from audio description"""
+async def analyze_food_audio(request: AudioRequest, user_id: str = Header(..., alias="X-User-ID")):
+    """Analyze food from audio description (free feature)"""
     if not request.audio:
         raise HTTPException(status_code=400, detail="No audio provided")
 
@@ -92,9 +101,9 @@ async def analyze_food_audio(request: AudioRequest):
 
 # Backward compatibility: keep old endpoint pointing to image analysis
 @app.post("/analyze_food", response_model=FoodAnalysisResponse)
-async def analyze_food(request: ImageRequest):
-    """Legacy endpoint - redirects to image analysis"""
-    return await analyze_food_image(request)
+async def analyze_food(request: ImageRequest, user_id: str = Header(..., alias="X-User-ID")):
+    """Legacy endpoint - redirects to image analysis (free feature)"""
+    return await analyze_food_image(request, user_id)
 
 
 def parse_nutrition_json(raw_content: str) -> dict:
@@ -211,4 +220,5 @@ def predict_nutrition_from_audio(audio_data: str, audio_format: str = "mp3") -> 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5001)
+    port = int(os.getenv("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
