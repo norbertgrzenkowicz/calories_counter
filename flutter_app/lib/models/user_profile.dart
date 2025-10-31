@@ -33,6 +33,15 @@ class UserProfile {
   final double? initialWeightKg;
   final double weeklyWeightLossTarget;
 
+  // Subscription fields
+  final String? subscriptionStatus;
+  final String? subscriptionTier;
+  final String? stripeCustomerId;
+  final String? stripeSubscriptionId;
+  final DateTime? subscriptionStartDate;
+  final DateTime? subscriptionEndDate;
+  final DateTime? trialEndsAt;
+
   // Timestamps
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -58,6 +67,13 @@ class UserProfile {
     this.weightLossStartDate,
     this.initialWeightKg,
     this.weeklyWeightLossTarget = 0.5,
+    this.subscriptionStatus,
+    this.subscriptionTier,
+    this.stripeCustomerId,
+    this.stripeSubscriptionId,
+    this.subscriptionStartDate,
+    this.subscriptionEndDate,
+    this.trialEndsAt,
     this.createdAt,
     this.updatedAt,
   });
@@ -193,6 +209,13 @@ class UserProfile {
     };
   }
 
+  // Check if user has active subscription
+  bool get hasActiveSubscription {
+    if (subscriptionStatus == null) return false;
+    final status = subscriptionStatus!.toLowerCase();
+    return status == 'active' || status == 'trialing';
+  }
+
   // Create copy with updated fields
   UserProfile copyWith({
     int? id,
@@ -215,6 +238,13 @@ class UserProfile {
     DateTime? weightLossStartDate,
     double? initialWeightKg,
     double? weeklyWeightLossTarget,
+    String? subscriptionStatus,
+    String? subscriptionTier,
+    String? stripeCustomerId,
+    String? stripeSubscriptionId,
+    DateTime? subscriptionStartDate,
+    DateTime? subscriptionEndDate,
+    DateTime? trialEndsAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -240,6 +270,13 @@ class UserProfile {
       initialWeightKg: initialWeightKg ?? this.initialWeightKg,
       weeklyWeightLossTarget:
           weeklyWeightLossTarget ?? this.weeklyWeightLossTarget,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionTier: subscriptionTier ?? this.subscriptionTier,
+      stripeCustomerId: stripeCustomerId ?? this.stripeCustomerId,
+      stripeSubscriptionId: stripeSubscriptionId ?? this.stripeSubscriptionId,
+      subscriptionStartDate: subscriptionStartDate ?? this.subscriptionStartDate,
+      subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
+      trialEndsAt: trialEndsAt ?? this.trialEndsAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -318,6 +355,19 @@ class UserProfile {
       initialWeightKg: data['initial_weight_kg']?.toDouble(),
       weeklyWeightLossTarget:
           (data['weekly_weight_loss_target'] ?? 0.5).toDouble(),
+      subscriptionStatus: data['subscription_status'],
+      subscriptionTier: data['subscription_tier'],
+      stripeCustomerId: data['stripe_customer_id'],
+      stripeSubscriptionId: data['stripe_subscription_id'],
+      subscriptionStartDate: data['subscription_start_date'] != null
+          ? DateTime.parse(data['subscription_start_date'])
+          : null,
+      subscriptionEndDate: data['subscription_end_date'] != null
+          ? DateTime.parse(data['subscription_end_date'])
+          : null,
+      trialEndsAt: data['trial_ends_at'] != null
+          ? DateTime.parse(data['trial_ends_at'])
+          : null,
       createdAt: data['created_at'] != null
           ? DateTime.parse(data['created_at'])
           : null,

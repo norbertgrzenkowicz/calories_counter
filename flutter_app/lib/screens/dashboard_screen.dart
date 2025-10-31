@@ -16,11 +16,13 @@ import '../services/chat_service.dart';
 import '../widgets/compact_nutrition_bars.dart';
 import '../widgets/chat_input_bar.dart';
 import '../widgets/chat_message_bubble.dart';
+import '../widgets/subscription_banner.dart';
 import 'profile_screen.dart';
 import 'calendar_screen.dart';
 import 'add_meal_screen.dart';
 import 'weight_tracking_screen.dart';
 import 'meal_detail_screen.dart';
+import 'settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -799,7 +801,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           PopupMenuButton<String>(
             onSelected: (value) async {
-              if (value == 'profile') {
+              if (value == 'settings') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              } else if (value == 'profile') {
                 _navigateToProfile();
               } else if (value == 'logout') {
                 await SupabaseService().signOut();
@@ -810,6 +817,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'settings',
+                child: Text('Settings'),
+              ),
               const PopupMenuItem<String>(
                 value: 'profile',
                 child: Text('My Profile'),
@@ -826,6 +837,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Column(
         children: [
+          // Subscription banner
+          const SubscriptionBanner(),
           // Chat messages area
           Expanded(
             child: _buildChatMessages(),

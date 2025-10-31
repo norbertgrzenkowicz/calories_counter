@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
+import '../providers/subscription_provider.dart';
+import '../models/subscription.dart';
 import 'export_data_screen.dart';
+import 'subscription_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subscriptionState = ref.watch(subscriptionNotifierProvider);
+    final subscription = subscriptionState.subscription;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -18,9 +26,33 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildSection(
+            title: 'Subscription',
+            children: [
+              if (subscription?.hasAccess ?? false)
+                _buildSettingsTile(
+                  context: context,
+                  icon: Icons.star,
+                  title: 'Manage Subscription',
+                  subtitle:
+                      '${subscription?.status.toDisplayString()} - ${subscription?.tier?.toDisplayString() ?? "N/A"}',
+                  onTap: () => _manageSubscription(context, ref),
+                )
+              else
+                _buildSettingsTile(
+                  context: context,
+                  icon: Icons.star_border,
+                  title: 'Upgrade to Premium',
+                  subtitle: 'Start 7-day free trial',
+                  onTap: () => _navigateToSubscription(context),
+                ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildSection(
             title: 'Data Management',
             children: [
               _buildSettingsTile(
+                context: context,
                 icon: Icons.download,
                 title: 'Export Data',
                 subtitle: 'Download your weight history and meal data',
@@ -33,12 +65,14 @@ class SettingsScreen extends StatelessWidget {
             title: 'Account',
             children: [
               _buildSettingsTile(
+                context: context,
                 icon: Icons.person,
                 title: 'Profile Settings',
                 subtitle: 'Manage your profile information',
                 onTap: () => _showComingSoon(context),
               ),
               _buildSettingsTile(
+                context: context,
                 icon: Icons.security,
                 title: 'Privacy & Security',
                 subtitle: 'Manage your privacy settings',
@@ -51,12 +85,14 @@ class SettingsScreen extends StatelessWidget {
             title: 'Support',
             children: [
               _buildSettingsTile(
+                context: context,
                 icon: Icons.help_outline,
                 title: 'Help & FAQ',
                 subtitle: 'Get help and find answers',
                 onTap: () => _showComingSoon(context),
               ),
               _buildSettingsTile(
+                context: context,
                 icon: Icons.feedback,
                 title: 'Send Feedback',
                 subtitle: 'Help us improve the app',
@@ -106,6 +142,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSettingsTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -125,6 +162,61 @@ class SettingsScreen extends StatelessWidget {
       context,
       MaterialPageRoute(builder: (context) => const ExportDataScreen()),
     );
+  }
+
+  void _navigateToSubscription(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
+    );
+  }
+
+  Future<void> _manageSubscription(BuildContext context, WidgetRef ref) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final portalUrl = await ref
+          .read(subscriptionNotifierProvider.notifier)
+          .openCustomerPortal();
+
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading dialog
+
+      if (portalUrl != null) {
+        // Open Customer Portal in browser
+        final uri = Uri.parse(portalUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open subscription portal'),
+            ),
+          );
+        }
+      } else {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to access subscription portal'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   void _showComingSoon(BuildContext context) {

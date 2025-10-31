@@ -2,10 +2,26 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../core/app_logger.dart';
+import 'supabase_service.dart';
 
 class ChatService {
   static const String _apiBaseUrl =
-      'https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api';
+      'https://yapper-backend-789863392317.us-central1.run.app';
+
+  final SupabaseService _supabaseService = SupabaseService();
+
+  /// Get headers with authentication
+  Map<String, String> _getHeaders() {
+    final userId = _supabaseService.getCurrentUserId();
+    if (userId == null) {
+      throw Exception('User not authenticated');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'X-User-ID': userId,
+    };
+  }
 
   /// Analyze food from text description
   /// Returns nutrition data: {meal_name, calories, protein, carbs, fats}
@@ -15,7 +31,7 @@ class ChatService {
 
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/analyze_food/text'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: jsonEncode({'text': text}),
       );
 
@@ -52,7 +68,7 @@ class ChatService {
 
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/analyze_food/image'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: jsonEncode({
           'image': base64Image,
           'filename': imageFile.path.split('/').last,
@@ -94,7 +110,7 @@ class ChatService {
 
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/analyze_food/audio'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: jsonEncode({
           'audio': base64Audio,
           'format': format,
