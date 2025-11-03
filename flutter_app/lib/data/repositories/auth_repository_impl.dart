@@ -67,7 +67,30 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (response.user != null) {
         final userId = response.user!.id;
-        AppLogger.info('User registered successfully');
+        AppLogger.info('User registered successfully: $userId');
+
+        // Create user profile in user_profiles table
+        try {
+          AppLogger.debug('Creating user profile in database');
+          await _supabaseService.client.from('user_profiles').insert({
+            'uid': userId,
+            'email': email,
+            'full_name': null,
+            // Required fields for BMR calculations
+            'gender': 'male', // Default - user should update in onboarding
+            'height_cm': 170.0, // Default average height - user should update
+            'current_weight_kg': 70.0, // Default average weight - user should update
+            'goal': 'maintaining', // Has default in schema
+            'activity_level': 1.2, // Has default in schema (sedentary)
+            'weekly_weight_loss_target': 0.5, // Has default in schema
+          });
+          AppLogger.info('User profile created successfully');
+        } catch (profileError) {
+          AppLogger.error('Failed to create user profile', profileError);
+          // Don't fail the signup - profile might already exist from trigger
+          // or the user can still use the app, just can't subscribe yet
+        }
+
         return Result.success(userId);
       } else {
         AppLogger.warning('Registration failed - no user returned');

@@ -9,14 +9,16 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 # Initialize Supabase client lazily
 _supabase_url = os.getenv('SUPABASE_URL')
-_supabase_key = os.getenv('SUPABASE_ANON_KEY')
+# Use SERVICE_ROLE_KEY for backend operations to bypass RLS
+_supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('SUPABASE_ANON_KEY')
 
 # Only create Supabase client if credentials are provided
 supabase: Optional[Client] = None
 if _supabase_url and _supabase_key and len(_supabase_url) > 0 and len(_supabase_key) > 0:
     try:
         supabase = create_client(_supabase_url, _supabase_key)
-        print(f"✓ Supabase client initialized")
+        key_type = "SERVICE_ROLE" if os.getenv('SUPABASE_SERVICE_ROLE_KEY') else "ANON"
+        print(f"✓ Supabase client initialized with {key_type} key")
     except Exception as e:
         print(f"⚠️  Failed to initialize Supabase: {e}")
         supabase = None
