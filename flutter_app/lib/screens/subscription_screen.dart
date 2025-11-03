@@ -44,9 +44,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Start your 7-day free trial',
-                    style: TextStyle(
+                  Text(
+                    _getHeaderSubtitle(subscription),
+                    style: const TextStyle(
                       fontSize: 18,
                       color: Colors.grey,
                     ),
@@ -88,9 +88,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Start Free Trial',
-                      style: TextStyle(
+                    child: Text(
+                      _getButtonText(subscription),
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -100,7 +100,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
                   // Terms
                   Text(
-                    'Cancel anytime. You won\'t be charged until the trial ends.',
+                    _getTermsText(subscription),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -266,31 +266,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.celebration,
-                    size: 16,
-                    color: Colors.green,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    '7-day free trial',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildTrialBadge(),
           ],
         ),
       ),
@@ -379,6 +355,68 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _getHeaderSubtitle(Subscription? subscription) {
+    // Check if user is eligible for trial (no trial_ends_at means never trialed)
+    if (subscription?.trialEndsAt == null) {
+      return 'Start your 7-day free trial';
+    }
+    return 'Choose your plan';
+  }
+
+  String _getButtonText(Subscription? subscription) {
+    // Check if user is eligible for trial
+    if (subscription?.trialEndsAt == null) {
+      return 'Start Free Trial';
+    }
+    return 'Subscribe Now';
+  }
+
+  String _getTermsText(Subscription? subscription) {
+    // Check if user is eligible for trial
+    if (subscription?.trialEndsAt == null) {
+      return 'Cancel anytime. You won\'t be charged until the trial ends.';
+    }
+    return 'Cancel anytime. Billed monthly or annually.';
+  }
+
+  Widget _buildTrialBadge() {
+    final subscriptionState = ref.watch(subscriptionNotifierProvider);
+    final subscription = subscriptionState.subscription;
+
+    // Check if user is eligible for trial
+    final isEligibleForTrial = subscription?.trialEndsAt == null;
+
+    if (!isEligibleForTrial) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.celebration,
+            size: 16,
+            color: Colors.green,
+          ),
+          SizedBox(width: 6),
+          Text(
+            '7-day free trial',
+            style: TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -27,7 +27,7 @@ class SubscriptionBanner extends ConsumerWidget {
 
     // Show upgrade banner for free users
     if (subscription.status == SubscriptionStatus.free) {
-      return _buildUpgradeBanner(context);
+      return _buildUpgradeBanner(context, subscription);
     }
 
     // Show past due banner
@@ -119,7 +119,14 @@ class SubscriptionBanner extends ConsumerWidget {
     );
   }
 
-  Widget _buildUpgradeBanner(BuildContext context) {
+  Widget _buildUpgradeBanner(BuildContext context, Subscription subscription) {
+    // Check if user is eligible for trial (no trial_ends_at means never trialed)
+    final isEligibleForTrial = subscription.trialEndsAt == null;
+    final subtitleText = isEligibleForTrial
+        ? 'Start 7-day free trial'
+        : 'Unlock unlimited features';
+    final buttonText = isEligibleForTrial ? 'Try Free' : 'Upgrade';
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -140,11 +147,11 @@ class SubscriptionBanner extends ConsumerWidget {
             size: 32,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Upgrade to Premium',
                   style: TextStyle(
                     color: Colors.white,
@@ -152,10 +159,10 @@ class SubscriptionBanner extends ConsumerWidget {
                     fontSize: 16,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Start 7-day free trial',
-                  style: TextStyle(
+                  subtitleText,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
                   ),
@@ -179,7 +186,7 @@ class SubscriptionBanner extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('Try Free'),
+            child: Text(buttonText),
           ),
         ],
       ),

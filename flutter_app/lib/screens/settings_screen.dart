@@ -33,8 +33,7 @@ class SettingsScreen extends ConsumerWidget {
                   context: context,
                   icon: Icons.star,
                   title: 'Manage Subscription',
-                  subtitle:
-                      '${subscription?.status.toDisplayString()} - ${subscription?.tier?.toDisplayString() ?? "N/A"}',
+                  subtitle: _getSubscriptionSubtitle(subscription),
                   onTap: () => _manageSubscription(context, ref),
                 )
               else
@@ -42,7 +41,7 @@ class SettingsScreen extends ConsumerWidget {
                   context: context,
                   icon: Icons.star_border,
                   title: 'Upgrade to Premium',
-                  subtitle: 'Start 7-day free trial',
+                  subtitle: _getUpgradeSubtitle(subscription),
                   onTap: () => _navigateToSubscription(context),
                 ),
             ],
@@ -155,6 +154,37 @@ class SettingsScreen extends ConsumerWidget {
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
     );
+  }
+
+  String _getSubscriptionSubtitle(Subscription? subscription) {
+    if (subscription == null) return 'Active';
+
+    if (subscription.status == SubscriptionStatus.trialing) {
+      final daysRemaining = subscription.trialDaysRemaining;
+      if (daysRemaining != null) {
+        if (daysRemaining > 1) {
+          return 'Trial - $daysRemaining days remaining';
+        } else if (daysRemaining == 1) {
+          return 'Trial - 1 day remaining';
+        } else {
+          final hoursRemaining = subscription.trialHoursRemaining;
+          return 'Trial - ${hoursRemaining ?? 0} hours remaining';
+        }
+      }
+      return 'Trial - ${subscription.tier?.toDisplayString() ?? "N/A"}';
+    }
+
+    return '${subscription.status.toDisplayString()} - ${subscription.tier?.toDisplayString() ?? "N/A"}';
+  }
+
+  String _getUpgradeSubtitle(Subscription? subscription) {
+    // Check if user has ever had a trial (if trial_ends_at is set, they used it)
+    if (subscription?.trialEndsAt != null) {
+      // User already used their trial
+      return 'Unlock unlimited features';
+    }
+    // User is eligible for trial
+    return 'Start 7-day free trial';
   }
 
   void _navigateToExportData(BuildContext context) {

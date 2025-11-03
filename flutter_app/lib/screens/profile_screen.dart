@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
 import '../models/user_profile.dart';
+import '../models/subscription.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
+import '../providers/subscription_provider.dart';
+import 'subscription_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _heightController = TextEditingController();
@@ -188,6 +192,305 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Widget _buildSubscriptionCard() {
+    final subscriptionState = ref.watch(subscriptionNotifierProvider);
+    final subscription = subscriptionState.subscription;
+
+    if (subscriptionState.isLoading) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Subscription',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 20),
+              const Center(child: CircularProgressIndicator()),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Subscription',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                _buildStatusBadge(subscription),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildSubscriptionDetails(subscription),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(Subscription? subscription) {
+    if (subscription == null || subscription.status == SubscriptionStatus.free) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star_border, size: 16, color: Colors.grey.shade600),
+            const SizedBox(width: 4),
+            Text(
+              'Free',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Color badgeColor;
+    Color textColor;
+    IconData icon;
+    String statusText;
+
+    switch (subscription.status) {
+      case SubscriptionStatus.trialing:
+        badgeColor = Colors.blue.shade50;
+        textColor = Colors.blue.shade700;
+        icon = Icons.access_time;
+        statusText = 'Trial';
+        break;
+      case SubscriptionStatus.active:
+        badgeColor = AppTheme.neonGreen.withOpacity(0.1);
+        textColor = AppTheme.neonGreen;
+        icon = Icons.check_circle;
+        statusText = 'Premium';
+        break;
+      case SubscriptionStatus.pastDue:
+        badgeColor = Colors.orange.shade50;
+        textColor = Colors.orange.shade700;
+        icon = Icons.warning_amber;
+        statusText = 'Past Due';
+        break;
+      case SubscriptionStatus.canceled:
+        badgeColor = Colors.red.shade50;
+        textColor = Colors.red.shade700;
+        icon = Icons.cancel;
+        statusText = 'Canceled';
+        break;
+      default:
+        badgeColor = Colors.grey.shade100;
+        textColor = Colors.grey.shade700;
+        icon = Icons.star_border;
+        statusText = 'Free';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: textColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            statusText,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionDetails(Subscription? subscription) {
+    if (subscription == null || subscription.status == SubscriptionStatus.free) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDetailRow(
+            icon: Icons.info_outline,
+            label: 'Status',
+            value: 'Free Tier',
+            valueColor: Colors.grey.shade600,
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            icon: Icons.star_border,
+            label: 'Plan',
+            value: 'Limited features',
+            valueColor: Colors.grey.shade600,
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SubscriptionScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.upgrade),
+              label: const Text('Upgrade to Premium'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.neonGreen,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDetailRow(
+          icon: Icons.card_membership,
+          label: 'Plan',
+          value: subscription.tier?.toDisplayString() ?? 'N/A',
+          valueColor: AppTheme.textPrimary,
+        ),
+        const SizedBox(height: 12),
+        _buildDetailRow(
+          icon: Icons.check_circle_outline,
+          label: 'Status',
+          value: subscription.status.toDisplayString(),
+          valueColor: AppTheme.textPrimary,
+        ),
+        if (subscription.status == SubscriptionStatus.trialing &&
+            subscription.trialEndsAt != null) ...[
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            icon: Icons.access_time,
+            label: 'Trial Ends',
+            value: _formatRemainingTime(subscription.trialEndsAt!),
+            valueColor: _getTimeColor(subscription.trialEndsAt!),
+          ),
+        ],
+        if (subscription.status == SubscriptionStatus.active &&
+            subscription.subscriptionEndDate != null) ...[
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            icon: Icons.calendar_today,
+            label: 'Next Payment',
+            value: _formatRemainingTime(subscription.subscriptionEndDate!),
+            valueColor: AppTheme.textPrimary,
+          ),
+        ],
+        if (subscription.subscriptionEndDate != null) ...[
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            icon: Icons.event,
+            label: 'Renewal Date',
+            value: _formatDate(subscription.subscriptionEndDate!),
+            valueColor: AppTheme.textSecondary,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppTheme.textSecondary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+              ),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: valueColor ?? AppTheme.textPrimary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatRemainingTime(DateTime date) {
+    final now = DateTime.now();
+    final difference = date.difference(now);
+
+    if (difference.isNegative) {
+      return 'Expired';
+    }
+
+    if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return 'in $months month${months > 1 ? 's' : ''}';
+    }
+
+    if (difference.inDays > 0) {
+      return 'in ${difference.inDays} day${difference.inDays > 1 ? 's' : ''}';
+    }
+
+    if (difference.inHours > 0) {
+      return 'in ${difference.inHours} hour${difference.inHours > 1 ? 's' : ''}';
+    }
+
+    return 'Less than 1 hour';
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Color _getTimeColor(DateTime date) {
+    final difference = date.difference(DateTime.now());
+
+    if (difference.inDays <= 1) {
+      return Colors.red.shade700;
+    } else if (difference.inDays <= 3) {
+      return Colors.orange.shade700;
+    }
+
+    return AppTheme.textPrimary;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoadingProfile) {
@@ -296,6 +599,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 20),
+
+                // Subscription Status Card
+                _buildSubscriptionCard(),
 
                 const SizedBox(height: 20),
 
