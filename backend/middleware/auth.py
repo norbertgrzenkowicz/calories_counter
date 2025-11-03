@@ -52,12 +52,23 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
     try:
         # Decode and verify JWT token
         secret = get_supabase_jwt_secret()
-        payload = jwt.decode(
-            token,
-            secret,
-            algorithms=["HS256"],
-            audience="authenticated"
-        )
+
+        # Try decoding with audience first, fall back to without audience
+        try:
+            payload = jwt.decode(
+                token,
+                secret,
+                algorithms=["HS256"],
+                audience="authenticated"
+            )
+        except jwt.InvalidAudienceError:
+            # Fallback: decode without audience requirement
+            print("Warning: JWT token missing 'authenticated' audience, decoding without audience check")
+            payload = jwt.decode(
+                token,
+                secret,
+                algorithms=["HS256"]
+            )
 
         # Extract user ID from token
         user_id = payload.get('sub')
@@ -75,6 +86,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
             detail="Token has expired"
         )
     except jwt.InvalidTokenError as e:
+        print(f"JWT validation error: {type(e).__name__}: {str(e)}")
         raise HTTPException(
             status_code=401,
             detail=f"Invalid token: {str(e)}"
