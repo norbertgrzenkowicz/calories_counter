@@ -63,13 +63,16 @@ class StripeService:
                 mode='subscription',
                 success_url='foodscanner://subscription/success?session_id={CHECKOUT_SESSION_ID}',
                 cancel_url='foodscanner://subscription/cancel',
-                metadata={
-                    'user_id': user_id,
-                    'tier': tier
+                # Pass metadata to subscription (not just checkout session)
+                subscription_data={
+                    'metadata': {
+                        'user_id': user_id,
+                        'tier': tier
+                    }
+                    # Trial is configured at product level in Stripe Dashboard
+                    # but can be overridden here if needed:
+                    # 'trial_period_days': 7,
                 },
-                # Trial is configured at product level in Stripe Dashboard
-                # but we can override it here if needed:
-                # subscription_data={'trial_period_days': 7},
             )
 
             return {
@@ -165,7 +168,10 @@ class StripeService:
 
         print(f"Processing webhook event: {event_type}")
 
-        if event_type == 'customer.subscription.created':
+        if event_type == 'checkout.session.completed':
+            StripeService._handle_checkout_completed(data)
+
+        elif event_type == 'customer.subscription.created':
             StripeService._handle_subscription_created(data)
 
         elif event_type == 'customer.subscription.updated':
@@ -184,42 +190,136 @@ class StripeService:
             print(f"Unhandled webhook event type: {event_type}")
 
     @staticmethod
-    def _handle_subscription_created(subscription: Dict[str, Any]) -> None:
-        """Handle subscription.created webhook"""
-        user_id = subscription['metadata'].get('user_id')
-        if not user_id:
-            # Fallback: get user_id from customer metadata
-            customer = stripe.Customer.retrieve(subscription['customer'])
-            user_id = customer.metadata.get('user_id')
+    def _handle_checkout_completed(session: Dict[str, Any]) -> None:
+        """Handle checkout.session.completed webhook"""
+        # This fires when checkout is completed, before subscription.created
+        # We can use this to immediately update user status
 
-        if not user_id:
-            print(f"Could not find user_id for subscription {subscription['id']}")
+        if session.get('mode') != 'subscription':
+            print(f"Skipping non-subscription checkout: {session['id']}")
             return
 
-        # Determine tier from price
-        price_id = subscription['items']['data'][0]['price']['id']
-        tier = StripeService._get_tier_from_price_id(price_id)
+        # Get subscription ID from checkout session
+        subscription_id = session.get('subscription')
+        if not subscription_id:
+            print(f"No subscription ID in checkout session: {session['id']}")
+            return
 
-        # Check if in trial
-        status = 'trialing' if subscription['status'] == 'trialing' else 'active'
-        trial_end = datetime.fromtimestamp(subscription['trial_end']) if subscription.get('trial_end') else None
+        # Retrieve full subscription object to get all details
+        try:
+            subscription = stripe.Subscription.retrieve(subscription_id)
 
-        # Update database
-        supabase.table('user_profiles').update({
-            'subscription_status': status,
-            'subscription_tier': tier,
-            'stripe_subscription_id': subscription['id'],
-            'subscription_start_date': datetime.fromtimestamp(subscription['current_period_start']).isoformat(),
-            'subscription_end_date': datetime.fromtimestamp(subscription['current_period_end']).isoformat(),
-            'trial_ends_at': trial_end.isoformat() if trial_end else None,
-        }).eq('uid', user_id).execute()
+            # Get user_id from subscription metadata
+            user_id = subscription.metadata.get('user_id')
+            if not user_id:
+                # Fallback: get from customer
+                customer = stripe.Customer.retrieve(subscription.customer)
+                user_id = customer.metadata.get('user_id')
 
-        print(f"Subscription created for user {user_id}: {status} ({tier})")
+            if not user_id:
+                print(f"Could not find user_id for checkout session {session['id']}")
+                return
+
+            # Determine tier from price (safe access for Stripe objects)
+            price_id = subscription['items']['data'][0]['price']['id']
+            tier = StripeService._get_tier_from_price_id(price_id)
+
+            # Check if in trial (safe access)
+            status = 'trialing' if subscription.get('status') == 'trialing' else 'active'
+            trial_end = datetime.fromtimestamp(subscription['trial_end']) if subscription.get('trial_end') else None
+
+            print(f"Checkout completed - Updating user {user_id} to {status} ({tier})")
+
+            # Update database - build update_data safely
+            update_data = {
+                'subscription_status': status,
+                'subscription_tier': tier,
+                'stripe_subscription_id': subscription['id'],
+            }
+
+            # Add optional timestamp fields if present
+            if subscription.get('current_period_start'):
+                update_data['subscription_start_date'] = datetime.fromtimestamp(subscription['current_period_start']).isoformat()
+
+            if subscription.get('current_period_end'):
+                update_data['subscription_end_date'] = datetime.fromtimestamp(subscription['current_period_end']).isoformat()
+
+            if trial_end:
+                update_data['trial_ends_at'] = trial_end.isoformat()
+
+            result = supabase.table('user_profiles').update(update_data).eq('uid', user_id).execute()
+
+            print(f"✓ Checkout completed for user {user_id}: {status} ({tier}) - Updated {len(result.data)} rows")
+
+        except Exception as e:
+            print(f"Error handling checkout completion: {e}")
+
+    @staticmethod
+    def _handle_subscription_created(subscription: Dict[str, Any]) -> None:
+        """Handle subscription.created webhook"""
+        print(f"Processing subscription.created for subscription {subscription['id']}")
+
+        # Try to get user_id from subscription metadata
+        user_id = subscription['metadata'].get('user_id')
+        print(f"User ID from subscription metadata: {user_id}")
+
+        if not user_id:
+            # Fallback: get user_id from customer metadata
+            print(f"Retrieving customer {subscription['customer']} for user_id fallback")
+            customer = stripe.Customer.retrieve(subscription['customer'])
+            user_id = customer.metadata.get('user_id')
+            print(f"User ID from customer metadata: {user_id}")
+
+        if not user_id:
+            print(f"❌ ERROR: Could not find user_id for subscription {subscription['id']}")
+            print(f"Subscription metadata: {subscription.get('metadata', {})}")
+            return
+
+        try:
+            # Determine tier from price
+            price_id = subscription['items']['data'][0]['price']['id']
+            tier = StripeService._get_tier_from_price_id(price_id)
+            print(f"Subscription tier: {tier} (price: {price_id})")
+
+            # Check if in trial
+            status = 'trialing' if subscription.get('status') == 'trialing' else 'active'
+            trial_end = datetime.fromtimestamp(subscription['trial_end']) if subscription.get('trial_end') else None
+            print(f"Subscription status: {status}, trial_end: {trial_end}")
+
+            # Build update data with safe access
+            update_data = {
+                'subscription_status': status,
+                'subscription_tier': tier,
+                'stripe_subscription_id': subscription['id'],
+            }
+
+            # Add optional timestamp fields if present
+            if subscription.get('current_period_start'):
+                update_data['subscription_start_date'] = datetime.fromtimestamp(subscription['current_period_start']).isoformat()
+
+            if subscription.get('current_period_end'):
+                update_data['subscription_end_date'] = datetime.fromtimestamp(subscription['current_period_end']).isoformat()
+
+            if trial_end:
+                update_data['trial_ends_at'] = trial_end.isoformat()
+
+            print(f"Updating user_profiles for uid={user_id} with: {update_data}")
+
+            result = supabase.table('user_profiles').update(update_data).eq('uid', user_id).execute()
+
+            print(f"✓ Subscription created for user {user_id}: {status} ({tier}) - Updated {len(result.data)} rows")
+
+        except Exception as e:
+            print(f"❌ ERROR handling subscription.created: {e}")
+            import traceback
+            traceback.print_exc()
 
     @staticmethod
     def _handle_subscription_updated(subscription: Dict[str, Any]) -> None:
         """Handle subscription.updated webhook"""
         subscription_id = subscription['id']
+        print(f"Processing subscription.updated for subscription {subscription_id}")
+
         status_map = {
             'active': 'active',
             'trialing': 'trialing',
@@ -228,17 +328,35 @@ class StripeService:
             'unpaid': 'canceled'
         }
 
-        status = status_map.get(subscription['status'], 'free')
+        stripe_status = subscription['status']
+        status = status_map.get(stripe_status, 'free')
         trial_end = datetime.fromtimestamp(subscription['trial_end']) if subscription.get('trial_end') else None
 
-        # Update database
-        supabase.table('user_profiles').update({
-            'subscription_status': status,
-            'subscription_end_date': datetime.fromtimestamp(subscription['current_period_end']).isoformat(),
-            'trial_ends_at': trial_end.isoformat() if trial_end else None,
-        }).eq('stripe_subscription_id', subscription_id).execute()
+        print(f"Stripe status: {stripe_status} → Our status: {status}, trial_end: {trial_end}")
 
-        print(f"Subscription {subscription_id} updated to status: {status}")
+        try:
+            # Update database - only include fields that exist in payload
+            update_data = {
+                'subscription_status': status,
+            }
+
+            # Add optional fields if present
+            if subscription.get('current_period_end'):
+                update_data['subscription_end_date'] = datetime.fromtimestamp(subscription['current_period_end']).isoformat()
+
+            if trial_end:
+                update_data['trial_ends_at'] = trial_end.isoformat()
+
+            print(f"Updating user_profiles for stripe_subscription_id={subscription_id} with: {update_data}")
+
+            result = supabase.table('user_profiles').update(update_data).eq('stripe_subscription_id', subscription_id).execute()
+
+            print(f"✓ Subscription {subscription_id} updated to status: {status} - Updated {len(result.data)} rows")
+
+        except Exception as e:
+            print(f"❌ ERROR handling subscription.updated: {e}")
+            import traceback
+            traceback.print_exc()
 
     @staticmethod
     def _handle_subscription_deleted(subscription: Dict[str, Any]) -> None:
@@ -258,13 +376,23 @@ class StripeService:
     def _handle_payment_succeeded(invoice: Dict[str, Any]) -> None:
         """Handle invoice.payment_succeeded webhook"""
         subscription_id = invoice.get('subscription')
-        if subscription_id:
-            # Ensure subscription is marked as active
-            supabase.table('user_profiles').update({
-                'subscription_status': 'active',
-            }).eq('stripe_subscription_id', subscription_id).execute()
+        print(f"Processing invoice.payment_succeeded for invoice {invoice['id']}, subscription: {subscription_id}")
 
-            print(f"Payment succeeded for subscription {subscription_id}")
+        if subscription_id:
+            try:
+                # Ensure subscription is marked as active
+                result = supabase.table('user_profiles').update({
+                    'subscription_status': 'active',
+                }).eq('stripe_subscription_id', subscription_id).execute()
+
+                print(f"✓ Payment succeeded for subscription {subscription_id} - Updated {len(result.data)} rows to active")
+
+            except Exception as e:
+                print(f"❌ ERROR handling payment.succeeded: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"Skipping payment.succeeded: No subscription ID in invoice")
 
     @staticmethod
     def _handle_payment_failed(invoice: Dict[str, Any]) -> None:
