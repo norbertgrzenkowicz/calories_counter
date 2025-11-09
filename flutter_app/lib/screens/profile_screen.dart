@@ -45,6 +45,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+    // Refresh subscription status when screen loads
+    Future.microtask(() {
+      ref.read(subscriptionNotifierProvider.notifier).fetchSubscriptionStatus();
+    });
   }
 
   @override
@@ -57,7 +61,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  void _loadProfile() async {
+  Future<void> _loadProfile() async {
     setState(() => _isLoadingProfile = true);
 
     try {
@@ -491,6 +495,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return AppTheme.textPrimary;
   }
 
+  Future<void> _refreshData() async {
+    await Future.wait([
+      _loadProfile(),
+      ref.read(subscriptionNotifierProvider.notifier).fetchSubscriptionStatus(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoadingProfile) {
@@ -512,14 +523,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        color: AppTheme.neonGreen,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                 // Personal Information Card
                 Card(
                   child: Padding(
@@ -884,10 +899,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
         ),
-      ),
-    );
+      ), // Closes Padding
+    ), // Closes RefreshIndicator
+  ); // Closes Scaffold
   }
 }
+
 
 extension StringExtension on String {
   String capitalize() {
