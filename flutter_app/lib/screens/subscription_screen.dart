@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/subscription.dart';
 import '../providers/subscription_provider.dart';
@@ -340,17 +339,6 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
       );
     }
 
-    // Option 2: Open in WebView (more integrated, but more complex)
-    // Uncomment if you prefer in-app experience:
-    /*
-    if (!context.mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _CheckoutWebView(checkoutUrl: checkoutUrl),
-      ),
-    );
-    */
   }
 
   String _formatDate(DateTime date) {
@@ -416,58 +404,6 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-// Optional: In-app WebView for Stripe Checkout
-class _CheckoutWebView extends StatefulWidget {
-  final String checkoutUrl;
-
-  const _CheckoutWebView({required this.checkoutUrl});
-
-  @override
-  State<_CheckoutWebView> createState() => _CheckoutWebViewState();
-}
-
-class _CheckoutWebViewState extends State<_CheckoutWebView> {
-  late final WebViewController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (NavigationRequest request) {
-            // Handle success/cancel redirects
-            if (request.url.startsWith('foodscanner://subscription/success')) {
-              // Checkout successful
-              Navigator.pop(context, true);
-              return NavigationDecision.prevent;
-            } else if (request.url
-                .startsWith('foodscanner://subscription/cancel')) {
-              // Checkout canceled
-              Navigator.pop(context, false);
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.checkoutUrl));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Complete Purchase'),
-        backgroundColor: AppTheme.neonGreen,
-        foregroundColor: AppTheme.darkBackground,
-      ),
-      body: WebViewWidget(controller: _controller),
     );
   }
 }
