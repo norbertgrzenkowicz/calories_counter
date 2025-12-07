@@ -3,7 +3,7 @@ import json
 from app import predict_nutrition, predict_nutrition_from_text, predict_nutrition_from_audio
 
 @functions_framework.http
-def yapper_api(request):
+def japer_api(request):
     """HTTP Cloud Function entry point"""
     # Set CORS headers
     headers = {
@@ -46,7 +46,7 @@ def yapper_api(request):
                 nutrition = predict_nutrition_from_audio(request_json['audio'], audio_format)
 
             else:
-                return (json.dumps({'message': 'Yapper API is running'}), 200, headers)
+                return (json.dumps({'message': 'Japer API is running'}), 200, headers)
 
             # Return nutrition data if analysis was performed
             if nutrition:
@@ -66,4 +66,4 @@ def yapper_api(request):
             return (json.dumps(error_response), 500, headers)
 
     # Default response for other endpoints
-    return (json.dumps({'message': 'Yapper API is running'}), 200, headers)
+    return (json.dumps({'message': 'Japer API is running'}), 200, headers)

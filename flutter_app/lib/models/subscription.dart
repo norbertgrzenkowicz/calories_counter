@@ -103,6 +103,7 @@ class Subscription {
   final SubscriptionTier? tier;
   final DateTime? trialEndsAt;
   final DateTime? subscriptionEndDate;
+  final bool cancelAtPeriodEnd;
   final bool hasAccess;
 
   const Subscription({
@@ -110,6 +111,7 @@ class Subscription {
     this.tier,
     this.trialEndsAt,
     this.subscriptionEndDate,
+    this.cancelAtPeriodEnd = false,
     required this.hasAccess,
   });
 
@@ -124,6 +126,7 @@ class Subscription {
       subscriptionEndDate: json['subscription_end_date'] != null
           ? DateTime.parse(json['subscription_end_date'] as String)
           : null,
+      cancelAtPeriodEnd: json['cancel_at_period_end'] as bool? ?? false,
       hasAccess: json['has_access'] as bool? ?? false,
     );
   }
@@ -135,6 +138,7 @@ class Subscription {
       'tier': tier?.name,
       'trial_ends_at': trialEndsAt?.toIso8601String(),
       'subscription_end_date': subscriptionEndDate?.toIso8601String(),
+      'cancel_at_period_end': cancelAtPeriodEnd,
       'has_access': hasAccess,
     };
   }
@@ -163,12 +167,16 @@ class Subscription {
     return difference.inHours;
   }
 
+  /// Check if subscription will cancel soon (active but cancelling at period end)
+  bool get willCancelSoon => cancelAtPeriodEnd && hasAccess;
+
   /// Copy with
   Subscription copyWith({
     SubscriptionStatus? status,
     SubscriptionTier? tier,
     DateTime? trialEndsAt,
     DateTime? subscriptionEndDate,
+    bool? cancelAtPeriodEnd,
     bool? hasAccess,
   }) {
     return Subscription(
@@ -176,12 +184,13 @@ class Subscription {
       tier: tier ?? this.tier,
       trialEndsAt: trialEndsAt ?? this.trialEndsAt,
       subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
+      cancelAtPeriodEnd: cancelAtPeriodEnd ?? this.cancelAtPeriodEnd,
       hasAccess: hasAccess ?? this.hasAccess,
     );
   }
 
   @override
   String toString() {
-    return 'Subscription(status: ${status.name}, tier: ${tier?.name}, hasAccess: $hasAccess)';
+    return 'Subscription(status: ${status.name}, tier: ${tier?.name}, cancelAtPeriodEnd: $cancelAtPeriodEnd, hasAccess: $hasAccess)';
   }
 }

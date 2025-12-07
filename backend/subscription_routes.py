@@ -29,6 +29,7 @@ class SubscriptionStatusResponse(BaseModel):
     tier: Optional[str]
     trial_ends_at: Optional[str]
     subscription_end_date: Optional[str]
+    cancel_at_period_end: bool
     has_access: bool
 
 
@@ -106,6 +107,7 @@ async def get_subscription_status(user_id: str = Depends(get_current_user)):
             tier=status['tier'],
             trial_ends_at=status['trial_ends_at'],
             subscription_end_date=status['subscription_end_date'],
+            cancel_at_period_end=status['cancel_at_period_end'],
             has_access=status['has_access']
         )
 

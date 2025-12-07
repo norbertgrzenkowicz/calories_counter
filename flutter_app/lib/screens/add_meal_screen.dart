@@ -52,7 +52,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
 
   // API endpoint using cloud function
   static const String _apiBaseUrl =
-      'https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api';
+      'https://us-central1-white-faculty-417521.cloudfunctions.net/japer-api';
 
   @override
   void initState() {

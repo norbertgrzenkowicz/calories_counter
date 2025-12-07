@@ -1,4 +1,4 @@
-# Yapper - AI-Powered Food Scanner & Nutrition Tracker
+# Japer - AI-Powered Food Scanner & Nutrition Tracker
 
 A sophisticated Flutter mobile application that leverages computer vision and artificial intelligence to automatically identify food items, calculate nutritional information, and help users track their dietary intake.
 
@@ -33,7 +33,7 @@ A sophisticated Flutter mobile application that leverages computer vision and ar
 ## 🏗️ Architecture
 
 ```
-📦 Yapper
+📦 Japer
 ├── 📱 flutter_app/          # Flutter mobile application
 │   ├── lib/
 │   │   ├── models/          # Data models (Meal, User, etc.)

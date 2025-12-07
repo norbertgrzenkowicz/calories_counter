@@ -63,7 +63,7 @@
 
 ### Authentication & Data Handling
 2. **Hardcoded API endpoints** - `lib/screens/add_meal_screen.dart:38`
-   - Google Cloud Functions URL hardcoded: `https://us-central1-white-faculty-417521.cloudfunctions.net/yapper-api`
+   - Google Cloud Functions URL hardcoded: `https://us-central1-white-faculty-417521.cloudfunctions.net/japer-api`
    - **Severity**: MEDIUM - Service discovery and potential credential exposure
 
 3. ✅ **Extensive debug logging with sensitive data** - 100+ locations RESOLVED

@@ -159,6 +159,22 @@ class SettingsScreen extends ConsumerWidget {
   String _getSubscriptionSubtitle(Subscription? subscription) {
     if (subscription == null) return 'Active';
 
+    // Check if subscription will cancel at period end
+    if (subscription.willCancelSoon && subscription.subscriptionEndDate != null) {
+      final endDate = subscription.subscriptionEndDate!;
+      final now = DateTime.now();
+      final daysRemaining = endDate.difference(now).inDays;
+
+      if (daysRemaining > 1) {
+        return 'Cancels in $daysRemaining days - ${subscription.tier?.toDisplayString() ?? "N/A"}';
+      } else if (daysRemaining == 1) {
+        return 'Cancels tomorrow - ${subscription.tier?.toDisplayString() ?? "N/A"}';
+      } else if (daysRemaining == 0) {
+        return 'Cancels today - ${subscription.tier?.toDisplayString() ?? "N/A"}';
+      }
+      return 'Cancels on ${endDate.month}/${endDate.day}/${endDate.year}';
+    }
+
     if (subscription.status == SubscriptionStatus.trialing) {
       final daysRemaining = subscription.trialDaysRemaining;
       if (daysRemaining != null) {

@@ -159,7 +159,7 @@ class _DashboardScreenRiverpodState
       backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title:
-            const Text('Yapper', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Japer', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.neonGreen,
         foregroundColor: AppTheme.darkBackground,
         actions: [
@@ -454,7 +454,7 @@ class _DashboardScreenRiverpodState
               color: AppTheme.neonGreen,
             ),
             child: const Text(
-              'Yapper',
+              'Japer',
               style: TextStyle(
                 color: AppTheme.darkBackground,
                 fontSize: 24,

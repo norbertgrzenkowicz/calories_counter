@@ -124,7 +124,7 @@ class DataExportService {
 
     final exportData = {
       'export_info': {
-        'app': 'Yapper',
+        'app': 'Japer',
         'data_type': 'weight_history',
         'export_date': DateTime.now().toIso8601String(),
         'date_range': {
@@ -171,7 +171,7 @@ class DataExportService {
     xmlContent.writeln('<?xml version="1.0" encoding="UTF-8"?>');
     xmlContent.writeln('<weight_history_export>');
     xmlContent.writeln('  <export_info>');
-    xmlContent.writeln('    <app>Yapper</app>');
+    xmlContent.writeln('    <app>Japer</app>');
     xmlContent.writeln('    <data_type>weight_history</data_type>');
     xmlContent.writeln('    <export_date>${DateTime.now().toIso8601String()}</export_date>');
     xmlContent.writeln('    <date_range>');
@@ -239,7 +239,7 @@ class DataExportService {
             pw.Header(
               level: 0,
               child: pw.Text(
-                'Yapper Weight History Report',
+                'Japer Weight History Report',
                 style: pw.TextStyle(
                   fontSize: 24,
                   fontWeight: pw.FontWeight.bold,
@@ -345,6 +345,6 @@ class DataExportService {
         ? '_${fromDate.toIso8601String().split('T')[0]}_to_${toDate.toIso8601String().split('T')[0]}'
         : '_all_data';
     
-    return 'yapper_weight_history$rangeStr$dateStr.$format';
+    return 'japer_weight_history$rangeStr$dateStr.$format';
   }
 }

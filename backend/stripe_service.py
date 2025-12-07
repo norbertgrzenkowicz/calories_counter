@@ -228,6 +228,7 @@ class StripeService:
             status = 'trialing' if subscription.get('status') == 'trialing' else 'active'
             trial_end = datetime.fromtimestamp(subscription['trial_end']) if subscription.get('trial_end') else None
 
+            cancel_at_period_end = subscription.get('cancel_at_period_end', False)
             print(f"Checkout completed - Updating user {user_id} to {status} ({tier})")
 
             # Update database - build update_data safely
@@ -235,6 +236,7 @@ class StripeService:
                 'subscription_status': status,
                 'subscription_tier': tier,
                 'stripe_subscription_id': subscription['id'],
+                'cancel_at_period_end': cancel_at_period_end,
             }
 
             # Add optional timestamp fields if present
@@ -284,13 +286,15 @@ class StripeService:
             # Check if in trial
             status = 'trialing' if subscription.get('status') == 'trialing' else 'active'
             trial_end = datetime.fromtimestamp(subscription['trial_end']) if subscription.get('trial_end') else None
-            print(f"Subscription status: {status}, trial_end: {trial_end}")
+            cancel_at_period_end = subscription.get('cancel_at_period_end', False)
+            print(f"Subscription status: {status}, trial_end: {trial_end}, cancel_at_period_end: {cancel_at_period_end}")
 
             # Build update data with safe access
             update_data = {
                 'subscription_status': status,
                 'subscription_tier': tier,
                 'stripe_subscription_id': subscription['id'],
+                'cancel_at_period_end': cancel_at_period_end,
             }
 
             # Add optional timestamp fields if present
@@ -331,13 +335,15 @@ class StripeService:
         stripe_status = subscription['status']
         status = status_map.get(stripe_status, 'free')
         trial_end = datetime.fromtimestamp(subscription['trial_end']) if subscription.get('trial_end') else None
+        cancel_at_period_end = subscription.get('cancel_at_period_end', False)
 
-        print(f"Stripe status: {stripe_status} → Our status: {status}, trial_end: {trial_end}")
+        print(f"Stripe status: {stripe_status} → Our status: {status}, trial_end: {trial_end}, cancel_at_period_end: {cancel_at_period_end}")
 
         try:
             # Update database - only include fields that exist in payload
             update_data = {
                 'subscription_status': status,
+                'cancel_at_period_end': cancel_at_period_end,
             }
 
             # Add optional fields if present
@@ -351,7 +357,7 @@ class StripeService:
 
             result = supabase.table('user_profiles').update(update_data).eq('stripe_subscription_id', subscription_id).execute()
 
-            print(f"✓ Subscription {subscription_id} updated to status: {status} - Updated {len(result.data)} rows")
+            print(f"✓ Subscription {subscription_id} updated to status: {status}, cancel_at_period_end: {cancel_at_period_end} - Updated {len(result.data)} rows")
 
         except Exception as e:
             print(f"❌ ERROR handling subscription.updated: {e}")
@@ -368,6 +374,7 @@ class StripeService:
             'subscription_status': 'canceled',
             'subscription_tier': None,
             'stripe_subscription_id': None,
+            'cancel_at_period_end': False,
         }).eq('stripe_subscription_id', subscription_id).execute()
 
         print(f"Subscription {subscription_id} canceled")
@@ -438,11 +445,12 @@ class StripeService:
                     'tier': None,
                     'trial_ends_at': None,
                     'subscription_end_date': None,
+                    'cancel_at_period_end': False,
                     'has_access': False
                 }
 
             response = supabase.table('user_profiles').select(
-                'subscription_status, subscription_tier, trial_ends_at, subscription_end_date'
+                'subscription_status, subscription_tier, trial_ends_at, subscription_end_date, cancel_at_period_end'
             ).eq('uid', user_id).execute()
 
             # Check if user profile exists
@@ -455,11 +463,13 @@ class StripeService:
                     'tier': None,
                     'trial_ends_at': None,
                     'subscription_end_date': None,
+                    'cancel_at_period_end': False,
                     'has_access': False
                 }
 
             data = response.data[0]
             status = data.get('subscription_status', 'free')
+            cancel_at_period_end = data.get('cancel_at_period_end', False)
 
             # Check if user has active access
             has_access = status in ('active', 'trialing')
@@ -476,6 +486,7 @@ class StripeService:
                 'tier': data.get('subscription_tier'),
                 'trial_ends_at': trial_ends_at,
                 'subscription_end_date': data.get('subscription_end_date'),
+                'cancel_at_period_end': cancel_at_period_end,
                 'has_access': has_access
             }
 
@@ -486,6 +497,7 @@ class StripeService:
                 'tier': None,
                 'trial_ends_at': None,
                 'subscription_end_date': None,
+                'cancel_at_period_end': False,
                 'has_access': False
             }
 

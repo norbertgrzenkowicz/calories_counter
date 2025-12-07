@@ -5,7 +5,7 @@ import '../core/app_logger.dart';
 class OpenFoodFactsService {
   static const String _baseUrl = 'https://world.openfoodfacts.org/api/v2';
   static const Map<String, String> _headers = {
-    'User-Agent': 'YapperApp/1.0.0 (contact@yapper.app)',
+    'User-Agent': 'JaperApp/1.0.0 (contact@japer.app)',
     'Accept': 'application/json',
   };
 
