@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
@@ -81,158 +80,6 @@ class _AddMealScreenState extends State<AddMealScreen> {
     _fatsController.dispose();
     _carbsController.dispose();
     super.dispose();
-  }
-
-  Future<void> _addPhoto() async {
-    final source = await _showPhotoSourceDialog();
-    if (source != null) {
-      await _pickImageFromSource(source);
-    }
-  }
-
-  Future<ImageSource?> _showPhotoSourceDialog() async {
-    return showDialog<ImageSource>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Photo Source'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Take Photo'),
-                onTap: () => Navigator.of(context).pop(ImageSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _pickImageFromSource(ImageSource source) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: source);
-
-    if (pickedFile != null) {
-      AppLogger.debug('Photo selected for upload: ${pickedFile.path}');
-
-      // Validate the uploaded file
-      final validationResult =
-          await FileUploadValidator.validateImageFile(pickedFile);
-
-      if (validationResult != FileValidationResult.valid) {
-        final errorMessage =
-            FileUploadValidator.getErrorMessage(validationResult);
-        AppLogger.warning('File validation failed: $errorMessage');
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      AppLogger.debug('File validation successful');
-      setState(() {
-        _photoPath = pickedFile.path;
-        _hasAnalyzedPhoto = false;
-        _analysisResult = null;
-      });
-      await _analyzePhoto();
-    }
-  }
-
-  Future<void> _analyzePhoto() async {
-    if (_photoPath == null) return;
-
-    setState(() {
-      _isAnalyzing = true;
-    });
-
-    try {
-      // Read image file and convert to base64
-      final bytes = await File(_photoPath!).readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      // Call the API
-      final response = await http.post(
-        Uri.parse('$_apiBaseUrl/analyze_food'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'image': base64Image,
-          'filename': _photoPath!.split('/').last,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final analysisData = jsonDecode(response.body) as Map<String, dynamic>;
-        setState(() {
-          _analysisResult = analysisData;
-          _hasAnalyzedPhoto = true;
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Photo analyzed! Review the suggested values.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else {
-        throw Exception('Failed to analyze photo: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to analyze photo: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        _isAnalyzing = false;
-      });
-    }
-  }
-
-  void _acceptAnalysis() {
-    if (_analysisResult != null) {
-      setState(() {
-        _caloriesController.text = _analysisResult!['calories'].toString();
-        _proteinsController.text = _analysisResult!['protein'].toString();
-        _fatsController.text = _analysisResult!['fats'].toString();
-        _carbsController.text = _analysisResult!['carbs'].toString();
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Analysis accepted! Values filled in.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _scanBarcode() async {
@@ -540,33 +387,6 @@ class _AddMealScreenState extends State<AddMealScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                if (_photoPath != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(_photoPath!),
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                OutlinedButton.icon(
-                  onPressed: _isAnalyzing ? null : _addPhoto,
-                  icon: _isAnalyzing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.camera_alt),
-                  label: Text(_isAnalyzing ? 'Analyzing...' : 'Add Photo'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: _isScanningBarcode ? null : _scanBarcode,
                   icon: _isScanningBarcode
@@ -685,46 +505,6 @@ class _AddMealScreenState extends State<AddMealScreen> {
                             ),
                           ),
                         ],
-                      ],
-                    ),
-                  ),
-                ],
-                if (_hasAnalyzedPhoto && _analysisResult != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'AI Analysis Results:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Calories: ${_analysisResult!['calories']}'),
-                        Text('Protein: ${_analysisResult!['protein']}g'),
-                        Text('Fats: ${_analysisResult!['fats']}g'),
-                        Text('Carbs: ${_analysisResult!['carbs']}g'),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _acceptAnalysis,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Accept & Fill Values'),
-                          ),
-                        ),
                       ],
                     ),
                   ),

@@ -1,13 +1,10 @@
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
 import 'package:food_scanner/screens/login_screen.dart';
 import 'package:food_scanner/services/supabase_service.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key, required this.cameras});
-
-  final List<CameraDescription> cameras;
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -33,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
       // User is authenticated, go to dashboard
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
-          builder: (context) => DashboardScreen(cameras: widget.cameras),
+          builder: (context) => const DashboardScreen(),
         ),
       );
     } else {

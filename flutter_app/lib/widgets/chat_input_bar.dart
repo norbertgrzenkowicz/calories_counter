@@ -1,19 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../core/app_logger.dart';
 
 class ChatInputBar extends StatefulWidget {
   final Function(String text) onSendText;
-  final Function(File image) onSendImage;
   final Function(File audio, String format) onSendAudio;
   final bool isProcessing;
 
   const ChatInputBar({
     super.key,
     required this.onSendText,
-    required this.onSendImage,
     required this.onSendAudio,
     this.isProcessing = false,
   });
@@ -29,67 +26,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
   void dispose() {
     _textController.dispose();
     super.dispose();
-  }
-
-  Future<void> _handleImagePicker() async {
-    if (widget.isProcessing) return;
-
-    try {
-      final source = await _showPhotoSourceDialog();
-      if (source == null) return;
-
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: source);
-
-      if (pickedFile != null) {
-        AppLogger.debug('Image picked: ${pickedFile.path}');
-        widget.onSendImage(File(pickedFile.path));
-      }
-    } catch (e) {
-      AppLogger.error('Image picker error', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to pick image: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<ImageSource?> _showPhotoSourceDialog() async {
-    return showDialog<ImageSource>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.cardBackground,
-          title: const Text('Select Photo Source'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppTheme.neonBlue),
-                title: const Text('Take Photo'),
-                onTap: () => Navigator.of(context).pop(ImageSource.camera),
-              ),
-              ListTile(
-                leading:
-                    const Icon(Icons.photo_library, color: AppTheme.neonBlue),
-                title: const Text('Choose from Gallery'),
-                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   // Audio recording temporarily disabled due to package compatibility issues
@@ -126,17 +62,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
       ),
       child: Row(
         children: [
-          // Image button
-          IconButton(
-            onPressed: widget.isProcessing ? null : _handleImagePicker,
-            icon: Icon(
-              Icons.camera_alt,
-              color: widget.isProcessing
-                  ? AppTheme.textTertiary
-                  : AppTheme.neonBlue,
-            ),
-            tooltip: 'Add image',
-          ),
           // Audio button (temporarily disabled)
           IconButton(
             onPressed: widget.isProcessing ? null : _handleAudioRecording,

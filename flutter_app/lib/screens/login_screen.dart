@@ -1,4 +1,3 @@
-import 'package:camera/camera.dart';
 import '../core/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,22 +18,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  late List<CameraDescription> _cameras;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeCameras();
-  }
-
-  Future<void> _initializeCameras() async {
-    try {
-      _cameras = await availableCameras();
-    } catch (e) {
-      AppLogger.error('Camera initialization failed', e);
-      _cameras = [];
-    }
-  }
 
   @override
   void dispose() {
@@ -67,8 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (authState.isAuthenticated && mounted) {
         AppLogger.logUserAction('login_successful');
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-              builder: (context) => DashboardScreen(cameras: _cameras)),
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
         );
       }
     } catch (e) {

@@ -45,10 +45,6 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to scan food items.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs microphone access for camera functionality.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:camera/camera.dart';
 import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
@@ -13,9 +12,7 @@ import 'weight_tracking_screen.dart';
 import 'settings_screen.dart';
 
 class DashboardScreenRiverpod extends ConsumerStatefulWidget {
-  final List<CameraDescription> cameras;
-
-  const DashboardScreenRiverpod({super.key, required this.cameras});
+  const DashboardScreenRiverpod({super.key});
 
   @override
   ConsumerState<DashboardScreenRiverpod> createState() =>

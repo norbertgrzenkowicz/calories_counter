@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
@@ -16,31 +15,22 @@ void main() async {
     debugPrint('Service initialization error: $e');
   }
 
-  List<CameraDescription> cameras = [];
-  try {
-    cameras = await availableCameras();
-  } catch (e) {
-    // Camera initialization failed, continue without camera
-  }
-
   runApp(
-    ProviderScope(
-      child: FoodScannerApp(cameras: cameras),
+    const ProviderScope(
+      child: FoodScannerApp(),
     ),
   );
 }
 
 class FoodScannerApp extends StatelessWidget {
-  final List<CameraDescription> cameras;
-
-  const FoodScannerApp({super.key, required this.cameras});
+  const FoodScannerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Food Scanner',
       theme: AppTheme.theme,
-      home: SplashScreen(cameras: cameras),
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 
 enum FileValidationResult {
   valid,
@@ -11,10 +10,15 @@ enum FileValidationResult {
 
 class FileUploadValidator {
   static const int maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
-  static const List<String> allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+  static const List<String> allowedExtensions = [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif'
+  ];
   static const List<String> allowedMimeTypes = [
     'image/jpeg',
-    'image/jpg', 
+    'image/jpg',
     'image/png',
     'image/gif'
   ];
@@ -34,8 +38,9 @@ class FileUploadValidator {
 
       // Check file extension
       final fileName = file.path.toLowerCase();
-      final hasValidExtension = allowedExtensions.any((ext) => fileName.endsWith(ext));
-      
+      final hasValidExtension =
+          allowedExtensions.any((ext) => fileName.endsWith(ext));
+
       if (!hasValidExtension) {
         return FileValidationResult.invalidFormat;
       }
@@ -50,11 +55,6 @@ class FileUploadValidator {
     } catch (e) {
       return FileValidationResult.accessDenied;
     }
-  }
-
-  static Future<FileValidationResult> validateImageFile(XFile file) async {
-    final ioFile = File(file.path);
-    return await validateFile(ioFile);
   }
 
   static String getErrorMessage(FileValidationResult result) {

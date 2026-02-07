@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/supabase_service.dart';
@@ -29,7 +28,6 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   late TextEditingController _proteinsController;
   late TextEditingController _fatsController;
   late TextEditingController _carbsController;
-  String? _newPhotoPath;
 
   @override
   void initState() {
@@ -59,17 +57,6 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     super.dispose();
   }
 
-  Future<void> _pickNewPhoto() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
-    if (pickedFile != null) {
-      setState(() {
-        _newPhotoPath = pickedFile.path;
-      });
-    }
-  }
-
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -83,14 +70,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
         const SnackBar(content: Text('Updating meal...')),
       );
 
-      String? photoUrl = currentMeal.photoUrl;
-
-      // Upload new photo if one was selected
-      if (_newPhotoPath != null) {
-        final fileName = 'meal_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        photoUrl =
-            await supabaseService.uploadMealPhoto(_newPhotoPath!, fileName);
-      }
+      final photoUrl = currentMeal.photoUrl;
 
       final updatedMeal = Meal(
         id: currentMeal.id,
@@ -111,7 +91,6 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       setState(() {
         currentMeal = updatedMeal;
         isEditing = false;
-        _newPhotoPath = null;
       });
 
       widget.onMealUpdated();
@@ -226,7 +205,6 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
               onPressed: () {
                 setState(() {
                   isEditing = false;
-                  _newPhotoPath = null;
                   _initializeControllers();
                 });
               },
@@ -263,8 +241,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground,
                     borderRadius: BorderRadius.circular(8),
-                    border:
-                        Border.all(color: AppTheme.borderColor),
+                    border: Border.all(color: AppTheme.borderColor),
                   ),
                   child: currentMeal.photoUrl != null
                       ? ClipRRect(
@@ -278,9 +255,12 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(Icons.fastfood,
-                                        size: 48, color: AppTheme.textSecondary),
+                                        size: 48,
+                                        color: AppTheme.textSecondary),
                                     SizedBox(height: 8),
-                                    Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
+                                    Text('No photo available',
+                                        style: TextStyle(
+                                            color: AppTheme.textSecondary)),
                                   ],
                                 ),
                               );
@@ -299,7 +279,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                               Icon(Icons.fastfood,
                                   size: 48, color: AppTheme.textSecondary),
                               SizedBox(height: 8),
-                              Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
+                              Text('No photo available',
+                                  style:
+                                      TextStyle(color: AppTheme.textSecondary)),
                             ],
                           ),
                         ),
@@ -352,11 +334,17 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                 _buildNutritionCard('Calories', '${currentMeal.calories}',
                     'kcal', AppTheme.neonGreen),
                 const SizedBox(height: 12),
-                _buildNutritionCard('Proteins',
-                    currentMeal.proteins.toStringAsFixed(1), 'g', AppTheme.neonRed),
+                _buildNutritionCard(
+                    'Proteins',
+                    currentMeal.proteins.toStringAsFixed(1),
+                    'g',
+                    AppTheme.neonRed),
                 const SizedBox(height: 12),
-                _buildNutritionCard('Carbohydrates',
-                    currentMeal.carbs.toStringAsFixed(1), 'g', AppTheme.neonOrange),
+                _buildNutritionCard(
+                    'Carbohydrates',
+                    currentMeal.carbs.toStringAsFixed(1),
+                    'g',
+                    AppTheme.neonOrange),
                 const SizedBox(height: 12),
                 _buildNutritionCard('Fats', currentMeal.fats.toStringAsFixed(1),
                     'g', AppTheme.neonBlue),
@@ -374,91 +362,6 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Photo Edit Section
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Photo',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardBackground,
-                      borderRadius: BorderRadius.circular(8),
-                      border:
-                          Border.all(color: AppTheme.borderColor),
-                    ),
-                    child: _newPhotoPath != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(_newPhotoPath!),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Center(
-                                    child: Text('Error loading new photo'));
-                              },
-                            ),
-                          )
-                        : currentMeal.photoUrl != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  currentMeal.photoUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.fastfood,
-                                              size: 48,
-                                              color: AppTheme.textSecondary),
-                                          SizedBox(height: 8),
-                                          Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              )
-                            : const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.fastfood,
-                                        size: 48, color: AppTheme.textSecondary),
-                                    SizedBox(height: 8),
-                                    Text('No photo available', style: TextStyle(color: AppTheme.textSecondary)),
-                                  ],
-                                ),
-                              ),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: _pickNewPhoto,
-                    icon: const Icon(Icons.camera_alt),
-                    label: Text(_newPhotoPath != null
-                        ? 'Change Photo'
-                        : 'Update Photo'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // Form Fields
           Card(
             child: Padding(
