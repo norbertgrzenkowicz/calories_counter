@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:food_scanner/screens/login_screen.dart';
 import 'package:food_scanner/services/supabase_service.dart';
 import '../theme/app_theme.dart';
@@ -39,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final ChatService _chatService = ChatService();
   bool _isProcessingMessage = false;
   final ScrollController _chatScrollController = ScrollController();
+  bool _didDismissKeyboardInDrag = false;
 
   @override
   void initState() {
@@ -587,6 +589,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  void _dismissKeyboardGlobally() {
+    final primaryFocus = FocusManager.instance.primaryFocus;
+    if (primaryFocus != null) {
+      primaryFocus.unfocus();
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    }
+  }
+
+  void _handleGlobalPointerMove(PointerMoveEvent event) {
+    if (_didDismissKeyboardInDrag) return;
+    if (event.delta.dy > 16) {
+      _dismissKeyboardGlobally();
+      _didDismissKeyboardInDrag = true;
+    }
+  }
+
+  void _resetGlobalPointerDismissState([PointerEvent? _]) {
+    _didDismissKeyboardInDrag = false;
+  }
+
   /// Save a chat message to database
   Future<void> _saveChatMessage(ChatMessage message) async {
     try {
@@ -733,32 +755,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 16),
         ],
       ),
-      body: Column(
-        children: [
-          // Subscription banner
-          const SubscriptionBanner(),
-          // Chat messages area
-          Expanded(
-            child: _buildChatMessages(),
-          ),
-          // Compact nutrition bars at bottom
-          FutureBuilder<List<Meal>>(
-            future: _getMealsForSelectedDate(),
-            builder: (context, snapshot) {
-              final meals = snapshot.data ?? [];
-              return CompactNutritionBars(
-                meals: meals,
-                userProfile: _userProfile,
-              );
-            },
-          ),
-          // Chat input bar
-          ChatInputBar(
-            onSendText: _handleSendText,
-            onSendAudio: _handleSendAudio,
-            isProcessing: _isProcessingMessage,
-          ),
-        ],
+      body: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerMove: _handleGlobalPointerMove,
+        onPointerUp: _resetGlobalPointerDismissState,
+        onPointerCancel: _resetGlobalPointerDismissState,
+        child: Column(
+          children: [
+            // Subscription banner
+            const SubscriptionBanner(),
+            // Chat messages area
+            Expanded(
+              child: _buildChatMessages(),
+            ),
+            // Compact nutrition bars at bottom
+            FutureBuilder<List<Meal>>(
+              future: _getMealsForSelectedDate(),
+              builder: (context, snapshot) {
+                final meals = snapshot.data ?? [];
+                return CompactNutritionBars(
+                  meals: meals,
+                  userProfile: _userProfile,
+                );
+              },
+            ),
+            // Chat input bar
+            ChatInputBar(
+              onSendText: _handleSendText,
+              onSendAudio: _handleSendAudio,
+              isProcessing: _isProcessingMessage,
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
@@ -766,44 +794,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildChatMessages() {
     if (_chatMessages.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppTheme.neonGreen.withOpacity(0.1),
-                  shape: BoxShape.circle,
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppTheme.neonGreen.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.chat_bubble_outline,
+                          size: 64,
+                          color: AppTheme.neonGreen,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Start tracking your food!',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Describe what you ate or record audio.\nOur AI will analyze the nutrition for you.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                child: const Icon(
-                  Icons.chat_bubble_outline,
-                  size: 64,
-                  color: AppTheme.neonGreen,
-                ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Start tracking your food!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Describe what you ate or record audio.\nOur AI will analyze the nutrition for you.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
     }
 
