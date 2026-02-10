@@ -418,6 +418,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     _scrollToBottom();
 
+    // Wait 300ms before showing loading indicator (avoids flash for quick responses)
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // Add loading message
+    final loadingMessage = ChatMessage.loading();
+    setState(() {
+      _chatMessages.add(loadingMessage);
+    });
+    _scrollToBottom();
+
     try {
       // Call API
       final nutritionData = await _chatService.analyzeFoodFromText(text);
@@ -429,7 +439,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
 
       setState(() {
-        _chatMessages.add(aiMessage);
+        // Replace loading message with AI response
+        final index =
+            _chatMessages.indexWhere((m) => m.id == loadingMessage.id);
+        if (index != -1) {
+          _chatMessages[index] = aiMessage;
+        } else {
+          // Fallback: add to end if loading message not found
+          _chatMessages.add(aiMessage);
+        }
         _isProcessingMessage = false;
       });
 
@@ -439,6 +457,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _scrollToBottom();
     } catch (e) {
       setState(() {
+        // Remove loading message on error
+        _chatMessages.removeWhere((m) => m.id == loadingMessage.id);
         _isProcessingMessage = false;
       });
 
@@ -493,6 +513,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Save user message to database (with storage URL)
       await _saveChatMessage(finalUserMessage);
 
+      // Wait 300ms before showing loading indicator
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Add loading message
+      final loadingMessage = ChatMessage.loading();
+      setState(() {
+        _chatMessages.add(loadingMessage);
+      });
+      _scrollToBottom();
+
       // Call API for analysis
       final nutritionData =
           await _chatService.analyzeFoodFromAudio(audioFile, format);
@@ -504,7 +534,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
 
       setState(() {
-        _chatMessages.add(aiMessage);
+        // Replace loading message with AI response
+        final index =
+            _chatMessages.indexWhere((m) => m.id == loadingMessage.id);
+        if (index != -1) {
+          _chatMessages[index] = aiMessage;
+        } else {
+          // Fallback: add to end if loading message not found
+          _chatMessages.add(aiMessage);
+        }
         _isProcessingMessage = false;
       });
 
@@ -550,7 +588,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _handleGlobalPointerMove(PointerMoveEvent event) {
     if (_didDismissKeyboardInDrag) return;
-    if (event.delta.dy > 16) {
+    if (event.delta.dy > 8) {
       _dismissKeyboardGlobally();
       _didDismissKeyboardInDrag = true;
     }
