@@ -75,7 +75,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
           Expanded(
             child: TextField(
               controller: _textController,
-              enabled: !widget.isProcessing,
               decoration: InputDecoration(
                 hintText: 'Describe your food...',
                 hintStyle: const TextStyle(
@@ -113,20 +112,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
           // Send button
           IconButton(
             onPressed: widget.isProcessing ? null : _handleSendText,
-            icon: widget.isProcessing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppTheme.neonGreen),
-                    ),
-                  )
-                : const Icon(
-                    Icons.send,
-                    color: AppTheme.neonGreen,
-                  ),
+            icon: Icon(
+              Icons.send,
+              color: widget.isProcessing
+                  ? AppTheme.textTertiary
+                  : AppTheme.neonGreen,
+            ),
             tooltip: 'Send',
           ),
         ],

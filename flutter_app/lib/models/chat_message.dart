@@ -12,10 +12,12 @@ class ChatMessage {
   final MessageType type;
   final DateTime timestamp;
   final bool isUser; // true for user messages, false for AI responses
-  final Map<String, dynamic>? nutritionData; // Only for AI responses (includes meal_name, calories, protein, carbs, fats)
+  final Map<String, dynamic>?
+      nutritionData; // Only for AI responses (includes meal_name, calories, protein, carbs, fats)
   final bool isDiscarded; // true if the message has been discarded
   final bool isAdded; // true if the meal has been added to today's meals
   final String? mealName; // Name of the meal (set when discarded)
+  final bool isLoading; // true for AI typing indicator
 
   ChatMessage({
     String? id,
@@ -27,6 +29,7 @@ class ChatMessage {
     this.isDiscarded = false,
     this.isAdded = false,
     this.mealName,
+    this.isLoading = false,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -52,6 +55,16 @@ class ChatMessage {
       type: MessageType.text,
       isUser: false,
       nutritionData: nutritionData,
+    );
+  }
+
+  /// Create a loading/typing indicator message
+  factory ChatMessage.loading() {
+    return ChatMessage(
+      content: 'AI is analyzing...',
+      type: MessageType.text,
+      isUser: false,
+      isLoading: true,
     );
   }
 
@@ -90,6 +103,7 @@ class ChatMessage {
     bool? isDiscarded,
     bool? isAdded,
     String? mealName,
+    bool? isLoading,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -101,11 +115,13 @@ class ChatMessage {
       isDiscarded: isDiscarded ?? this.isDiscarded,
       isAdded: isAdded ?? this.isAdded,
       mealName: mealName ?? this.mealName,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 
   /// Convert to Supabase format for database storage
-  Map<String, dynamic> toSupabase({required String userId, required DateTime date}) {
+  Map<String, dynamic> toSupabase(
+      {required String userId, required DateTime date}) {
     return {
       'uid': userId,
       'message_id': id,
@@ -116,7 +132,9 @@ class ChatMessage {
       'is_discarded': isDiscarded,
       'is_added': isAdded,
       'meal_name': mealName,
-      'date': date.toIso8601String().split('T')[0], // Store as DATE only (YYYY-MM-DD)
+      'date': date
+          .toIso8601String()
+          .split('T')[0], // Store as DATE only (YYYY-MM-DD)
       'timestamp': timestamp.toIso8601String(), // Store full timestamp
     };
   }

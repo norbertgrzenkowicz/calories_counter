@@ -3,6 +3,124 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/chat_message.dart';
 
+/// Animated loading bubble with 3-dot bounce animation
+class _LoadingBubble extends StatefulWidget {
+  const _LoadingBubble();
+
+  @override
+  State<_LoadingBubble> createState() => _LoadingBubbleState();
+}
+
+class _LoadingBubbleState extends State<_LoadingBubble>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  bool _showDots = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
+
+    // Delay showing dots by 300ms
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _showDots = true;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppTheme.borderColor,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.neonGreen.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.psychology,
+                      color: AppTheme.neonGreen,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (_showDots)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildDot(0),
+                        const SizedBox(width: 4),
+                        _buildDot(1),
+                        const SizedBox(width: 4),
+                        _buildDot(2),
+                      ],
+                    )
+                  else
+                    const SizedBox(width: 36),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDot(int index) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double phase = index * 0.33;
+        final double value = (_controller.value + phase) % 1.0;
+        final double scale = 0.5 + 0.5 * (1 - (value * 2 - 1).abs());
+
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: AppTheme.neonGreen,
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class ChatMessageBubble extends StatelessWidget {
   final ChatMessage message;
   final VoidCallback? onAddToMeals;
@@ -17,6 +135,9 @@ class ChatMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (message.isLoading) {
+      return const _LoadingBubble();
+    }
     if (message.isUser) {
       return _buildUserMessage(context);
     } else {
