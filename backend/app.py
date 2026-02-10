@@ -130,7 +130,7 @@ def predict_nutrition(image_data: str) -> dict:
     """Predict nutrition from base64-encoded image"""
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5-nano",
             messages=[
                 {
                     "role": "system",
@@ -148,8 +148,7 @@ def predict_nutrition(image_data: str) -> dict:
                         }
                     ]
                 }
-            ],
-            max_tokens=150
+            ]
         )
     except Exception as e:
         print(f"OpenAI API error: {e}")
@@ -167,7 +166,7 @@ def predict_nutrition_from_text(text_description: str) -> dict:
     """Predict nutrition from text description of food"""
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5-nano",
             messages=[
                 {
                     "role": "system",
@@ -177,8 +176,7 @@ def predict_nutrition_from_text(text_description: str) -> dict:
                     "role": "user",
                     "content": f"Estimate the total nutritional content of this food description and give it a descriptive name: \"{text_description}\". Return JSON format: {{\"meal_name\": \"descriptive name\", \"calories\": number, \"protein\": grams, \"carbs\": grams, \"fats\": grams}}"
                 }
-            ],
-            max_tokens=150
+            ]
         )
     except Exception as e:
         print(f"OpenAI API error: {e}")

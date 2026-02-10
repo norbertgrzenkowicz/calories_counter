@@ -355,96 +355,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final defaultMealName =
         message.nutritionData?['meal_name'] as String? ?? 'My Meal';
 
-    final mealNameController = TextEditingController(text: defaultMealName);
-
-    final confirmed = await showDialog<bool>(
+    final result = await showDialog<String?>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.cardBackground,
-        title: const Text('Discard Meal'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter a name for this discarded meal:',
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: mealNameController,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Meal Name',
-                hintText: 'e.g., Pizza',
-                border: OutlineInputBorder(),
-              ),
-              textInputAction: TextInputAction.done,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.neonRed,
-              foregroundColor: AppTheme.darkBackground,
-            ),
-            child: const Text('Discard'),
-          ),
-        ],
+      builder: (context) => _DiscardMealDialog(
+        defaultMealName: defaultMealName,
       ),
     );
 
-    if (confirmed == true && mounted) {
-      final mealName = mealNameController.text.trim();
-
-      if (mealName.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meal name cannot be empty'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        mealNameController.dispose();
-        return;
-      }
-
+    if (result != null && result.isNotEmpty && mounted) {
       // Find and update the message
       final messageIndex = _chatMessages.indexWhere((m) => m.id == messageId);
       if (messageIndex != -1) {
         setState(() {
           _chatMessages[messageIndex] = _chatMessages[messageIndex].copyWith(
             isDiscarded: true,
-            mealName: mealName,
+            mealName: result,
           );
         });
 
         // Update message in database
         await _updateChatMessage(messageId, {
           'is_discarded': true,
-          'meal_name': mealName,
+          'meal_name': result,
         });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Meal "$mealName" discarded'),
+              content: Text('Meal "$result" discarded'),
               backgroundColor: AppTheme.textTertiary,
             ),
           );
         }
       }
+    } else if (result != null && result.isEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Meal name cannot be empty'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-
-    mealNameController.dispose();
   }
 
   // Chat message handlers
@@ -1439,6 +1390,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DiscardMealDialog extends StatefulWidget {
+  final String defaultMealName;
+
+  const _DiscardMealDialog({
+    required this.defaultMealName,
+  });
+
+  @override
+  State<_DiscardMealDialog> createState() => _DiscardMealDialogState();
+}
+
+class _DiscardMealDialogState extends State<_DiscardMealDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.defaultMealName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleDiscard() {
+    final mealName = _controller.text.trim();
+    Navigator.of(context).pop(mealName);
+  }
+
+  void _handleCancel() {
+    Navigator.of(context).pop(null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.cardBackground,
+      title: const Text('Discard Meal'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Enter a name for this discarded meal:',
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Meal Name',
+              hintText: 'e.g., Pizza',
+              border: OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _handleDiscard(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _handleCancel,
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _handleDiscard,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.neonRed,
+            foregroundColor: AppTheme.darkBackground,
+          ),
+          child: const Text('Discard'),
+        ),
+      ],
     );
   }
 }
