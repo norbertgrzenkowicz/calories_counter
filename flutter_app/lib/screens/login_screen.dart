@@ -6,6 +6,8 @@ import 'package:food_scanner/screens/dashboard_screen.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
 import 'package:food_scanner/providers/auth_provider.dart';
+import 'package:food_scanner/utils/app_page_route.dart';
+import 'package:food_scanner/utils/app_snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -31,12 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both email and password'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbar.error(context, 'Please enter both email and password');
       return;
     }
 
@@ -50,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (authState.isAuthenticated && mounted) {
         AppLogger.logUserAction('login_successful');
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          AppPageRoute(builder: (context) => const DashboardScreen()),
         );
       }
     } catch (e) {
@@ -60,7 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _goToRegisterScreen() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+      AppPageRoute(builder: (context) => const RegisterScreen()),
     );
   }
 
@@ -71,12 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Listen for auth state changes and show errors
     ref.listen(authNotifierProvider, (previous, next) {
       if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, next.error!);
       }
     });
     return Scaffold(
@@ -88,6 +80,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.neonGreen.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.restaurant,
+                  size: 48,
+                  color: AppTheme.neonGreen,
+                ),
+              ),
+              const SizedBox(height: 24),
               Text(
                 'Welcome Back!',
                 textAlign: TextAlign.center,

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../core/app_logger.dart';
+import '../utils/app_snackbar.dart';
 
 class ChatInputBar extends StatefulWidget {
   final Function(String text) onSendText;
@@ -32,12 +34,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   Future<void> _handleAudioRecording() async {
     if (widget.isProcessing) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Audio recording temporarily unavailable'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+    AppSnackbar.warning(context, 'Audio recording temporarily unavailable');
   }
 
   void _handleSendText() {
@@ -46,6 +43,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    HapticFeedback.lightImpact();
     widget.onSendText(text);
     _textController.clear();
   }

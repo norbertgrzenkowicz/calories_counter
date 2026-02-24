@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
 import 'package:food_scanner/screens/login_screen.dart';
 import 'package:food_scanner/services/supabase_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/app_page_route.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -29,14 +31,14 @@ class _SplashScreenState extends State<SplashScreen> {
     if (userId != null) {
       // User is authenticated, go to dashboard
       await Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
+        AppPageRoute(
           builder: (context) => const DashboardScreen(),
         ),
       );
     } else {
       // User is not authenticated, go to login
       await Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
+        AppPageRoute(
           builder: (context) => const LoginScreen(),
         ),
       );
@@ -45,8 +47,44 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      backgroundColor: AppTheme.darkBackground,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.neonGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.restaurant,
+                size: 64,
+                color: AppTheme.neonGreen,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Japer',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.neonGreen),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

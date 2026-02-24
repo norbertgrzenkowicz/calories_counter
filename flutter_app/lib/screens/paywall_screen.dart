@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_page_route.dart';
 import 'subscription_screen.dart';
 
 class PaywallScreen extends StatelessWidget {
@@ -48,7 +49,7 @@ class PaywallScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    AppPageRoute(
                       builder: (context) => const SubscriptionScreen(),
                     ),
                   );

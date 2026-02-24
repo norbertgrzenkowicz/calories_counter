@@ -7,6 +7,8 @@ import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/supabase_service.dart';
 import '../services/openfoodfacts_service.dart';
+import '../utils/app_page_route.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/file_upload_validator.dart';
 import '../utils/input_sanitizer.dart';
 import 'barcode_scanner_screen.dart';
@@ -90,7 +92,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
     try {
       final result = await Navigator.push<String>(
         context,
-        MaterialPageRoute(
+        AppPageRoute(
           builder: (context) => const BarcodeScannerScreen(),
         ),
       );
@@ -106,13 +108,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
         });
 
         // Show scanning feedback
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Looking up product...'),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        AppSnackbar.info(context, 'Looking up product...');
 
         // Look up product with cache-first strategy
         final supabaseService = SupabaseService();
@@ -125,12 +121,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
           });
 
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Product found: ${product.name}'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppSnackbar.success(context, 'Product found: ${product.name}');
         } else if (mounted) {
           // Product not found - show placeholder
           // Sanitize the barcode result before displaying
@@ -142,23 +133,12 @@ class _AddMealScreenState extends State<AddMealScreen> {
             _nameController.text = 'Unknown Product ($displayBarcode)';
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Product not found in database. You can enter nutrition manually.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          AppSnackbar.warning(context, 'Product not found in database. You can enter nutrition manually.');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to scan barcode: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to scan barcode: $e');
       }
     } finally {
       setState(() {
@@ -180,12 +160,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Product nutrition accepted! Values filled in.'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackbar.success(context, 'Product nutrition accepted! Values filled in.');
       }
     }
   }
@@ -252,12 +227,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
         await supabaseService.addMeal(meal.toSupabase());
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Meal added successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppSnackbar.success(context, 'Meal added successfully!');
         }
 
         widget.onMealAdded();
@@ -266,12 +236,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to add meal: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppSnackbar.error(context, 'Failed to add meal: $e');
         }
       } finally {
         if (mounted) {

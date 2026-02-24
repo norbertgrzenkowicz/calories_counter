@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_page_route.dart';
+import '../utils/app_snackbar.dart';
 import '../providers/auth_provider.dart';
 import '../providers/meals_provider.dart';
 import '../providers/profile_provider.dart';
@@ -32,6 +35,7 @@ class _DashboardScreenRiverpodState
   }
 
   void _onItemTapped(int index) {
+    HapticFeedback.lightImpact();
     setState(() {
       _selectedIndex = index;
     });
@@ -51,13 +55,14 @@ class _DashboardScreenRiverpodState
 
   void _openWeightTracking() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const WeightTrackingScreen()),
+      AppPageRoute(builder: (context) => const WeightTrackingScreen()),
     );
   }
 
   void _addMeal() {
+    HapticFeedback.mediumImpact();
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (context) => AddMealScreen(
           selectedDate: _selectedDate,
           onMealAdded: () {
@@ -71,7 +76,7 @@ class _DashboardScreenRiverpodState
 
   void _navigateToProfile() async {
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+      AppPageRoute(builder: (context) => const ProfileScreen()),
     );
 
     // Refresh profile when returning from profile screen
@@ -81,6 +86,7 @@ class _DashboardScreenRiverpodState
   }
 
   void _goToPreviousDay() {
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedDate = DateTime(
           _selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
@@ -88,6 +94,7 @@ class _DashboardScreenRiverpodState
   }
 
   void _goToNextDay() {
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedDate = DateTime(
           _selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
@@ -107,18 +114,13 @@ class _DashboardScreenRiverpodState
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          AppPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     } catch (e) {
       AppLogger.error('Sign out failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sign out failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Sign out failed: $e');
       }
     }
   }
@@ -138,7 +140,7 @@ class _DashboardScreenRiverpodState
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            AppPageRoute(builder: (context) => const LoginScreen()),
           );
         }
       });
@@ -157,8 +159,6 @@ class _DashboardScreenRiverpodState
       appBar: AppBar(
         title:
             const Text('Japer', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.neonGreen,
-        foregroundColor: AppTheme.darkBackground,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -392,21 +392,29 @@ class _DashboardScreenRiverpodState
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Complete Your Profile'),
+        backgroundColor: AppTheme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Complete Your Profile',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
         content: const Text(
           'To get personalized calorie and nutrition targets, please complete your profile with your basic information.',
+          style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Skip for Now',
+                style: TextStyle(color: AppTheme.textSecondary)),
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               _navigateToProfile();
             },
-            child: const Text('Complete Profile'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Skip for Now'),
+            child: const Text('Complete Profile',
+                style: TextStyle(color: AppTheme.neonGreen)),
           ),
         ],
       ),
@@ -421,22 +429,12 @@ class _DashboardScreenRiverpodState
           .read(mealsNotifierProvider(_selectedDate).notifier)
           .deleteMeal(mealId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meal deleted successfully'),
-            backgroundColor: AppTheme.neonGreen,
-          ),
-        );
+        AppSnackbar.success(context, 'Meal deleted successfully');
       }
     } catch (e) {
       AppLogger.error('Failed to delete meal', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete meal: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to delete meal: $e');
       }
     }
   }
@@ -483,7 +481,7 @@ class _DashboardScreenRiverpodState
   void _navigateToSettings() {
     Navigator.push(
       context,
-      MaterialPageRoute<void>(builder: (context) => const SettingsScreen()),
+      AppPageRoute<void>(builder: (context) => const SettingsScreen()),
     );
   }
 }

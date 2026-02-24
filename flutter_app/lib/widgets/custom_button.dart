@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 
 class CustomButton extends StatefulWidget {
@@ -89,7 +90,12 @@ class _CustomButtonState extends State<CustomButton>
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: widget.isLoading ? null : widget.onPressed,
+                  onTap: widget.isLoading
+                      ? null
+                      : () {
+                          HapticFeedback.lightImpact();
+                          widget.onPressed();
+                        },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -119,7 +125,7 @@ class _CustomButtonState extends State<CustomButton>
                               size: 20,
                               color: widget.isSecondary
                                   ? AppTheme.neonGreen
-                                  : AppTheme.darkBackground,
+                                  : AppTheme.neonGreen,
                             ),
                             const SizedBox(width: 8),
                           ],
@@ -130,7 +136,7 @@ class _CustomButtonState extends State<CustomButton>
                             ).textTheme.labelLarge?.copyWith(
                                   color: widget.isSecondary
                                       ? AppTheme.neonGreen
-                                      : AppTheme.darkBackground,
+                                      : AppTheme.neonGreen,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),

@@ -7,6 +7,8 @@ import '../models/subscription.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
 import '../providers/subscription_provider.dart';
+import '../utils/app_page_route.dart';
+import '../utils/app_snackbar.dart';
 import '../widgets/keyboard_toolbar.dart';
 import 'subscription_screen.dart';
 
@@ -100,9 +102,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $e')),
-        );
+        AppSnackbar.error(context, 'Error loading profile: $e');
       }
     } finally {
       setState(() => _isLoadingProfile = false);
@@ -153,24 +153,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       AppLogger.info('Profile saved successfully');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile saved successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackbar.success(context, 'Profile saved successfully!');
         Navigator.of(context).pop();
       }
     } catch (e, stackTrace) {
       AppLogger.error('Error saving profile', e, stackTrace);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving profile: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Error saving profile: $e');
       }
     } finally {
       setState(() => _isLoading = false);
@@ -368,7 +358,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  AppPageRoute(
                     builder: (context) => const SubscriptionScreen(),
                   ),
                 );

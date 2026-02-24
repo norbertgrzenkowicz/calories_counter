@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../services/data_export_service.dart';
 import '../core/app_logger.dart';
+import '../utils/app_snackbar.dart';
 
 enum ExportFormat { csv, json, xml, pdf }
 
@@ -36,8 +37,6 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Export Data'),
-        backgroundColor: AppTheme.neonGreen,
-        foregroundColor: AppTheme.darkBackground,
       ),
       backgroundColor: AppTheme.darkBackground,
       body: _isExporting ? _buildExportingView() : _buildExportForm(),
@@ -409,12 +408,7 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
 
   Future<void> _exportData() async {
     if (!_includeWeightHistory) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one data type to export'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppSnackbar.warning(context, 'Please select at least one data type to export');
       return;
     }
 
@@ -433,24 +427,14 @@ class _ExportDataScreenState extends ConsumerState<ExportDataScreen> {
 
       if (success && mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Data exported successfully!'),
-            backgroundColor: AppTheme.neonGreen,
-          ),
-        );
+        AppSnackbar.success(context, 'Data exported successfully!');
       } else if (mounted) {
         throw Exception('Export failed');
       }
     } catch (e) {
       AppLogger.error('Export failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Export failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Export failed: ${e.toString()}');
       }
     } finally {
       if (mounted) {

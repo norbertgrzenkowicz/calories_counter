@@ -4,6 +4,7 @@ import 'package:food_scanner/widgets/custom_button.dart';
 import 'package:food_scanner/services/supabase_service.dart';
 import 'package:food_scanner/core/app_logger.dart';
 import 'package:food_scanner/core/service_locator.dart';
+import 'package:food_scanner/utils/app_snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -42,74 +43,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
         AppLogger.logUserAction('user_registration_successful');
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Registration successful! Please check your email to verify your account.'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackbar.success(context, 'Registration successful! Check your email to verify your account.');
         Navigator.of(context).pop();
       } else {
         AppLogger.error('Registration failed: No user returned');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration failed: No user created'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Registration failed: No user created');
       }
     } on AuthException catch (e) {
       AppLogger.error('Registration failed - AuthException', e);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Registration failed: ${e.message}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbar.error(context, 'Registration failed: ${e.message}');
     } catch (e) {
       AppLogger.error('Registration failed - Unexpected error', e);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbar.error(context, 'An error occurred: $e');
     }
   }
 
   bool _validateForm() {
     if (_emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an email address')),
-      );
+      AppSnackbar.warning(context, 'Please enter an email address');
       return false;
     }
 
     if (!_emailController.text.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
-      );
+      AppSnackbar.warning(context, 'Please enter a valid email address');
       return false;
     }
 
     if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Password must be at least 6 characters long')),
-      );
+      AppSnackbar.warning(context, 'Password must be at least 6 characters long');
       return false;
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
+      AppSnackbar.warning(context, 'Passwords do not match');
       return false;
     }
 
@@ -145,6 +116,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.neonGreen.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.restaurant,
+                  size: 48,
+                  color: AppTheme.neonGreen,
+                ),
+              ),
+              const SizedBox(height: 24),
               Text(
                 'Create Account',
                 textAlign: TextAlign.center,

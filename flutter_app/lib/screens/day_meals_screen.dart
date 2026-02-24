@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
+import '../utils/app_page_route.dart';
 import 'meal_detail_screen.dart';
 
 class DayMealsScreen extends StatelessWidget {
@@ -70,7 +71,7 @@ class DayMealsScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          AppPageRoute(
                             builder: (context) => MealDetailScreen(
                               meal: meal,
                               onMealUpdated: () {

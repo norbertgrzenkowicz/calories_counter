@@ -32,6 +32,13 @@ class AppTheme {
     stops: [0.0, 1.0],
   );
 
+  // Spacing constants
+  static const double spaceXS = 4;
+  static const double spaceSM = 8;
+  static const double spaceMD = 16;
+  static const double spaceLG = 24;
+  static const double spaceXL = 32;
+
   static ThemeData get theme {
     return ThemeData(
       useMaterial3: true,

@@ -507,10 +507,10 @@ class ChatMessageBubble extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNutritionItem('🍎', '$calories', 'kcal'),
-              _buildNutritionItem('🥩', '${protein}g', 'protein'),
-              _buildNutritionItem('🍞', '${carbs}g', 'carbs'),
-              _buildNutritionItem('🥑', '${fats}g', 'fat'),
+              _buildNutritionItem(Icons.local_fire_department, AppTheme.neonGreen, '$calories', 'kcal'),
+              _buildNutritionItem(Icons.fitness_center, AppTheme.neonRed, '${protein}g', 'protein'),
+              _buildNutritionItem(Icons.grain, AppTheme.neonYellow, '${carbs}g', 'carbs'),
+              _buildNutritionItem(Icons.water_drop, AppTheme.neonBlue, '${fats}g', 'fat'),
             ],
           ),
         ],
@@ -518,13 +518,10 @@ class ChatMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildNutritionItem(String emoji, String value, String label) {
+  Widget _buildNutritionItem(IconData icon, Color color, String value, String label) {
     return Column(
       children: [
-        Text(
-          emoji,
-          style: const TextStyle(fontSize: 20),
-        ),
+        Icon(icon, size: 20, color: color),
         const SizedBox(height: 4),
         Text(
           value,

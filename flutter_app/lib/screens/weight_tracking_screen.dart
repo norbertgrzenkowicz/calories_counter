@@ -5,6 +5,7 @@ import '../models/weight_history.dart';
 import '../models/user_profile.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
+import '../utils/app_snackbar.dart';
 
 class WeightTrackingScreen extends StatefulWidget {
   const WeightTrackingScreen({super.key});
@@ -69,9 +70,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
     } catch (e) {
       setState(() => _isLoadingHistory = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading data: $e')),
-        );
+        AppSnackbar.error(context, 'Error loading data: $e');
       }
     }
   }
@@ -91,17 +90,13 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
 
   void _addWeightEntry() async {
     if (_weightController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your weight')),
-      );
+      AppSnackbar.warning(context, 'Please enter your weight');
       return;
     }
 
     final weight = _parseWeight(_weightController.text);
     if (weight == null || weight <= 0 || weight > 300) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid weight (1-300 kg)')),
-      );
+      AppSnackbar.warning(context, 'Please enter a valid weight (1-300 kg)');
       return;
     }
 
@@ -140,21 +135,11 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
       _loadData();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Weight entry added successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackbar.success(context, 'Weight entry added successfully!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error adding weight entry: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Error adding weight entry: $e');
       }
     } finally {
       setState(() => _isLoading = false);
@@ -163,11 +148,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
 
   void _showProgressAnalysis() {
     if (_weightHistory.length < 2 || _userProfile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Need at least 2 weight entries and a complete profile for analysis')),
-      );
+      AppSnackbar.warning(context, 'Need at least 2 weight entries and a complete profile for analysis');
       return;
     }
 
@@ -183,7 +164,9 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Progress Analysis'),
+        backgroundColor: AppTheme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Progress Analysis', style: TextStyle(color: AppTheme.textPrimary)),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +220,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: const Text('Close', style: TextStyle(color: AppTheme.neonGreen)),
           ),
         ],
       ),
@@ -251,20 +234,23 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Weight Entry'),
+        backgroundColor: AppTheme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Weight Entry', style: TextStyle(color: AppTheme.textPrimary)),
         content: Text(
-            'Are you sure you want to delete the weight entry from $dateString?'),
+            'Are you sure you want to delete the weight entry from $dateString?',
+            style: const TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('No'),
+            child: const Text('No', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               _deleteWeightEntry(entry);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.neonRed),
             child: const Text('Yes'),
           ),
         ],
@@ -274,12 +260,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
 
   void _deleteWeightEntry(WeightHistory entry) async {
     if (entry.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot delete entry: Invalid ID'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbar.error(context, 'Cannot delete entry: Invalid ID');
       return;
     }
 
@@ -304,21 +285,11 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
       _loadData();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Weight entry deleted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackbar.success(context, 'Weight entry deleted successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting weight entry: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Error deleting weight entry: $e');
       }
     }
   }

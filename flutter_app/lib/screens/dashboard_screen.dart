@@ -10,6 +10,8 @@ import '../models/chat_message.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
 import '../services/chat_service.dart';
+import '../utils/app_page_route.dart';
+import '../utils/app_snackbar.dart';
 import '../widgets/compact_nutrition_bars.dart';
 import '../widgets/chat_input_bar.dart';
 import '../widgets/chat_message_bubble.dart';
@@ -105,21 +107,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Complete Your Profile'),
+        backgroundColor: AppTheme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Complete Your Profile', style: TextStyle(color: AppTheme.textPrimary)),
         content: const Text(
           'To get personalized calorie and nutrition targets, please complete your profile with your basic information.',
+          style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Skip for Now', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               _navigateToProfile();
             },
-            child: const Text('Complete Profile'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Skip for Now'),
+            child: const Text('Complete Profile', style: TextStyle(color: AppTheme.neonGreen)),
           ),
         ],
       ),
@@ -128,7 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _navigateToProfile() async {
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+      AppPageRoute(builder: (context) => const ProfileScreen()),
     );
 
     // Reload profile after returning from profile screen
@@ -156,6 +161,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _onItemTapped(int index) {
+    HapticFeedback.lightImpact();
     setState(() {
       _selectedIndex = index;
     });
@@ -170,6 +176,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _goToPreviousDay() {
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedDate = DateTime(
           _selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
@@ -179,6 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _goToNextDay() {
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedDate = DateTime(
           _selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
@@ -216,7 +224,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Navigate to meal detail screen
       Navigator.push(
         context,
-        MaterialPageRoute(
+        AppPageRoute(
             builder: (context) => MealDetailScreen(
                   meal: meals[mealIndex],
                   onMealUpdated: () {
@@ -235,7 +243,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Navigate directly to meal detail screen with the actual meal object
     Navigator.push(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
           builder: (context) => MealDetailScreen(
                 meal: meal,
                 onMealUpdated: () {
@@ -251,7 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _openCalendar() async {
     final meals = await _meals;
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (context) => CalendarScreen(meals: meals),
       ),
     );
@@ -259,7 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _openWeightTracking() async {
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (context) => const WeightTrackingScreen(),
       ),
     );
@@ -272,7 +280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _addMeal() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (context) => AddMealScreen(
           selectedDate: _selectedDate,
           onMealAdded: () {
@@ -287,6 +295,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _addMealWithNutrition(
       String messageId, Map<String, dynamic> nutritionData) async {
+    HapticFeedback.mediumImpact();
     // Get meal name from API response
     final mealName = nutritionData['meal_name'] as String? ?? 'My Meal';
     final calories = (nutritionData['calories'] as num?)?.toInt() ?? 0;
@@ -329,27 +338,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✓ Added: $mealName'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        AppSnackbar.success(context, 'Added: $mealName');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add meal: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to add meal: $e');
       }
     }
   }
 
   void _discardMessage(String messageId) async {
+    HapticFeedback.lightImpact();
     // Find the message to get its meal name
     final message = _chatMessages.firstWhere((m) => m.id == messageId);
     final defaultMealName =
@@ -380,21 +379,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Meal "$result" discarded'),
-              backgroundColor: AppTheme.textTertiary,
-            ),
-          );
+          AppSnackbar.info(context, 'Meal "$result" discarded');
         }
       }
     } else if (result != null && result.isEmpty && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Meal name cannot be empty'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbar.error(context, 'Meal name cannot be empty');
     }
   }
 
@@ -463,12 +452,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to analyze food: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to analyze food: $e');
       }
     }
   }
@@ -556,12 +540,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to analyze audio: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to analyze audio: $e');
       }
     }
   }
@@ -712,7 +691,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (value == 'settings') {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  AppPageRoute(
                       builder: (context) => const SettingsScreen()),
                 );
               } else if (value == 'profile') {
@@ -720,7 +699,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               } else if (value == 'logout') {
                 await SupabaseService().signOut();
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  AppPageRoute(builder: (context) => const LoginScreen()),
                   (route) => false,
                 );
               }
@@ -1407,26 +1386,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildBottomNavItem(int index, IconData icon, String label) {
     final isSelected = _selectedIndex == index;
-    return GestureDetector(
+    return InkWell(
       onTap: () => _onItemTapped(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppTheme.neonGreen : AppTheme.textSecondary,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
               color: isSelected ? AppTheme.neonGreen : AppTheme.textSecondary,
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              size: 24,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppTheme.neonGreen : AppTheme.textSecondary,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1471,7 +1454,8 @@ class _DiscardMealDialogState extends State<_DiscardMealDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppTheme.cardBackground,
-      title: const Text('Discard Meal'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Discard Meal', style: TextStyle(color: AppTheme.textPrimary)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1500,7 +1484,7 @@ class _DiscardMealDialogState extends State<_DiscardMealDialog> {
       actions: [
         TextButton(
           onPressed: _handleCancel,
-          child: const Text('Cancel'),
+          child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
         ),
         ElevatedButton(
           onPressed: _handleDiscard,

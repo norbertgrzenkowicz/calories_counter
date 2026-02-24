@@ -51,7 +51,7 @@ class CompactNutritionBars extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildMiniBar(
-            '🍎',
+            Icons.local_fire_department,
             'Calories',
             totalCalories.toDouble(),
             targetCalories.toDouble(),
@@ -60,7 +60,7 @@ class CompactNutritionBars extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _buildMiniBar(
-            '🥩',
+            Icons.fitness_center,
             'Protein',
             totalProteins,
             targetProteins,
@@ -68,7 +68,7 @@ class CompactNutritionBars extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _buildMiniBar(
-            '🍞',
+            Icons.grain,
             'Carbs',
             totalCarbs,
             targetCarbs,
@@ -76,7 +76,7 @@ class CompactNutritionBars extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _buildMiniBar(
-            '🥑',
+            Icons.water_drop,
             'Fat',
             totalFats,
             targetFats,
@@ -88,7 +88,7 @@ class CompactNutritionBars extends StatelessWidget {
   }
 
   Widget _buildMiniBar(
-    String emoji,
+    IconData icon,
     String label,
     double current,
     double target,
@@ -100,10 +100,7 @@ class CompactNutritionBars extends StatelessWidget {
 
     return Row(
       children: [
-        Text(
-          emoji,
-          style: const TextStyle(fontSize: 16),
-        ),
+        Icon(icon, size: 16, color: color),
         const SizedBox(width: 8),
         Expanded(
           child: Column(

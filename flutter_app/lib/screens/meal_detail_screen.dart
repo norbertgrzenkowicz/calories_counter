@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/supabase_service.dart';
+import '../utils/app_snackbar.dart';
 
 class MealDetailScreen extends StatefulWidget {
   final Meal meal;
@@ -66,9 +67,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
         throw Exception('Supabase not initialized');
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Updating meal...')),
-      );
+      AppSnackbar.info(context, 'Updating meal...');
 
       final photoUrl = currentMeal.photoUrl;
 
@@ -96,21 +95,11 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       widget.onMealUpdated();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meal updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackbar.success(context, 'Meal updated successfully!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update meal: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to update meal: $e');
       }
     }
   }
@@ -119,17 +108,20 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Meal'),
+        backgroundColor: AppTheme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Meal', style: TextStyle(color: AppTheme.textPrimary)),
         content: const Text(
-            'Are you sure you want to delete this meal? This action cannot be undone.'),
+            'Are you sure you want to delete this meal? This action cannot be undone.',
+            style: TextStyle(color: AppTheme.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.neonRed),
             child: const Text('Delete'),
           ),
         ],
@@ -144,31 +136,19 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
         throw Exception('Supabase not initialized');
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deleting meal...')),
-      );
+      AppSnackbar.info(context, 'Deleting meal...');
 
       await supabaseService.deleteMeal(currentMeal.id!);
 
       widget.onMealUpdated();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meal deleted successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackbar.success(context, 'Meal deleted successfully!');
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete meal: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to delete meal: $e');
       }
     }
   }
@@ -344,7 +324,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                     'Carbohydrates',
                     currentMeal.carbs.toStringAsFixed(1),
                     'g',
-                    AppTheme.neonOrange),
+                    AppTheme.neonYellow),
                 const SizedBox(height: 12),
                 _buildNutritionCard('Fats', currentMeal.fats.toStringAsFixed(1),
                     'g', AppTheme.neonBlue),

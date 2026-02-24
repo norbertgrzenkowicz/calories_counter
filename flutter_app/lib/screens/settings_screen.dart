@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../providers/subscription_provider.dart';
 import '../models/subscription.dart';
+import '../utils/app_page_route.dart';
+import '../utils/app_snackbar.dart';
 import 'export_data_screen.dart';
 import 'subscription_screen.dart';
 
@@ -18,8 +20,6 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: AppTheme.neonGreen,
-        foregroundColor: AppTheme.darkBackground,
       ),
       backgroundColor: AppTheme.darkBackground,
       body: ListView(
@@ -206,14 +206,14 @@ class SettingsScreen extends ConsumerWidget {
   void _navigateToExportData(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const ExportDataScreen()),
+      AppPageRoute(builder: (context) => const ExportDataScreen()),
     );
   }
 
   void _navigateToSubscription(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
+      AppPageRoute(builder: (context) => const SubscriptionScreen()),
     );
   }
 
@@ -242,35 +242,20 @@ class SettingsScreen extends ConsumerWidget {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
           if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open subscription portal'),
-            ),
-          );
+          AppSnackbar.error(context, 'Could not open subscription portal');
         }
       } else {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to access subscription portal'),
-          ),
-        );
+        AppSnackbar.error(context, 'Failed to access subscription portal');
       }
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      AppSnackbar.error(context, 'Error: $e');
     }
   }
 
   void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Coming soon!'),
-        backgroundColor: AppTheme.neonGreen,
-      ),
-    );
+    AppSnackbar.info(context, 'Coming soon!');
   }
 }

@@ -4,6 +4,7 @@ import '../models/subscription.dart';
 import '../providers/subscription_provider.dart';
 import '../screens/subscription_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_page_route.dart';
 
 class SubscriptionBanner extends ConsumerWidget {
   const SubscriptionBanner({super.key});
@@ -100,7 +101,7 @@ class SubscriptionBanner extends ConsumerWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                AppPageRoute(
                   builder: (context) => const SubscriptionScreen(),
                 ),
               );
@@ -174,7 +175,7 @@ class SubscriptionBanner extends ConsumerWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                AppPageRoute(
                   builder: (context) => const SubscriptionScreen(),
                 ),
               );
@@ -239,7 +240,7 @@ class SubscriptionBanner extends ConsumerWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                AppPageRoute(
                   builder: (context) => const SubscriptionScreen(),
                 ),
               );

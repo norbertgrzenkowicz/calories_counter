@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
+import '../utils/app_page_route.dart';
 import 'day_meals_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -64,7 +65,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     if (mealsForDay != null && mealsForDay.isNotEmpty) {
       Navigator.of(context).push(
-        MaterialPageRoute(
+        AppPageRoute(
           builder: (context) => DayMealsScreen(
             date: selectedDay,
             meals: mealsForDay,

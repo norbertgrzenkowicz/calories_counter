@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/subscription.dart';
 import '../providers/subscription_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_snackbar.dart';
 
 class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({super.key});
@@ -23,8 +24,6 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Upgrade to Premium'),
-        backgroundColor: AppTheme.neonGreen,
-        foregroundColor: AppTheme.darkBackground,
       ),
       body: subscriptionState.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -298,16 +297,12 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         await _openCheckout(context, checkoutUrl);
       } else {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to start checkout')),
-        );
+        AppSnackbar.error(context, 'Failed to start checkout');
       }
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      AppSnackbar.error(context, 'Error: $e');
     }
   }
 
@@ -319,14 +314,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
       if (!context.mounted) return;
       // Show message to user
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Opening Stripe Checkout... Return to the app after completing purchase.',
-          ),
-          duration: Duration(seconds: 5),
-        ),
-      );
+      AppSnackbar.info(context, 'Opening Stripe Checkout... Return to the app after completing purchase.');
 
       // Refresh subscription status after a delay (user might return)
       Future.delayed(const Duration(seconds: 10), () {
@@ -334,9 +322,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
       });
     } else {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open checkout')),
-      );
+      AppSnackbar.error(context, 'Could not open checkout');
     }
 
   }
