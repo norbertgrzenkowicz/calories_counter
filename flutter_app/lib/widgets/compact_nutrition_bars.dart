@@ -1,3 +1,6 @@
+/// Compact nutrition bars widget.
+/// Displays macro progress bars (calories, protein, carbs, fat)
+/// relative to the user's daily targets.
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
