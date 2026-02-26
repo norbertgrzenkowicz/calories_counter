@@ -58,5 +58,9 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Food Scanner uses your camera to scan barcodes and capture product details for your meal logs.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location access helps Food Scanner tailor nutrition insights and reminders based on where you log meals.</string>
 </dict>
 </plist>

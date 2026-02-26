@@ -47,7 +47,7 @@ def run_test_directory(test_dir):
             "Check if the actual output calorie value falls within the expected range.",
             "If it falls within the range, the test passes; otherwise, it fails."
         ],
-        model="gpt-4o-mini"
+        model="gpt-5-nano"
     )
     
     # Find all image files in the test directory
