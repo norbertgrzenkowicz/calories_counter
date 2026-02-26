@@ -14,8 +14,8 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
-          channel: 'stable'
+          flutter-version: '3.24.5'
+          dart-version: '3.7.0'
 
       - name: Get Flutter dependencies
         working-directory: ./flutter_app
