@@ -15,6 +15,7 @@ void main() async {
     debugPrint('Service initialization error: $e');
   }
 
+  // TODO: add crash reporting (Sentry or similar) before public launch
   runApp(
     const ProviderScope(
       child: FoodScannerApp(),
