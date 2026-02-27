@@ -114,6 +114,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 controller: _emailController,
                 labelText: 'Email',
                 icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 20),
               _buildTextField(
@@ -142,10 +143,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required String labelText,
     required IconData icon,
     bool obscureText = false,
+    TextInputType? keyboardType,
   }) {
     return TextField(
       controller: controller,
       obscureText: obscureText,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: labelText,
         prefixIcon: Icon(icon, color: AppTheme.neonGreen),
