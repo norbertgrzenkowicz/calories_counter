@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../services/supabase_service.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/input_sanitizer.dart';
 
 class MealDetailScreen extends StatefulWidget {
   final Meal meal;
@@ -76,9 +77,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
         name: _nameController.text,
         uid: currentMeal.uid,
         calories: int.parse(_caloriesController.text),
-        proteins: double.parse(_proteinsController.text),
-        fats: double.parse(_fatsController.text),
-        carbs: double.parse(_carbsController.text),
+        proteins: InputSanitizer.parseDouble(_proteinsController.text)!,
+        fats: InputSanitizer.parseDouble(_fatsController.text)!,
+        carbs: InputSanitizer.parseDouble(_carbsController.text)!,
         photoUrl: photoUrl,
         date: currentMeal.date,
         createdAt: currentMeal.createdAt,
@@ -398,7 +399,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter proteins';
                       }
-                      if (double.tryParse(value) == null) {
+                      if (InputSanitizer.parseDouble(value) == null) {
                         return 'Please enter a valid number';
                       }
                       return null;
@@ -417,7 +418,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter fats';
                       }
-                      if (double.tryParse(value) == null) {
+                      if (InputSanitizer.parseDouble(value) == null) {
                         return 'Please enter a valid number';
                       }
                       return null;
@@ -436,7 +437,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter carbs';
                       }
-                      if (double.tryParse(value) == null) {
+                      if (InputSanitizer.parseDouble(value) == null) {
                         return 'Please enter a valid number';
                       }
                       return null;

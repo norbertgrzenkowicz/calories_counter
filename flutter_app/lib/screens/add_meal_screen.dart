@@ -309,7 +309,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter proteins';
                     }
-                    if (double.tryParse(value) == null) {
+                    if (InputSanitizer.parseDouble(value) == null) {
                       return 'Please enter a valid number';
                     }
                     return null;
@@ -327,7 +327,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter fats';
                     }
-                    if (double.tryParse(value) == null) {
+                    if (InputSanitizer.parseDouble(value) == null) {
                       return 'Please enter a valid number';
                     }
                     return null;
@@ -345,7 +345,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter carbs';
                     }
-                    if (double.tryParse(value) == null) {
+                    if (InputSanitizer.parseDouble(value) == null) {
                       return 'Please enter a valid number';
                     }
                     return null;
