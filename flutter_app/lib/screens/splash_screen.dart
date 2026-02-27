@@ -24,19 +24,23 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // Check if user is authenticated
+    // Check if user is authenticated and email is verified
     final supabaseService = SupabaseService();
     final userId = supabaseService.getCurrentUserId();
 
-    if (userId != null) {
-      // User is authenticated, go to dashboard
+    if (userId != null && supabaseService.isEmailVerified()) {
+      // User is authenticated with verified email, go to dashboard
       await Navigator.of(context).pushReplacement(
         AppPageRoute(
           builder: (context) => const DashboardScreen(),
         ),
       );
     } else {
-      // User is not authenticated, go to login
+      // Sign out unverified sessions so they don't linger
+      if (userId != null) {
+        await supabaseService.signOut();
+      }
+      // User is not authenticated or not verified, go to login
       await Navigator.of(context).pushReplacement(
         AppPageRoute(
           builder: (context) => const LoginScreen(),

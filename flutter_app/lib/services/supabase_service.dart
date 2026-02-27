@@ -175,6 +175,14 @@ class SupabaseService {
     return client.auth.currentUser?.id;
   }
 
+  // Check if current user's email is verified
+  bool isEmailVerified() {
+    if (!isInitialized) return false;
+    final user = client.auth.currentUser;
+    if (user == null) return false;
+    return user.emailConfirmedAt != null;
+  }
+
   // Fetch meals for a specific date range and current user
   Future<List<Map<String, dynamic>>> getMealsByDateRange({
     required DateTime startDate,

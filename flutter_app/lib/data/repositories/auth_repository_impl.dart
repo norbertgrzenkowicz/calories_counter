@@ -21,6 +21,16 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       if (response.user != null) {
+        // Reject users who haven't verified their email
+        if (response.user!.emailConfirmedAt == null) {
+          AppLogger.warning('Sign in rejected - email not verified');
+          await _supabaseService.client.auth.signOut();
+          return const Result.failure(
+            AppError.authentication(
+                'Please verify your email before logging in. Check your inbox.'),
+          );
+        }
+
         final userId = response.user!.id;
         AppLogger.info('User signed in successfully');
         return Result.success(userId);
