@@ -104,29 +104,34 @@
 
 ### Current Focus & Next Priorities (Next 30 Days)
 
-**Priority 1: Stabilize & Polish (Week 1-2)**
-- [ ] Fix remaining food photo analysis issues (currently disabled)
-- [ ] Clean up chat/description UI (test user feedback)
-- [ ] Keyboard handling improvements (numeric inputs, dismissal)
-- [ ] Test full subscription flow (trial → paid)
+See `DEVELOPMENT_ROADMAP.md` for detailed sprint breakdown.
 
-**Priority 2: Quality & Metrics (Week 2-3)**
-- [ ] Add crash reporting (Sentry or similar)
-- [ ] Add analytics (Mixpanel or Firebase)
-- [ ] Performance profiling (app startup, image analysis speed)
-- [ ] Battery/data usage optimization
+**Priority 1: Make Revenue Possible (Sprint 1 — 1-2 days)**
+- [ ] Enforce paywall — gate features behind `Subscription.hasAccess`
+- [ ] Wire up existing `PaywallScreen` (built but never imported)
+- [ ] Test full trial → paid flow end-to-end
 
-**Priority 3: Public Beta Prep (Week 3-4)**
+**Priority 2: Unify Architecture (Sprint 2 — 1-2 days)**
+- [ ] Switch live dashboard from `DashboardScreen` to `DashboardScreenRiverpod`
+- [ ] Delete old 1500-line dashboard once verified
+
+**Priority 3: Observability (Sprint 3 — half day)**
+- [ ] Add Sentry crash reporting (TODO already in main.dart)
+- [ ] Optional: Firebase Analytics for funnel tracking
+
+**Priority 4: Onboarding + Photo Analysis (Sprint 4-5 — 2-3 days)**
+- [ ] Build 3-4 screen onboarding flow
+- [ ] Wire camera capture to existing photo analysis API
+- [ ] Add `image_picker` dependency
+
+**Priority 5: App Store Compliance (Sprint 6 — half day)**
+- [ ] Implement real account deletion (currently stubs out)
 - [ ] Privacy policy & terms of service
-- [ ] Support flow (email/in-app)
-- [ ] Beta signup landing page
-- [ ] App Store compliance (iOS/Android)
 
-**Priority 4: Launch & Early Monetization**
+**Stretch: Public Beta**
 - [ ] Beta launch (invite 50-100 testers)
-- [ ] Gather feedback
-- [ ] Iterate on PMF
-- [ ] Plan marketing (TikTok, Reddit fitness communities)
+- [ ] Gather feedback, iterate on PMF
+- [ ] Marketing (TikTok, Reddit fitness communities)
 
 ### Revenue Model
 
@@ -178,9 +183,14 @@
 
 ### Known Issues & Tech Debt
 
-- **Food photo analysis disabled** — GPT-4 Vision costs too much, may re-enable with better cost controls
-- **Chat UI** — Needs refinement for longer meal descriptions
-- **Offline support** — Partial (cached meals only, no sync)
+See `bugs.md` for full list.
+
+- **Paywall not enforced** — `PaywallScreen` + `hasAccess` exist but are never wired up. Zero revenue.
+- **Two dashboards** — `DashboardScreen` (live, raw SupabaseService) vs `DashboardScreenRiverpod` (dead code, clean). Need to switch.
+- **Photo analysis not wired** — Backend API exists, UI never calls it. No `image_picker` in deps.
+- **Account deletion stubs out** — Signs out but doesn't delete data. App Store blocker.
+- **No crash reporting** — Blind to production issues.
+- **Offline support** — None. App is 100% network-dependent.
 - **Testing coverage** — Minimal (mostly manual)
 
 ### Git Repository
