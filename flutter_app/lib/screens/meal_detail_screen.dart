@@ -1,25 +1,24 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
-import '../services/supabase_service.dart';
+import '../providers/meals_provider.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/input_sanitizer.dart';
 
-class MealDetailScreen extends StatefulWidget {
+class MealDetailScreen extends ConsumerStatefulWidget {
   final Meal meal;
-  final Function() onMealUpdated;
 
   const MealDetailScreen({
     super.key,
     required this.meal,
-    required this.onMealUpdated,
   });
 
   @override
-  State<MealDetailScreen> createState() => _MealDetailScreenState();
+  ConsumerState<MealDetailScreen> createState() => _MealDetailScreenState();
 }
 
-class _MealDetailScreenState extends State<MealDetailScreen> {
+class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
   late Meal currentMeal;
   bool isEditing = false;
 
@@ -62,37 +61,44 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      final supabaseService = SupabaseService();
-      if (!supabaseService.isInitialized) {
-        throw Exception('Supabase not initialized');
-      }
-
       AppSnackbar.info(context, 'Updating meal...');
 
-      final photoUrl = currentMeal.photoUrl;
+      final sanitizedName =
+          InputSanitizer.sanitizeMealName(_nameController.text);
+      final sanitizedCalories =
+          InputSanitizer.sanitizeCalories(_caloriesController.text) ?? 0;
+      final sanitizedProteins =
+          InputSanitizer.sanitizeMacroNutrient(_proteinsController.text) ?? 0.0;
+      final sanitizedFats =
+          InputSanitizer.sanitizeMacroNutrient(_fatsController.text) ?? 0.0;
+      final sanitizedCarbs =
+          InputSanitizer.sanitizeMacroNutrient(_carbsController.text) ?? 0.0;
+
+      if (sanitizedName.isEmpty) {
+        throw Exception('Meal name is required');
+      }
 
       final updatedMeal = Meal(
         id: currentMeal.id,
-        name: _nameController.text,
+        name: sanitizedName,
         uid: currentMeal.uid,
-        calories: int.parse(_caloriesController.text),
-        proteins: double.parse(_proteinsController.text),
-        fats: double.parse(_fatsController.text),
-        carbs: double.parse(_carbsController.text),
-        photoUrl: photoUrl,
+        calories: sanitizedCalories,
+        proteins: sanitizedProteins,
+        fats: sanitizedFats,
+        carbs: sanitizedCarbs,
+        photoUrl: currentMeal.photoUrl,
         date: currentMeal.date,
         createdAt: currentMeal.createdAt,
       );
 
-      await supabaseService.updateMeal(
-          currentMeal.id!, updatedMeal.toSupabase());
+      await ref
+          .read(mealsNotifierProvider(currentMeal.date).notifier)
+          .updateMeal(updatedMeal);
 
       setState(() {
         currentMeal = updatedMeal;
         isEditing = false;
       });
-
-      widget.onMealUpdated();
 
       if (mounted) {
         AppSnackbar.success(context, 'Meal updated successfully!');
@@ -131,16 +137,11 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     if (confirmed != true) return;
 
     try {
-      final supabaseService = SupabaseService();
-      if (!supabaseService.isInitialized) {
-        throw Exception('Supabase not initialized');
-      }
-
       AppSnackbar.info(context, 'Deleting meal...');
 
-      await supabaseService.deleteMeal(currentMeal.id!);
-
-      widget.onMealUpdated();
+      await ref
+          .read(mealsNotifierProvider(currentMeal.date).notifier)
+          .deleteMeal(currentMeal.id!);
 
       if (mounted) {
         AppSnackbar.success(context, 'Meal deleted successfully!');
@@ -361,7 +362,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Please enter a meal name';
                       }
                       return null;
@@ -379,8 +380,12 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter calories';
                       }
-                      if (int.tryParse(value) == null) {
+                      final parsed = int.tryParse(value);
+                      if (parsed == null) {
                         return 'Please enter a valid number';
+                      }
+                      if (parsed < 0) {
+                        return 'Calories cannot be negative';
                       }
                       return null;
                     },
@@ -398,8 +403,12 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter proteins';
                       }
-                      if (double.tryParse(value) == null) {
+                      final parsed = double.tryParse(value);
+                      if (parsed == null) {
                         return 'Please enter a valid number';
+                      }
+                      if (parsed < 0) {
+                        return 'Proteins cannot be negative';
                       }
                       return null;
                     },
@@ -417,8 +426,12 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter fats';
                       }
-                      if (double.tryParse(value) == null) {
+                      final parsed = double.tryParse(value);
+                      if (parsed == null) {
                         return 'Please enter a valid number';
+                      }
+                      if (parsed < 0) {
+                        return 'Fats cannot be negative';
                       }
                       return null;
                     },
@@ -436,8 +449,12 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter carbs';
                       }
-                      if (double.tryParse(value) == null) {
+                      final parsed = double.tryParse(value);
+                      if (parsed == null) {
                         return 'Please enter a valid number';
+                      }
+                      if (parsed < 0) {
+                        return 'Carbs cannot be negative';
                       }
                       return null;
                     },

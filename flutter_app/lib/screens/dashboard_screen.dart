@@ -227,14 +227,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         AppPageRoute(
             builder: (context) => MealDetailScreen(
                   meal: meals[mealIndex],
-                  onMealUpdated: () {
-                    setState(() {
-                      // Refresh the data when meal is updated or deleted
-                      _meals = _getMealsFromSupabase();
-                    });
-                  },
                 )),
-      );
+      ).then((_) {
+        // Refresh data when returning from detail screen
+        setState(() {
+          _meals = _getMealsFromSupabase();
+        });
+      });
     }
     // Remove the else block - don't show any message for empty meal slots
   }
@@ -246,14 +245,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       AppPageRoute(
           builder: (context) => MealDetailScreen(
                 meal: meal,
-                onMealUpdated: () {
-                  setState(() {
-                    // Refresh the data when meal is updated or deleted
-                    _meals = _getMealsFromSupabase();
-                  });
-                },
               )),
-    );
+    ).then((_) {
+      // Refresh data when returning from detail screen
+      setState(() {
+        _meals = _getMealsFromSupabase();
+      });
+    });
   }
 
   void _openCalendar() async {

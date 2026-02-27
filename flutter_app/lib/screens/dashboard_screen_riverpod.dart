@@ -65,10 +65,6 @@ class _DashboardScreenRiverpodState
       AppPageRoute(
         builder: (context) => AddMealScreen(
           selectedDate: _selectedDate,
-          onMealAdded: () {
-            // Refresh meals when returning from add meal screen
-            ref.invalidate(mealsNotifierProvider(_selectedDate));
-          },
         ),
       ),
     );

@@ -68,7 +68,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         AppPageRoute(
           builder: (context) => DayMealsScreen(
             date: selectedDay,
-            meals: mealsForDay,
           ),
         ),
       );
