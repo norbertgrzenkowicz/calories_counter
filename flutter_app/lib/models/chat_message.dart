@@ -20,6 +20,7 @@ class ChatMessage {
   final bool isLoading; // true for AI typing indicator
   final int? mealId; // Database ID of the added meal (for tracking)
   final bool isDeleted; // true if the associated meal has been deleted
+  final bool isEdited; // true if the message has been edited by the user
 
   ChatMessage({
     String? id,
@@ -34,6 +35,7 @@ class ChatMessage {
     this.isLoading = false,
     this.mealId,
     this.isDeleted = false,
+    this.isEdited = false,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -110,6 +112,7 @@ class ChatMessage {
     bool? isLoading,
     int? mealId,
     bool? isDeleted,
+    bool? isEdited,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -124,6 +127,7 @@ class ChatMessage {
       isLoading: isLoading ?? this.isLoading,
       mealId: mealId ?? this.mealId,
       isDeleted: isDeleted ?? this.isDeleted,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
 
@@ -142,6 +146,7 @@ class ChatMessage {
       'meal_name': mealName,
       'meal_id': mealId,
       'is_deleted': isDeleted,
+      'is_edited': isEdited,
       'date': date
           .toIso8601String()
           .split('T')[0], // Store as DATE only (YYYY-MM-DD)
@@ -193,6 +198,7 @@ class ChatMessage {
       mealName: data['meal_name'] as String?,
       mealId: data['meal_id'] as int?,
       isDeleted: data['is_deleted'] as bool? ?? false,
+      isEdited: data['is_edited'] as bool? ?? false,
     );
   }
 
