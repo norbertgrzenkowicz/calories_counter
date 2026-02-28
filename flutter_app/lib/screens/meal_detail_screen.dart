@@ -111,6 +111,8 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
 
       if (mounted) {
         AppSnackbar.success(context, 'Meal updated successfully!');
+        // Refresh the list after showing success message
+        ref.invalidate(mealsNotifierProvider(currentMeal.date));
       }
     } catch (e) {
       if (mounted) {
@@ -159,9 +161,11 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
       if (mounted) {
         AppSnackbar.success(context, 'Meal deleted successfully!');
         // Wait for user to see the success message before closing
-        await Future.delayed(const Duration(milliseconds: 800));
+        await Future.delayed(const Duration(milliseconds: 1000));
         if (mounted) {
           Navigator.of(context).pop();
+          // Refresh the list AFTER we've closed this screen
+          ref.invalidate(mealsNotifierProvider(currentMeal.date));
         }
       }
     } catch (e) {

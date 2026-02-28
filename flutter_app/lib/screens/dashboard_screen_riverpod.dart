@@ -426,6 +426,8 @@ class _DashboardScreenRiverpodState
           .deleteMeal(mealId);
       if (mounted) {
         AppSnackbar.success(context, 'Meal deleted successfully');
+        // Refresh the list after showing success message
+        ref.invalidate(mealsNotifierProvider(_selectedDate));
       }
     } catch (e) {
       AppLogger.error('Failed to delete meal', e);

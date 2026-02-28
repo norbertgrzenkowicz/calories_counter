@@ -235,6 +235,8 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
         widget.onMealAdded();
         if (mounted) {
           Navigator.of(context).pop();
+          // Refresh the list after we've closed this screen
+          ref.invalidate(mealsNotifierProvider(widget.selectedDate));
         }
       } catch (e) {
         if (mounted) {
