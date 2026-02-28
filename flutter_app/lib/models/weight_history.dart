@@ -184,25 +184,25 @@ class WeightHistory {
   // Create from Supabase data
   static WeightHistory fromSupabase(Map<String, dynamic> data) {
     return WeightHistory(
-      id: data['id'],
-      uid: data['uid'],
-      weightKg: (data['weight_kg'] ?? 0.0).toDouble(),
+      id: data['id'] as int?,
+      uid: data['uid'] as String?,
+      weightKg: ((data['weight_kg'] ?? 0.0) as num).toDouble(),
       recordedDate: DateTime.parse(
-          data['recorded_date'] ?? DateTime.now().toIso8601String()),
-      measurementTime: data['measurement_time'] ?? 'morning',
-      notes: data['notes'],
-      goalAtTime: data['goal_at_time'],
-      daysSinceGoalStart: data['days_since_goal_start'] ?? 0,
-      weightChangeKg: data['weight_change_kg']?.toDouble(),
-      weeklyAverageKg: data['weekly_average_kg']?.toDouble(),
-      monthlyAverageKg: data['monthly_average_kg']?.toDouble(),
-      isInitialPhase: data['is_initial_phase'] ?? true,
-      phase: data['phase'] ?? 'initial',
+          (data['recorded_date'] as String?) ?? DateTime.now().toIso8601String()),
+      measurementTime: (data['measurement_time'] as String?) ?? 'morning',
+      notes: data['notes'] as String?,
+      goalAtTime: data['goal_at_time'] as String?,
+      daysSinceGoalStart: (data['days_since_goal_start'] as int?) ?? 0,
+      weightChangeKg: (data['weight_change_kg'] as num?)?.toDouble(),
+      weeklyAverageKg: (data['weekly_average_kg'] as num?)?.toDouble(),
+      monthlyAverageKg: (data['monthly_average_kg'] as num?)?.toDouble(),
+      isInitialPhase: (data['is_initial_phase'] as bool?) ?? true,
+      phase: (data['phase'] as String?) ?? 'initial',
       createdAt: data['created_at'] != null
-          ? DateTime.parse(data['created_at'])
+          ? DateTime.parse(data['created_at'] as String)
           : null,
       updatedAt: data['updated_at'] != null
-          ? DateTime.parse(data['updated_at'])
+          ? DateTime.parse(data['updated_at'] as String)
           : null,
     );
   }

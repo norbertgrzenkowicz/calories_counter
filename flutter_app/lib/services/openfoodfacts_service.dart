@@ -30,7 +30,7 @@ class OpenFoodFactsService {
 
         // Check if product was found
         if (data['status'] == 1 && data['product'] != null) {
-          return ProductNutrition.fromOpenFoodFacts(data['product'], barcode);
+          return ProductNutrition.fromOpenFoodFacts(data['product'] as Map<String, dynamic>, barcode);
         } else {
           // Product not found in database
           return null;
@@ -67,10 +67,10 @@ class OpenFoodFactsService {
         final products = <ProductNutrition>[];
 
         if (data['products'] != null && data['products'] is List) {
-          for (final product in data['products']) {
+          for (final product in data['products'] as List) {
             if (product['code'] != null) {
               final nutrition = ProductNutrition.fromOpenFoodFacts(
-                  product, product['code'].toString());
+                  product as Map<String, dynamic>, product['code'].toString());
               products.add(nutrition);
             }
           }
@@ -192,19 +192,19 @@ class ProductNutrition {
   /// Creates ProductNutrition from Supabase data
   factory ProductNutrition.fromSupabase(Map<String, dynamic> data) {
     return ProductNutrition(
-      barcode: data['barcode'],
-      name: data['name'],
-      brand: data['brand'],
-      caloriesPer100g: data['calories_per_100g']?.toDouble(),
-      proteinPer100g: data['protein_per_100g']?.toDouble(),
-      carbsPer100g: data['carbs_per_100g']?.toDouble(),
-      fatPer100g: data['fat_per_100g']?.toDouble(),
-      fiberPer100g: data['fiber_per_100g']?.toDouble(),
-      sugarPer100g: data['sugar_per_100g']?.toDouble(),
-      sodiumPer100g: data['sodium_per_100g']?.toDouble(),
-      servingSize: data['serving_size'],
-      servingQuantity: data['serving_quantity']?.toDouble(),
-      fetchedAt: DateTime.parse(data['cached_at']),
+      barcode: data['barcode'] as String,
+      name: data['name'] as String,
+      brand: data['brand'] as String?,
+      caloriesPer100g: (data['calories_per_100g'] as num?)?.toDouble(),
+      proteinPer100g: (data['protein_per_100g'] as num?)?.toDouble(),
+      carbsPer100g: (data['carbs_per_100g'] as num?)?.toDouble(),
+      fatPer100g: (data['fat_per_100g'] as num?)?.toDouble(),
+      fiberPer100g: (data['fiber_per_100g'] as num?)?.toDouble(),
+      sugarPer100g: (data['sugar_per_100g'] as num?)?.toDouble(),
+      sodiumPer100g: (data['sodium_per_100g'] as num?)?.toDouble(),
+      servingSize: data['serving_size'] as String?,
+      servingQuantity: (data['serving_quantity'] as num?)?.toDouble(),
+      fetchedAt: DateTime.parse(data['cached_at'] as String),
     );
   }
 

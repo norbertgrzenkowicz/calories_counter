@@ -187,32 +187,32 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(analysis['progressStatus'])
+                    color: _getStatusColor(analysis['progressStatus'] as String)
                         .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                        color: _getStatusColor(analysis['progressStatus'])),
+                        color: _getStatusColor(analysis['progressStatus'] as String)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Status: ${_getStatusTitle(analysis['progressStatus'])}',
+                        'Status: ${_getStatusTitle(analysis['progressStatus'] as String)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: _getStatusColor(analysis['progressStatus']),
+                          color: _getStatusColor(analysis['progressStatus'] as String),
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        analysis['recommendation'],
+                        analysis['recommendation'] as String,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
               ] else ...[
-                Text(analysis['error'] ?? 'Unable to analyze progress'),
+                Text((analysis['error'] as String?) ?? 'Unable to analyze progress'),
               ],
             ],
           ),
@@ -613,7 +613,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                analysis['error'] ?? 'Unknown error',
+                (analysis['error'] as String?) ?? 'Unknown error',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey.shade500,
                     ),
@@ -662,25 +662,25 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _getStatusColor(analysis['progressStatus'])
+                color: _getStatusColor(analysis['progressStatus'] as String)
                     .withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: _getStatusColor(analysis['progressStatus'])),
+                    color: _getStatusColor(analysis['progressStatus'] as String)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Status: ${_getStatusTitle(analysis['progressStatus'])}',
+                    'Status: ${_getStatusTitle(analysis['progressStatus'] as String)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: _getStatusColor(analysis['progressStatus']),
+                      color: _getStatusColor(analysis['progressStatus'] as String),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    analysis['recommendation'],
+                    analysis['recommendation'] as String,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],

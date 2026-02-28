@@ -440,7 +440,7 @@ class SupabaseService {
 
       // Delete the photo if it exists
       if (meal['photo_url'] != null) {
-        await deleteMealPhoto(meal['photo_url']);
+        await deleteMealPhoto(meal['photo_url'] as String);
       }
 
       developer.log('Meal deleted successfully: $mealId',

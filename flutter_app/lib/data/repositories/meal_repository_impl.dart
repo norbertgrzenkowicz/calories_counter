@@ -107,7 +107,7 @@ class MealRepositoryImpl implements MealRepository {
           .from('meals')
           .select('*')
           .eq('uid', userId)
-          .order('logged_date', ascending: false)
+          .order('date', ascending: false)
           .order('created_at', ascending: false);
 
       final meals =
@@ -449,17 +449,17 @@ class MealRepositoryImpl implements MealRepository {
       final response = await _supabaseService.client
           .from('meals')
           .select(
-              'logged_date, calories, proteins, carbs, fats, sugars, fiber, sodium')
+              'date, calories, proteins, carbs, fats, sugars, fiber, sodium')
           .eq('uid', userId)
-          .gte('logged_date', startDateString)
-          .lte('logged_date', endDateString)
-          .order('logged_date');
+          .gte('date', startDateString)
+          .lte('date', endDateString)
+          .order('date');
 
       // Group by date and calculate totals
       final Map<DateTime, Map<String, num>> dailyTotals = {};
 
       for (final meal in response) {
-        final dateString = meal['logged_date'] as String;
+        final dateString = meal['date'] as String;
         final date = DateTime.parse(dateString);
 
         if (!dailyTotals.containsKey(date)) {

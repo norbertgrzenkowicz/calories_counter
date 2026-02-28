@@ -330,49 +330,49 @@ class UserProfile {
   // Create from Supabase data
   static UserProfile fromSupabase(Map<String, dynamic> data) {
     return UserProfile(
-      id: data['id'],
-      uid: data['uid'],
-      fullName: data['full_name'],
-      email: data['email'],
+      id: data['id'] as int?,
+      uid: data['uid'] as String?,
+      fullName: data['full_name'] as String?,
+      email: data['email'] as String?,
       dateOfBirth: data['date_of_birth'] != null
-          ? DateTime.parse(data['date_of_birth'])
+          ? DateTime.parse(data['date_of_birth'] as String)
           : null,
-      gender: data['gender'] ?? 'male',
-      heightCm: (data['height_cm'] ?? 0.0).toDouble(),
-      currentWeightKg: (data['current_weight_kg'] ?? 0.0).toDouble(),
-      targetWeightKg: data['target_weight_kg']?.toDouble(),
-      goal: data['goal'] ?? 'maintaining',
-      activityLevel: (data['activity_level'] ?? 1.2).toDouble(),
-      bmrCalories: data['bmr_calories']?.toInt(),
-      tdeeCalories: data['tdee_calories']?.toInt(),
-      targetCalories: data['target_calories']?.toInt(),
-      targetProteinG: data['target_protein_g']?.toDouble(),
-      targetCarbsG: data['target_carbs_g']?.toDouble(),
-      targetFatsG: data['target_fats_g']?.toDouble(),
+      gender: (data['gender'] as String?) ?? 'male',
+      heightCm: ((data['height_cm'] ?? 0.0) as num).toDouble(),
+      currentWeightKg: ((data['current_weight_kg'] ?? 0.0) as num).toDouble(),
+      targetWeightKg: (data['target_weight_kg'] as num?)?.toDouble(),
+      goal: (data['goal'] as String?) ?? 'maintaining',
+      activityLevel: ((data['activity_level'] ?? 1.2) as num).toDouble(),
+      bmrCalories: (data['bmr_calories'] as int?),
+      tdeeCalories: (data['tdee_calories'] as int?),
+      targetCalories: (data['target_calories'] as int?),
+      targetProteinG: (data['target_protein_g'] as num?)?.toDouble(),
+      targetCarbsG: (data['target_carbs_g'] as num?)?.toDouble(),
+      targetFatsG: (data['target_fats_g'] as num?)?.toDouble(),
       weightLossStartDate: data['weight_loss_start_date'] != null
-          ? DateTime.parse(data['weight_loss_start_date'])
+          ? DateTime.parse(data['weight_loss_start_date'] as String)
           : null,
-      initialWeightKg: data['initial_weight_kg']?.toDouble(),
+      initialWeightKg: (data['initial_weight_kg'] as num?)?.toDouble(),
       weeklyWeightLossTarget:
-          (data['weekly_weight_loss_target'] ?? 0.5).toDouble(),
-      subscriptionStatus: data['subscription_status'],
-      subscriptionTier: data['subscription_tier'],
-      stripeCustomerId: data['stripe_customer_id'],
-      stripeSubscriptionId: data['stripe_subscription_id'],
+          ((data['weekly_weight_loss_target'] ?? 0.5) as num).toDouble(),
+      subscriptionStatus: data['subscription_status'] as String?,
+      subscriptionTier: data['subscription_tier'] as String?,
+      stripeCustomerId: data['stripe_customer_id'] as String?,
+      stripeSubscriptionId: data['stripe_subscription_id'] as String?,
       subscriptionStartDate: data['subscription_start_date'] != null
-          ? DateTime.parse(data['subscription_start_date'])
+          ? DateTime.parse(data['subscription_start_date'] as String)
           : null,
       subscriptionEndDate: data['subscription_end_date'] != null
-          ? DateTime.parse(data['subscription_end_date'])
+          ? DateTime.parse(data['subscription_end_date'] as String)
           : null,
       trialEndsAt: data['trial_ends_at'] != null
-          ? DateTime.parse(data['trial_ends_at'])
+          ? DateTime.parse(data['trial_ends_at'] as String)
           : null,
       createdAt: data['created_at'] != null
-          ? DateTime.parse(data['created_at'])
+          ? DateTime.parse(data['created_at'] as String)
           : null,
       updatedAt: data['updated_at'] != null
-          ? DateTime.parse(data['updated_at'])
+          ? DateTime.parse(data['updated_at'] as String)
           : null,
     );
   }
