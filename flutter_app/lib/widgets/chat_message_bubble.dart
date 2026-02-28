@@ -6,6 +6,89 @@ import '../models/chat_message.dart';
 import '../providers/meals_provider.dart';
 import '../utils/app_snackbar.dart';
 
+/// Animated user message bubble with pop effect on long press
+class _AnimatedUserBubble extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onLongPress;
+
+  const _AnimatedUserBubble({
+    required this.child,
+    this.onLongPress,
+  });
+
+  @override
+  State<_AnimatedUserBubble> createState() => _AnimatedUserBubbleState();
+}
+
+class _AnimatedUserBubbleState extends State<_AnimatedUserBubble>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Pop-up animation
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+
+    // Scale: grow UP first (1.0 -> 1.08) on press - like bubble popping up
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onLongPressStart(LongPressStartDetails details) {
+    // Grow up when pressed
+    _controller.forward();
+  }
+
+  void _onLongPressEnd(LongPressEndDetails details) {
+    // Settle back down with elastic bounce
+    _controller.animateBack(
+      0.0,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.elasticOut, // Bouncy spring-back effect
+    );
+    widget.onLongPress?.call();
+  }
+
+  void _onLongPressCancel() {
+    // Settle back down with same bounce if cancelled
+    _controller.animateBack(
+      0.0,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.elasticOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPressStart: widget.onLongPress != null ? _onLongPressStart : null,
+      onLongPressEnd: widget.onLongPress != null ? _onLongPressEnd : null,
+      onLongPress: () {}, // Required for long press to work
+      onLongPressCancel: widget.onLongPress != null ? _onLongPressCancel : null,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 /// Animated loading bubble with 3-dot bounce animation
 class _LoadingBubble extends StatefulWidget {
   const _LoadingBubble();
@@ -128,12 +211,14 @@ class ChatMessageBubble extends ConsumerWidget {
   final ChatMessage message;
   final VoidCallback? onAddToMeals;
   final VoidCallback? onDiscard;
+  final VoidCallback? onEditMessage;
 
   const ChatMessageBubble({
     super.key,
     required this.message,
     this.onAddToMeals,
     this.onDiscard,
+    this.onEditMessage,
   });
 
   @override
@@ -156,17 +241,38 @@ class ChatMessageBubble extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.neonBlue.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppTheme.neonBlue.withOpacity(0.3),
-                  width: 1,
+            child: _AnimatedUserBubble(
+              onLongPress: message.type == MessageType.text && onEditMessage != null
+                  ? onEditMessage
+                  : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.neonBlue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppTheme.neonBlue.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildUserContent(),
+                    if (message.isEdited) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'edited',
+                        style: TextStyle(
+                          color: AppTheme.textTertiary,
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              child: _buildUserContent(),
             ),
           ),
         ],
