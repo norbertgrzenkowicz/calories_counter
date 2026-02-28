@@ -140,9 +140,9 @@ extension WeightHistoryFreezedExtension on WeightHistoryFreezed {
     final absChange = change.abs();
 
     if (change > 0) {
-      return '+${absChange.toStringAsFixed(1)}kg';
+      return '↑ +${absChange.toStringAsFixed(1)}kg';
     } else {
-      return '-${absChange.toStringAsFixed(1)}kg';
+      return '↓ -${absChange.toStringAsFixed(1)}kg';
     }
   }
 
@@ -150,7 +150,12 @@ extension WeightHistoryFreezedExtension on WeightHistoryFreezed {
   String get weightChangeColor {
     if (weightChangeKg == null || weightChangeKg == 0) return 'neutral';
 
-    return weightChangeKg! < 0 ? 'negative' : 'positive';
+    if (goalAtTime == 'weight_loss') {
+      return weightChangeKg! < 0 ? 'positive' : 'negative';
+    } else if (goalAtTime == 'weight_gain') {
+      return weightChangeKg! > 0 ? 'positive' : 'negative';
+    }
+    return 'neutral';
   }
 
   /// Gets formatted date string

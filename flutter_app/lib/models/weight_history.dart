@@ -90,8 +90,8 @@ class WeightHistory {
   // Get weight change description
   String get weightChangeDescription {
     if (weightChangeKg == null) return 'First entry';
-    if (weightChangeKg! > 0) return '+${weightChangeKg!.toStringAsFixed(1)} kg';
-    if (weightChangeKg! < 0) return '${weightChangeKg!.toStringAsFixed(1)} kg';
+    if (weightChangeKg! > 0) return '↑ ${weightChangeKg!.toStringAsFixed(1)} kg';
+    if (weightChangeKg! < 0) return '↓ ${weightChangeKg!.abs().toStringAsFixed(1)} kg';
     return 'No change';
   }
 

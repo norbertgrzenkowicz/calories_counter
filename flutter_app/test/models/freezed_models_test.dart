@@ -133,8 +133,8 @@ void main() {
           weightChangeKg: 0.0,
         );
 
-        expect(entryPositive.weightChangeDescription, '+1.5kg');
-        expect(entryNegative.weightChangeDescription, '-2.0kg');
+        expect(entryPositive.weightChangeDescription, '↑ +1.5kg');
+        expect(entryNegative.weightChangeDescription, '↓ -2.0kg');
         expect(entryNoChange.weightChangeDescription, 'No change');
       });
 
@@ -151,8 +151,8 @@ void main() {
           weightChangeKg: -1.0,
         );
 
-        expect(entryPositive.weightChangeColor, 'positive');
-        expect(entryNegative.weightChangeColor, 'negative');
+        expect(entryPositive.weightChangeColor, 'neutral');
+        expect(entryNegative.weightChangeColor, 'neutral');
       });
     });
   });
