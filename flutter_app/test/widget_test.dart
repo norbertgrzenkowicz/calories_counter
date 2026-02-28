@@ -15,8 +15,8 @@ void main() {
   testWidgets('App loads without crashing', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
-      ProviderScope(
-        child: const FoodScannerApp(cameras: []),
+      const ProviderScope(
+        child: FoodScannerApp(),
       ),
     );
 

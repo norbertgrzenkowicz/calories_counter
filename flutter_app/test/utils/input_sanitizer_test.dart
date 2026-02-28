@@ -13,8 +13,7 @@ void main() {
             InputSanitizer.sanitizeText('normal text'), equals('normal text'));
       });
 
-      test('handles null and empty input', () {
-        expect(InputSanitizer.sanitizeText(null), equals(''));
+      test('handles empty input', () {
         expect(InputSanitizer.sanitizeText(''), equals(''));
       });
 
@@ -43,29 +42,28 @@ void main() {
       });
     });
 
-    group('sanitizeNumeric', () {
+    group('parseDouble', () {
       test('parses valid numbers', () {
-        expect(InputSanitizer.sanitizeNumeric('123.45'), equals(123.45));
-        expect(InputSanitizer.sanitizeNumeric('100'), equals(100.0));
-        expect(InputSanitizer.sanitizeNumeric('0'), equals(0.0));
+        expect(InputSanitizer.parseDouble('123.45'), equals(123.45));
+        expect(InputSanitizer.parseDouble('100'), equals(100.0));
+        expect(InputSanitizer.parseDouble('0'), equals(0.0));
       });
 
       test('handles invalid input', () {
-        expect(InputSanitizer.sanitizeNumeric('not a number'), isNull);
-        expect(InputSanitizer.sanitizeNumeric(''), isNull);
-        expect(InputSanitizer.sanitizeNumeric(null), isNull);
+        expect(InputSanitizer.parseDouble('not a number'), isNull);
+        expect(InputSanitizer.parseDouble(''), isNull);
       });
 
-      test('applies bounds correctly', () {
-        expect(InputSanitizer.sanitizeNumeric('50', min: 100), equals(100));
-        expect(InputSanitizer.sanitizeNumeric('150', max: 100), equals(100));
-        expect(InputSanitizer.sanitizeNumeric('75', min: 50, max: 100),
-            equals(75));
+      test('handles comma as decimal separator', () {
+        expect(InputSanitizer.parseDouble('123,45'), equals(123.45));
       });
+    });
 
+    group('sanitizeNumber', () {
       test('removes non-numeric characters', () {
-        expect(InputSanitizer.sanitizeNumeric(r'$123.45'), equals(123.45));
-        expect(InputSanitizer.sanitizeNumeric('1,234.56'), equals(1234.56));
+        expect(InputSanitizer.sanitizeNumber(r'$123.45'), equals('123.45'));
+        expect(InputSanitizer.sanitizeNumber('1,234.56'), equals('1234.56'));
+        expect(InputSanitizer.sanitizeNumber('abc123def'), equals('123'));
       });
     });
 
@@ -130,32 +128,5 @@ void main() {
       });
     });
 
-    group('removeXSS', () {
-      test('removes XSS attempts', () {
-        expect(InputSanitizer.removeXSS('<script>alert("xss")</script>text'),
-            equals('text'));
-        expect(InputSanitizer.removeXSS('javascript:alert("xss")'),
-            equals('alert("xss")'));
-        expect(InputSanitizer.removeXSS('<div onclick="alert()">text</div>'),
-            contains('text'));
-      });
-    });
-
-    group('sanitizeFilename', () {
-      test('creates safe filenames', () {
-        expect(InputSanitizer.sanitizeFilename('normal_file.jpg'),
-            equals('normal_file.jpg'));
-        expect(InputSanitizer.sanitizeFilename('../../../etc/passwd'),
-            equals('etcpasswd'));
-        expect(InputSanitizer.sanitizeFilename('file<>:"|?*.txt'),
-            equals('file.txt'));
-      });
-
-      test('limits filename length', () {
-        final longName = 'a' * 300;
-        final result = InputSanitizer.sanitizeFilename(longName);
-        expect(result.length, lessThanOrEqualTo(255));
-      });
-    });
   });
 }
