@@ -148,6 +148,7 @@ class Meal {
 
   Map<String, dynamic> toSupabase() {
     return {
+      if (id != null) 'id': id,
       'name': name,
       'uid': uid,
       'calories': calories,
