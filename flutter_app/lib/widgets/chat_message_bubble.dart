@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../models/chat_message.dart';
+import '../providers/meals_provider.dart';
+import '../utils/app_snackbar.dart';
 
 /// Animated loading bubble with 3-dot bounce animation
 class _LoadingBubble extends StatefulWidget {
@@ -121,7 +124,7 @@ class _LoadingBubbleState extends State<_LoadingBubble>
   }
 }
 
-class ChatMessageBubble extends StatelessWidget {
+class ChatMessageBubble extends ConsumerWidget {
   final ChatMessage message;
   final VoidCallback? onAddToMeals;
   final VoidCallback? onDiscard;
@@ -134,14 +137,14 @@ class ChatMessageBubble extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (message.isLoading) {
       return const _LoadingBubble();
     }
     if (message.isUser) {
       return _buildUserMessage(context);
     } else {
-      return _buildAIMessage(context);
+      return _buildAIMessage(context, ref);
     }
   }
 
@@ -240,7 +243,12 @@ class ChatMessageBubble extends StatelessWidget {
     }
   }
 
-  Widget _buildAIMessage(BuildContext context) {
+  Widget _buildAIMessage(BuildContext context, WidgetRef ref) {
+    // If message is deleted, show red deleted version (highest priority)
+    if (message.isDeleted) {
+      return _buildDeletedMessage();
+    }
+
     // If message is discarded, show compact version
     if (message.isDiscarded) {
       return _buildDiscardedMessage();
@@ -248,7 +256,7 @@ class ChatMessageBubble extends StatelessWidget {
 
     // If message is added, show compact added version
     if (message.isAdded) {
-      return _buildAddedMessage();
+      return _buildAddedMessage(context, ref);
     }
 
     return Padding(
@@ -407,7 +415,166 @@ class ChatMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildAddedMessage() {
+  Widget _buildAddedMessage(BuildContext context, WidgetRef ref) {
+    final nutrition = message.nutritionData!;
+    final mealName = nutrition['meal_name'] as String? ?? 'Meal';
+    final calories = nutrition['calories'] ?? 0;
+    final protein = nutrition['protein'] ?? 0;
+    final carbs = nutrition['carbs'] ?? 0;
+    final fats = nutrition['fats'] ?? 0;
+
+    final messageContent = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.neonGreen.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.neonGreen.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.neonGreen.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle,
+              size: 16,
+              color: AppTheme.neonGreen,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '✓ Added: $mealName',
+                  style: const TextStyle(
+                    color: AppTheme.neonGreen,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$calories cal • ${protein}g protein • ${carbs}g carbs • ${fats}g fat',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // Only make dismissible if we have a valid mealId and it's not deleted
+    if (message.mealId != null && !message.isDeleted) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Flexible(
+              child: Dismissible(
+                key: Key('meal_${message.mealId}'),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.neonRed,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                confirmDismiss: (direction) async {
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: AppTheme.cardBackground,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: const Text(
+                        'Delete Meal?',
+                        style: TextStyle(color: AppTheme.textPrimary),
+                      ),
+                      content: Text(
+                        'This will remove "$mealName" from your meal log.',
+                        style: const TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.neonRed,
+                          ),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                onDismissed: (direction) async {
+                  try {
+                    // Get the meal date from the message timestamp
+                    final mealDate = DateTime(
+                      message.timestamp.year,
+                      message.timestamp.month,
+                      message.timestamp.day,
+                    );
+
+                    await ref
+                        .read(mealsNotifierProvider(mealDate).notifier)
+                        .deleteMeal(message.mealId!);
+
+                    // Refresh the meals list
+                    ref.invalidate(mealsNotifierProvider(mealDate));
+                    ref.invalidate(allUserMealsProvider);
+
+                    if (context.mounted) {
+                      AppSnackbar.success(context, 'Meal deleted');
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      AppSnackbar.error(context, 'Failed to delete: $e');
+                    }
+                  }
+                },
+                child: messageContent,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Not dismissible - just show the content
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Flexible(child: messageContent),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeletedMessage() {
     final nutrition = message.nutritionData!;
     final mealName = nutrition['meal_name'] as String? ?? 'Meal';
     final calories = nutrition['calories'] ?? 0;
@@ -424,10 +591,10 @@ class ChatMessageBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.neonGreen.withOpacity(0.1),
+                color: AppTheme.neonRed.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.neonGreen.withOpacity(0.3),
+                  color: AppTheme.neonRed.withOpacity(0.3),
                   width: 1,
                 ),
               ),
@@ -437,13 +604,13 @@ class ChatMessageBubble extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: AppTheme.neonGreen.withOpacity(0.2),
+                      color: AppTheme.neonRed.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.check_circle,
+                      Icons.delete_outline,
                       size: 16,
-                      color: AppTheme.neonGreen,
+                      color: AppTheme.neonRed,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -452,9 +619,9 @@ class ChatMessageBubble extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '✓ Added: $mealName',
+                          'Deleted: $mealName',
                           style: const TextStyle(
-                            color: AppTheme.neonGreen,
+                            color: AppTheme.neonRed,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -462,9 +629,10 @@ class ChatMessageBubble extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           '$calories cal • ${protein}g protein • ${carbs}g carbs • ${fats}g fat',
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
+                          style: TextStyle(
+                            color: AppTheme.textSecondary.withOpacity(0.7),
                             fontSize: 11,
+                            decoration: TextDecoration.lineThrough,
                           ),
                         ),
                       ],

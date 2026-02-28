@@ -18,6 +18,8 @@ class ChatMessage {
   final bool isAdded; // true if the meal has been added to today's meals
   final String? mealName; // Name of the meal (set when discarded)
   final bool isLoading; // true for AI typing indicator
+  final int? mealId; // Database ID of the added meal (for tracking)
+  final bool isDeleted; // true if the associated meal has been deleted
 
   ChatMessage({
     String? id,
@@ -30,6 +32,8 @@ class ChatMessage {
     this.isAdded = false,
     this.mealName,
     this.isLoading = false,
+    this.mealId,
+    this.isDeleted = false,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -104,6 +108,8 @@ class ChatMessage {
     bool? isAdded,
     String? mealName,
     bool? isLoading,
+    int? mealId,
+    bool? isDeleted,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -116,6 +122,8 @@ class ChatMessage {
       isAdded: isAdded ?? this.isAdded,
       mealName: mealName ?? this.mealName,
       isLoading: isLoading ?? this.isLoading,
+      mealId: mealId ?? this.mealId,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -132,6 +140,8 @@ class ChatMessage {
       'is_discarded': isDiscarded,
       'is_added': isAdded,
       'meal_name': mealName,
+      'meal_id': mealId,
+      'is_deleted': isDeleted,
       'date': date
           .toIso8601String()
           .split('T')[0], // Store as DATE only (YYYY-MM-DD)
@@ -181,6 +191,8 @@ class ChatMessage {
       isDiscarded: data['is_discarded'] as bool? ?? false,
       isAdded: data['is_added'] as bool? ?? false,
       mealName: data['meal_name'] as String?,
+      mealId: data['meal_id'] as int?,
+      isDeleted: data['is_deleted'] as bool? ?? false,
     );
   }
 

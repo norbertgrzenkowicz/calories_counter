@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
+import '../providers/meals_provider.dart';
 import '../utils/app_page_route.dart';
 import 'day_meals_screen.dart';
 
-class CalendarScreen extends StatefulWidget {
-  final List<Meal> meals;
-
-  const CalendarScreen({super.key, required this.meals});
+class CalendarScreen extends ConsumerStatefulWidget {
+  const CalendarScreen({super.key});
 
   @override
-  State<CalendarScreen> createState() => _CalendarScreenState();
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  Map<DateTime, List<Meal>> _getMealsForDay() {
+  Map<DateTime, List<Meal>> _getMealsForDay(List<Meal> meals) {
     Map<DateTime, List<Meal>> mealsByDay = {};
-    for (Meal meal in widget.meals) {
+    for (Meal meal in meals) {
       DateTime day = DateTime(meal.date.year, meal.date.month, meal.date.day);
       if (mealsByDay[day] == null) {
         mealsByDay[day] = [];
@@ -31,34 +31,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return mealsByDay;
   }
 
-  int _getCaloriesForDay(DateTime day) {
-    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
+  int _getCaloriesForDay(DateTime day, List<Meal> meals) {
+    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay(meals);
     DateTime dayKey = DateTime(day.year, day.month, day.day);
     List<Meal>? mealsForDay = mealsByDay[dayKey];
     if (mealsForDay == null) return 0;
     return mealsForDay.fold(0, (sum, meal) => sum + meal.calories);
   }
 
-  List<FlSpot> _getChartData() {
+  List<FlSpot> _getChartData(List<Meal> meals) {
     DateTime oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
     List<FlSpot> spots = [];
 
     for (int i = 0; i <= 30; i++) {
       DateTime day = oneMonthAgo.add(Duration(days: i));
-      int calories = _getCaloriesForDay(day);
+      int calories = _getCaloriesForDay(day, meals);
       spots.add(FlSpot(i.toDouble(), calories.toDouble()));
     }
 
     return spots;
   }
 
-  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+  void _onDaySelected(DateTime selectedDay, DateTime focusedDay, List<Meal> meals) {
     setState(() {
       _selectedDay = selectedDay;
       _focusedDay = focusedDay;
     });
 
-    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
+    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay(meals);
     DateTime dayKey =
         DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     List<Meal>? mealsForDay = mealsByDay[dayKey];
@@ -76,7 +76,52 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay();
+    final mealsAsync = ref.watch(allUserMealsProvider);
+
+    return mealsAsync.when(
+      loading: () => Scaffold(
+        backgroundColor: AppTheme.darkBackground,
+        appBar: AppBar(
+          title: const Text('Calendar'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Scaffold(
+        backgroundColor: AppTheme.darkBackground,
+        appBar: AppBar(
+          title: const Text('Calendar'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppTheme.neonRed),
+              const SizedBox(height: 16),
+              Text('Error loading meals: $error',
+                  style: const TextStyle(color: AppTheme.textPrimary)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(allUserMealsProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (mealsData) {
+        // Convert to Meal objects
+        final meals = mealsData.map((m) => Meal.fromSupabase(m)).toList();
+        return _buildCalendar(meals);
+      },
+    );
+  }
+
+  Widget _buildCalendar(List<Meal> meals) {
+    Map<DateTime, List<Meal>> mealsByDay = _getMealsForDay(meals);
 
     return Scaffold(
       backgroundColor: AppTheme.darkBackground,
@@ -108,7 +153,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     DateTime dayKey = DateTime(day.year, day.month, day.day);
                     return mealsByDay[dayKey] ?? [];
                   },
-                  onDaySelected: _onDaySelected,
+                  onDaySelected: (selectedDay, focusedDay) =>
+                      _onDaySelected(selectedDay, focusedDay, meals),
                   calendarStyle: const CalendarStyle(
                     outsideDaysVisible: false,
                   ),
@@ -119,7 +165,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   calendarBuilders: CalendarBuilders(
                     markerBuilder: (context, day, events) {
                       if (events.isNotEmpty) {
-                        int calories = _getCaloriesForDay(day);
+                        int calories = _getCaloriesForDay(day, meals);
                         return Positioned(
                           bottom: 1,
                           child: Container(
@@ -163,7 +209,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           LineChartData(
                             lineBarsData: [
                               LineChartBarData(
-                                spots: _getChartData(),
+                                spots: _getChartData(meals),
                                 isCurved: true,
                                 color: AppTheme.neonGreen,
                                 barWidth: 3,
