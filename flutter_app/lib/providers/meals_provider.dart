@@ -53,8 +53,8 @@ class MealsNotifier extends _$MealsNotifier {
 
       result.when(
         success: (createdMeal) {
-          // Refresh the meals list
-          ref.invalidateSelf();
+          // Don't auto-refresh - let the caller control when to refresh
+          // This allows showing success messages before UI updates
           AppLogger.info('Meal added successfully');
         },
         failure: (error) {
@@ -87,8 +87,8 @@ class MealsNotifier extends _$MealsNotifier {
 
       result.when(
         success: (updatedMeal) {
-          // Refresh the meals list
-          ref.invalidateSelf();
+          // Don't auto-refresh - let the caller control when to refresh
+          // This allows showing success messages before UI updates
           AppLogger.info('Meal updated successfully');
         },
         failure: (error) {
@@ -121,8 +121,8 @@ class MealsNotifier extends _$MealsNotifier {
 
       result.when(
         success: (_) {
-          // Refresh the meals list
-          ref.invalidateSelf();
+          // Don't auto-refresh - let the caller control when to refresh
+          // This allows showing success messages before UI updates
           AppLogger.info('Meal deleted successfully');
         },
         failure: (error) {

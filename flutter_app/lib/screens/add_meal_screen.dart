@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
+import '../providers/meals_provider.dart';
 import '../services/supabase_service.dart';
 import '../services/openfoodfacts_service.dart';
 import '../utils/app_page_route.dart';
@@ -13,8 +15,8 @@ import '../utils/file_upload_validator.dart';
 import '../utils/input_sanitizer.dart';
 import 'barcode_scanner_screen.dart';
 
-class AddMealScreen extends StatefulWidget {
-  final Function() onMealAdded;
+class AddMealScreen extends ConsumerStatefulWidget {
+  final VoidCallback onMealAdded;
   final DateTime selectedDate;
   final int? initialCalories;
   final int? initialProtein;
@@ -23,7 +25,7 @@ class AddMealScreen extends StatefulWidget {
 
   const AddMealScreen({
     super.key,
-    required this.onMealAdded,
+    this.onMealAdded = _defaultCallback,
     required this.selectedDate,
     this.initialCalories,
     this.initialProtein,
@@ -31,11 +33,13 @@ class AddMealScreen extends StatefulWidget {
     this.initialFats,
   });
 
+  static void _defaultCallback() {}
+
   @override
-  State<AddMealScreen> createState() => _AddMealScreenState();
+  ConsumerState<AddMealScreen> createState() => _AddMealScreenState();
 }
 
-class _AddMealScreenState extends State<AddMealScreen> {
+class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _caloriesController = TextEditingController();
@@ -173,15 +177,12 @@ class _AddMealScreenState extends State<AddMealScreen> {
 
       try {
         final supabaseService = SupabaseService();
-        if (!supabaseService.isInitialized) {
-          throw Exception('Supabase not initialized');
-        }
 
         AppLogger.info('Adding meal to database');
 
         String? photoUrl;
 
-        // Upload photo if one was taken
+        // Upload photo if one was taken (keep using SupabaseService directly for storage)
         if (_photoPath != null) {
           final fileName = 'meal_${DateTime.now().millisecondsSinceEpoch}.jpg';
           photoUrl =
@@ -222,9 +223,10 @@ class _AddMealScreenState extends State<AddMealScreen> {
         );
 
         AppLogger.debug('Meal object created with photo');
-        // Note: Meal data not logged for privacy
 
-        await supabaseService.addMeal(meal.toSupabase());
+        await ref
+            .read(mealsNotifierProvider(widget.selectedDate).notifier)
+            .addMeal(meal);
 
         if (mounted) {
           AppSnackbar.success(context, 'Meal added successfully!');
@@ -233,6 +235,8 @@ class _AddMealScreenState extends State<AddMealScreen> {
         widget.onMealAdded();
         if (mounted) {
           Navigator.of(context).pop();
+          // Refresh the list after we've closed this screen
+          ref.invalidate(mealsNotifierProvider(widget.selectedDate));
         }
       } catch (e) {
         if (mounted) {
@@ -291,8 +295,12 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter calories';
                     }
-                    if (int.tryParse(value) == null) {
+                    final parsed = int.tryParse(value);
+                    if (parsed == null) {
                       return 'Please enter a valid number';
+                    }
+                    if (parsed <= 0) {
+                      return 'Calories must be greater than 0';
                     }
                     return null;
                   },
@@ -309,8 +317,12 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter proteins';
                     }
-                    if (double.tryParse(value) == null) {
+                    final parsed = double.tryParse(value);
+                    if (parsed == null) {
                       return 'Please enter a valid number';
+                    }
+                    if (parsed < 0) {
+                      return 'Proteins cannot be negative';
                     }
                     return null;
                   },
@@ -327,8 +339,12 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter fats';
                     }
-                    if (double.tryParse(value) == null) {
+                    final parsed = double.tryParse(value);
+                    if (parsed == null) {
                       return 'Please enter a valid number';
+                    }
+                    if (parsed < 0) {
+                      return 'Fats cannot be negative';
                     }
                     return null;
                   },
@@ -345,8 +361,12 @@ class _AddMealScreenState extends State<AddMealScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter carbs';
                     }
-                    if (double.tryParse(value) == null) {
+                    final parsed = double.tryParse(value);
+                    if (parsed == null) {
                       return 'Please enter a valid number';
+                    }
+                    if (parsed < 0) {
+                      return 'Carbs cannot be negative';
                     }
                     return null;
                   },

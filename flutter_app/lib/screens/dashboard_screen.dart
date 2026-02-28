@@ -94,11 +94,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _chatMessages.addAll(messages);
       });
 
+      // Check for deleted meals and update chat message states
+      await _syncMealDeletionStates();
+
       // Scroll to bottom after loading messages
       _scrollToBottom();
     } catch (e) {
       // Error loading messages, continue with empty chat
       print('Error loading chat messages: $e');
+    }
+  }
+
+  /// Sync meal deletion states with chat messages
+  /// Check if any added meals have been deleted and update message states
+  Future<void> _syncMealDeletionStates() async {
+    try {
+      final supabaseService = SupabaseService();
+      if (!supabaseService.isInitialized) {
+        return;
+      }
+
+      // Get all current user meals
+      final allMealsData = await supabaseService.getAllUserMeals();
+      final currentMealIds = allMealsData
+          .map((m) => m['id'] as int?)
+          .where((id) => id != null)
+          .toSet();
+
+      // Check each chat message with a mealId
+      bool hasChanges = false;
+      for (int i = 0; i < _chatMessages.length; i++) {
+        final message = _chatMessages[i];
+
+        // If message has a mealId but it's no longer in the database, mark as deleted
+        if (message.mealId != null &&
+            !message.isDeleted &&
+            !currentMealIds.contains(message.mealId)) {
+          _chatMessages[i] = message.copyWith(isDeleted: true);
+          hasChanges = true;
+
+          // Update in database
+          await _updateChatMessage(message.id, {'is_deleted': true});
+        }
+      }
+
+      // Update UI if there were changes
+      if (hasChanges && mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error syncing meal deletion states: $e');
+      // Don't throw - continue even if sync fails
     }
   }
 
@@ -227,14 +273,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         AppPageRoute(
             builder: (context) => MealDetailScreen(
                   meal: meals[mealIndex],
-                  onMealUpdated: () {
-                    setState(() {
-                      // Refresh the data when meal is updated or deleted
-                      _meals = _getMealsFromSupabase();
-                    });
-                  },
                 )),
-      );
+      ).then((_) {
+        // Refresh data when returning from detail screen
+        setState(() {
+          _meals = _getMealsFromSupabase();
+        });
+        // Sync meal deletion states in chat
+        _syncMealDeletionStates();
+      });
     }
     // Remove the else block - don't show any message for empty meal slots
   }
@@ -246,21 +293,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       AppPageRoute(
           builder: (context) => MealDetailScreen(
                 meal: meal,
-                onMealUpdated: () {
-                  setState(() {
-                    // Refresh the data when meal is updated or deleted
-                    _meals = _getMealsFromSupabase();
-                  });
-                },
               )),
-    );
+    ).then((_) {
+      // Refresh data when returning from detail screen
+      setState(() {
+        _meals = _getMealsFromSupabase();
+      });
+      // Sync meal deletion states in chat
+      _syncMealDeletionStates();
+    });
   }
 
   void _openCalendar() async {
-    final meals = await _meals;
     Navigator.of(context).push(
       AppPageRoute(
-        builder: (context) => CalendarScreen(meals: meals),
+        builder: (context) => const CalendarScreen(),
       ),
     );
   }
@@ -320,21 +367,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         date: _selectedDate,
       );
 
-      // Save to database
-      await supabaseService.addMeal(meal.toSupabase());
+      // Save to database and get the created meal with ID
+      final createdMealData = await supabaseService.addMeal(meal.toSupabase());
+      final mealId = createdMealData['id'] as int?;
 
-      // Update message state to mark as added
+      // Update message state to mark as added with meal ID
       final messageIndex = _chatMessages.indexWhere((m) => m.id == messageId);
       if (messageIndex != -1) {
         setState(() {
           _chatMessages[messageIndex] = _chatMessages[messageIndex].copyWith(
             isAdded: true,
+            mealId: mealId,
           );
           _meals = _getMealsFromSupabase();
         });
 
-        // Update message in database
-        await _updateChatMessage(messageId, {'is_added': true});
+        // Update message in database with meal ID
+        await _updateChatMessage(messageId, {
+          'is_added': true,
+          'meal_id': mealId,
+        });
       }
 
       if (mounted) {

@@ -46,7 +46,8 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
     // Auto-fetch subscription status when user is authenticated
     final userId = ref.watch(currentUserIdProvider);
     if (userId != null) {
-      fetchSubscriptionStatus();
+      // Schedule fetch after build completes to avoid accessing uninitialized state
+      Future.microtask(() => fetchSubscriptionStatus());
     }
     return const SubscriptionState();
   }
