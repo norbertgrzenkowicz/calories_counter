@@ -43,6 +43,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isProcessingMessage = false;
   final ScrollController _chatScrollController = ScrollController();
   bool _didDismissKeyboardInDrag = false;
+  bool _isEditingMessage = false;
+  String? _messageBeingEditedId;
 
   @override
   void initState() {
@@ -436,6 +438,380 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     } else if (result != null && result.isEmpty && mounted) {
       AppSnackbar.error(context, 'Meal name cannot be empty');
+    }
+  }
+
+  // Message edit handlers
+  void _handleEditMessage(ChatMessage message) async {
+    // Validate message is editable
+    if (!message.isUser ||
+        message.type != MessageType.text ||
+        message.isLoading ||
+        message.isDiscarded) {
+      return;
+    }
+
+    // Prevent concurrent edits
+    if (_isEditingMessage) {
+      AppSnackbar.warning(context, 'Please finish the current edit first');
+      return;
+    }
+
+    // Haptic feedback
+    HapticFeedback.mediumImpact();
+
+    // If message has associated meal, show confirmation first
+    if (message.isAdded && message.mealId != null) {
+      final confirmed = await _showEditConfirmationDialog(message);
+      if (confirmed != true) {
+        return;
+      }
+    }
+
+    // Show edit dialog
+    final editedText = await _showEditMessageDialog(message);
+    if (editedText != null && editedText.trim().isNotEmpty) {
+      await _editUserMessage(message.id, editedText, message);
+    }
+  }
+
+  Future<String?> _showEditMessageDialog(ChatMessage message) async {
+    final controller = TextEditingController(text: message.content);
+    final hasAssociatedMeal = message.isAdded && message.mealId != null;
+
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Edit Message',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (hasAssociatedMeal) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.neonYellow.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppTheme.neonYellow.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: AppTheme.neonYellow,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'This will update your meal and daily nutrition totals',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLines: 3,
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Enter your food description',
+                hintStyle: const TextStyle(color: AppTheme.textTertiary),
+                filled: true,
+                fillColor: AppTheme.borderColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context, null),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final text = controller.text.trim();
+                      if (text.isEmpty) {
+                        AppSnackbar.error(context, 'Message cannot be empty');
+                        return;
+                      }
+                      Navigator.pop(context, text);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.neonGreen,
+                      foregroundColor: AppTheme.darkBackground,
+                    ),
+                    child: const Text('Update'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<bool?> _showEditConfirmationDialog(ChatMessage message) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Edit Message',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: const Text(
+          'This will update your meal and daily nutrition totals. Continue?',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppTheme.textTertiary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.neonGreen,
+            ),
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editUserMessage(
+      String messageId, String newContent, ChatMessage originalMessage) async {
+    setState(() {
+      _isEditingMessage = true;
+      _messageBeingEditedId = messageId;
+    });
+
+    try {
+      // Find user message and paired AI message indices
+      final messageIndex = _chatMessages.indexWhere((m) => m.id == messageId);
+      if (messageIndex == -1) {
+        throw Exception('Message not found');
+      }
+
+      // Find paired AI message (should be next in list)
+      final aiMessageIndex = messageIndex + 1;
+      if (aiMessageIndex >= _chatMessages.length ||
+          !(_chatMessages[aiMessageIndex].isUser == false)) {
+        throw Exception('Paired AI message not found');
+      }
+
+      final aiMessage = _chatMessages[aiMessageIndex];
+      final oldMealId = aiMessage.mealId;
+      final hadMeal = aiMessage.isAdded && oldMealId != null;
+
+      // Update user message content and mark as edited
+      setState(() {
+        _chatMessages[messageIndex] = _chatMessages[messageIndex].copyWith(
+          content: newContent,
+          isEdited: true,
+        );
+      });
+
+      // Save updated user message to database
+      await _updateChatMessage(messageId, {
+        'content': newContent,
+        'is_edited': true,
+      });
+
+      // Show loading on AI message
+      setState(() {
+        _chatMessages[aiMessageIndex] = ChatMessage.loading();
+      });
+
+      // Requery AI with new text
+      await _requeryAIResponse(
+        _chatMessages[messageIndex],
+        aiMessage,
+        newContent,
+        hadMeal ? oldMealId : null,
+        aiMessageIndex,
+      );
+    } catch (e) {
+      // Rollback on failure
+      setState(() {
+        final messageIndex =
+            _chatMessages.indexWhere((m) => m.id == messageId);
+        if (messageIndex != -1) {
+          _chatMessages[messageIndex] = originalMessage;
+        }
+      });
+
+      await _updateChatMessage(messageId, {
+        'content': originalMessage.content,
+        'is_edited': originalMessage.isEdited,
+      });
+
+      if (mounted) {
+        AppSnackbar.error(context, 'Failed to edit message: $e');
+      }
+    } finally {
+      setState(() {
+        _isEditingMessage = false;
+        _messageBeingEditedId = null;
+      });
+    }
+  }
+
+  Future<void> _requeryAIResponse(
+    ChatMessage userMessage,
+    ChatMessage oldAiMessage,
+    String newText,
+    int? oldMealId,
+    int aiMessageIndex,
+  ) async {
+    try {
+      // Call AI service with new text
+      final nutritionData = await _chatService.analyzeFoodFromText(newText);
+
+      // Create updated AI message
+      final newAiMessage = ChatMessage.aiResponse(
+        content: 'Updated analysis',
+        nutritionData: nutritionData,
+      );
+
+      // Update AI message in state (use passed index instead of searching)
+      setState(() {
+        _chatMessages[aiMessageIndex] = newAiMessage;
+      });
+
+      // Save updated AI message to database
+      await _saveChatMessage(newAiMessage);
+
+      // If old message had a meal, update it
+      if (oldAiMessage.isAdded && oldMealId != null) {
+        final mealDate = DateTime(
+          oldAiMessage.timestamp.year,
+          oldAiMessage.timestamp.month,
+          oldAiMessage.timestamp.day,
+        );
+        await _handleMealUpdateForEditedMessage(
+          newAiMessage,
+          nutritionData,
+          mealDate,
+          oldMealId,
+          aiMessageIndex,
+        );
+      }
+
+      if (mounted) {
+        AppSnackbar.success(context, 'Message updated successfully');
+      }
+    } catch (e) {
+      // Restore old AI message on failure
+      if (aiMessageIndex >= 0 && aiMessageIndex < _chatMessages.length) {
+        setState(() {
+          _chatMessages[aiMessageIndex] = oldAiMessage;
+        });
+      }
+      throw Exception('Failed to requery AI: $e');
+    }
+  }
+
+  Future<void> _handleMealUpdateForEditedMessage(
+    ChatMessage aiMessage,
+    Map<String, dynamic> newNutritionData,
+    DateTime mealDate,
+    int oldMealId,
+    int aiMessageIndex,
+  ) async {
+    try {
+      final supabaseService = SupabaseService();
+
+      // Delete old meal
+      await supabaseService.deleteMeal(oldMealId);
+
+      // Create new meal with updated nutrition data
+      final newMeal = Meal(
+        name: newNutritionData['meal_name'] as String? ?? 'Updated Meal',
+        calories: (newNutritionData['calories'] ?? 0) is int
+            ? newNutritionData['calories']
+            : (newNutritionData['calories'] ?? 0).toInt(),
+        proteins: (newNutritionData['protein'] ?? 0).toDouble(),
+        carbs: (newNutritionData['carbs'] ?? 0).toDouble(),
+        fats: (newNutritionData['fats'] ?? 0).toDouble(),
+        date: mealDate,
+      );
+
+      // Add new meal
+      final response = await supabaseService.addMeal(newMeal.toSupabase());
+      final newMealId = response['id'] as int;
+
+      // Update AI message with new mealId and isAdded flag
+      setState(() {
+        _chatMessages[aiMessageIndex] = _chatMessages[aiMessageIndex].copyWith(
+          isAdded: true,
+          mealId: newMealId,
+        );
+      });
+
+      // Update in database
+      await _updateChatMessage(aiMessage.id, {
+        'is_added': true,
+        'meal_id': newMealId,
+      });
+
+      // Refresh meals list to update daily totals
+      setState(() {
+        _meals = _getMealsFromSupabase();
+      });
+
+      if (mounted) {
+        AppSnackbar.success(context, 'Meal updated successfully');
+      }
+    } catch (e) {
+      throw Exception('Failed to update meal: $e');
     }
   }
 
@@ -885,6 +1261,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   !message.isDiscarded &&
                   !message.isAdded
               ? () => _discardMessage(message.id)
+              : null,
+          onEditMessage: message.isUser &&
+                  message.type == MessageType.text &&
+                  !message.isLoading &&
+                  !message.isDiscarded
+              ? () => _handleEditMessage(message)
               : null,
         );
       },
