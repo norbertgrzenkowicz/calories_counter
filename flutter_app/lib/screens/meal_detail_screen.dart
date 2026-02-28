@@ -74,6 +74,9 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
       final sanitizedCarbs =
           InputSanitizer.sanitizeMacroNutrient(_carbsController.text) ?? 0.0;
 
+      if (currentMeal.id == null) {
+        throw Exception('Meal has no ID and cannot be updated');
+      }
       if (sanitizedName.isEmpty) {
         throw Exception('Meal name is required');
       }
@@ -143,6 +146,10 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
     if (confirmed != true) return;
 
     try {
+      if (currentMeal.id == null) {
+        throw Exception('Meal has no ID and cannot be deleted');
+      }
+
       AppSnackbar.info(context, 'Deleting meal...');
 
       await ref
