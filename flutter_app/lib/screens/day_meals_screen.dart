@@ -14,6 +14,7 @@ class DayMealsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mealsAsync = ref.watch(mealsNotifierProvider(date));
+    final dailyTotals = ref.watch(dailyNutritionTotalsProvider(date));
 
     return Scaffold(
       backgroundColor: AppTheme.darkBackground,
@@ -52,14 +53,10 @@ class DayMealsScreen extends ConsumerWidget {
             );
           }
 
-          int totalCalories =
-              meals.fold(0, (sum, meal) => sum + meal.calories);
-          double totalProteins =
-              meals.fold(0, (sum, meal) => sum + meal.proteins);
-          double totalCarbs =
-              meals.fold(0, (sum, meal) => sum + meal.carbs);
-          double totalFats =
-              meals.fold(0, (sum, meal) => sum + meal.fats);
+          final totalCalories = dailyTotals['calories']?.toInt() ?? 0;
+          final totalProteins = dailyTotals['proteins']?.toDouble() ?? 0.0;
+          final totalCarbs = dailyTotals['carbs']?.toDouble() ?? 0.0;
+          final totalFats = dailyTotals['fats']?.toDouble() ?? 0.0;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),

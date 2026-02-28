@@ -297,8 +297,8 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     if (parsed == null) {
                       return 'Please enter a valid number';
                     }
-                    if (parsed < 0) {
-                      return 'Calories cannot be negative';
+                    if (parsed <= 0) {
+                      return 'Calories must be greater than 0';
                     }
                     return null;
                   },

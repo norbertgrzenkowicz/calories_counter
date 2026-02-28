@@ -77,6 +77,12 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
       if (sanitizedName.isEmpty) {
         throw Exception('Meal name is required');
       }
+      if (sanitizedCalories < 0 ||
+          sanitizedProteins < 0 ||
+          sanitizedFats < 0 ||
+          sanitizedCarbs < 0) {
+        throw Exception('Nutrition values cannot be negative');
+      }
 
       final updatedMeal = Meal(
         id: currentMeal.id,
