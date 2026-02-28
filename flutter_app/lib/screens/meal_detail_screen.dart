@@ -158,7 +158,11 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
 
       if (mounted) {
         AppSnackbar.success(context, 'Meal deleted successfully!');
-        Navigator.of(context).pop();
+        // Wait for user to see the success message before closing
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       }
     } catch (e) {
       if (mounted) {
