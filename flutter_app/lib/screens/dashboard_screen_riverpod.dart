@@ -23,15 +23,43 @@ class DashboardScreenRiverpod extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenRiverpodState
-    extends ConsumerState<DashboardScreenRiverpod> {
+    extends ConsumerState<DashboardScreenRiverpod> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   DateTime _selectedDate = DateTime.now();
+  DateTime _lastCheckedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
+    _lastCheckedDate = _selectedDate;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkForNewDay();
+    }
+  }
+
+  void _checkForNewDay() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    if (_lastCheckedDate != today) {
+      setState(() {
+        _selectedDate = today;
+        _lastCheckedDate = today;
+      });
+    }
   }
 
   void _onItemTapped(int index) {
