@@ -30,10 +30,12 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   late Future<List<Meal>> _meals;
   late DateTime _selectedDate;
+  DateTime _lastCheckedDate = DateTime.now();
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
 
@@ -49,12 +51,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Always start on today (fresh start feeling)
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
+    _lastCheckedDate = _selectedDate;
     _meals = _getMealsFromSupabase();
     _loadUserProfile();
     _loadChatMessages();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkForNewDay();
+    }
+  }
+
+  void _checkForNewDay() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    if (_lastCheckedDate != today) {
+      setState(() {
+        _selectedDate = today;
+        _lastCheckedDate = today;
+        _meals = _getMealsFromSupabase();
+        _loadChatMessages();
+      });
+    }
   }
 
   void _loadUserProfile() async {
@@ -157,7 +182,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Complete Your Profile', style: TextStyle(color: AppTheme.textPrimary)),
+        title: const Text('Complete Your Profile',
+            style: TextStyle(color: AppTheme.textPrimary)),
         content: const Text(
           'To get personalized calorie and nutrition targets, please complete your profile with your basic information.',
           style: TextStyle(color: AppTheme.textSecondary),
@@ -165,14 +191,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Skip for Now', style: TextStyle(color: AppTheme.textSecondary)),
+            child: const Text('Skip for Now',
+                style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               _navigateToProfile();
             },
-            child: const Text('Complete Profile', style: TextStyle(color: AppTheme.neonGreen)),
+            child: const Text('Complete Profile',
+                style: TextStyle(color: AppTheme.neonGreen)),
           ),
         ],
       ),
@@ -681,8 +709,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       // Rollback on failure
       setState(() {
-        final messageIndex =
-            _chatMessages.indexWhere((m) => m.id == messageId);
+        final messageIndex = _chatMessages.indexWhere((m) => m.id == messageId);
         if (messageIndex != -1) {
           _chatMessages[messageIndex] = originalMessage;
         }
@@ -1048,6 +1075,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _chatScrollController.dispose();
     super.dispose();
   }
@@ -1119,8 +1147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (value == 'settings') {
                 Navigator.push(
                   context,
-                  AppPageRoute(
-                      builder: (context) => const SettingsScreen()),
+                  AppPageRoute(builder: (context) => const SettingsScreen()),
                 );
               } else if (value == 'profile') {
                 _navigateToProfile();
@@ -1889,7 +1916,8 @@ class _DiscardMealDialogState extends State<_DiscardMealDialog> {
     return AlertDialog(
       backgroundColor: AppTheme.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Discard Meal', style: TextStyle(color: AppTheme.textPrimary)),
+      title: const Text('Discard Meal',
+          style: TextStyle(color: AppTheme.textPrimary)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1918,7 +1946,8 @@ class _DiscardMealDialogState extends State<_DiscardMealDialog> {
       actions: [
         TextButton(
           onPressed: _handleCancel,
-          child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+          child: const Text('Cancel',
+              style: TextStyle(color: AppTheme.textSecondary)),
         ),
         ElevatedButton(
           onPressed: _handleDiscard,
