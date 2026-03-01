@@ -1,164 +1,121 @@
-# Japer - AI-Powered Food Scanner & Nutrition Tracker
+# Yapper
 
-A sophisticated Flutter mobile application that leverages computer vision and artificial intelligence to automatically identify food items, calculate nutritional information, and help users track their dietary intake.
+An AI-powered food tracking app built with Flutter and FastAPI. Users can log meals via text, audio, or barcode scanning, track weight, and view nutrition data.
 
-![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![OpenAI](https://img.shields.io/badge/OpenAI-412991.svg?style=for-the-badge&logo=openai&logoColor=white)
+## Current Status
 
-## 🚀 Features
+MVP with core features implemented. Stripe integration complete but paywall enforcement not yet wired. Built for iOS and Android.
 
-### 📸 Smart Food Recognition
-- **Camera Integration**: Capture food images directly through the app
-- **Barcode Scanning**: Quick product lookup using barcode scanning
-- **AI-Powered Analysis**: GPT-4 Vision model for accurate food identification and portion estimation
+### Working Features
 
-### 🥗 Nutrition Tracking
-- **Automated Nutrition Calculation**: Instant nutritional breakdown (calories, protein, carbs, fats)
-- **Meal History**: Track daily food intake with calendar view
-- **Weight Tracking**: Monitor weight changes over time with visual charts
-- **Progress Analytics**: Visual charts and progress indicators
+- User authentication (email/password via Supabase JWT)
+- Meal logging via text chat and audio input
+- Barcode scanning with product cache (OpenFoodFacts fallback)
+- Manual meal entry with input validation
+- Weight tracking with charts
+- Calendar view of meal history
+- Stripe subscription backend (checkout, webhooks, customer portal)
+- Data export (PDF/CSV)
+- Personalized nutrition targets in profile
 
-### 🔐 User Management
-- **Secure Authentication**: User registration and login with Supabase
-- **Profile Management**: Personalized user profiles and dietary goals
-- **Data Persistence**: Cloud storage with offline fallback
+### Known Issues
 
-### 📱 Cross-Platform
-- **iOS & Android**: Native performance on both platforms
-- **Responsive Design**: Optimized for different screen sizes
-- **Material Design**: Modern UI following Material Design principles
+- Paywall exists but not enforced (free users have unlimited access)
+- Two dashboard implementations (old one is live, Riverpod version is unused)
+- Photo analysis API exists but UI doesn't use it
+- No crash reporting
+- No offline support (fully network-dependent)
+- Account deletion doesn't actually delete data
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-📦 Japer
-├── 📱 flutter_app/          # Flutter mobile application
+yapper/
+├── flutter_app/
 │   ├── lib/
-│   │   ├── models/          # Data models (Meal, User, etc.)
-│   │   ├── screens/         # UI screens
-│   │   ├── services/        # Business logic & API calls
-│   │   └── widgets/         # Reusable UI components
-│   └── pubspec.yaml         # Flutter dependencies
+│   │   ├── models/
+│   │   ├── screens/
+│   │   ├── services/
+│   │   ├── repositories/
+│   │   └── widgets/
+│   └── pubspec.yaml
 │
-├── 🐍 backend/              # Python FastAPI backend
-│   ├── app.py              # Main API server
-│   ├── requirements.txt    # Python dependencies
-│   └── implementation_plans/ # Technical documentation
+├── backend/
+│   ├── app.py
+│   └── requirements.txt
 │
-└── 📄 Database Schemas      # Supabase table schemas
+└── database/ (Supabase PostgreSQL)
 ```
 
-## 🛠️ Technology Stack
+## Tech Stack
 
 **Frontend:**
 - Flutter 3.0+
 - Dart
-- Camera integration
-- Google Maps integration
-- Chart visualization (FL Chart)
+- Riverpod (state management)
+- FL Chart (data visualization)
+- Mobile Scanner (barcode scanning)
 
 **Backend:**
 - Python 3.8+
 - FastAPI
 - OpenAI GPT-4 Vision API
-- Uvicorn ASGI server
+- Uvicorn
 
-**Database & Storage:**
-- Supabase (PostgreSQL)
-- Cloud storage for images
-- Real-time subscriptions
+**Infrastructure:**
+- Supabase (PostgreSQL, auth, storage)
+- Stripe (subscriptions)
+- OpenFoodFacts API (barcode lookup)
 
-**External APIs:**
-- OpenFoodFacts API for barcode lookup
-- OpenAI GPT-4 Vision for food analysis
-
-## ⚙️ Setup & Installation
+## Setup
 
 ### Prerequisites
-- Flutter SDK 3.0+ 
+- Flutter SDK 3.0+
 - Python 3.8+
 - OpenAI API key
-- Supabase account
+- Supabase project
+- Stripe account (test mode)
 
-### Backend Setup
+### Backend
+
 ```bash
 cd backend
 pip install -r requirements.txt
-export OPENAI_API_KEY=your_api_key_here
+export OPENAI_API_KEY=your_key
 python app.py
 ```
 
-### Flutter App Setup
+### Flutter App
+
 ```bash
 cd flutter_app
 flutter pub get
-
-# Run with Supabase configuration
-flutter run --dart-define=SUPABASE_URL=your_supabase_url \
-            --dart-define=SUPABASE_ANON_KEY=your_supabase_anon_key
+flutter run --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key
 ```
 
-### Environment Variables
-Create a `.env` file for backend configuration:
+### iOS Release Build
+
 ```bash
-OPENAI_API_KEY=your_openai_api_key
+flutter build ios --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY && flutter install -d iPhone
 ```
 
-For Flutter, use `--dart-define` flags:
-```bash
+## Environment Variables
+
+Backend (.env):
+```
+OPENAI_API_KEY=your_openai_key
+```
+
+Flutter (--dart-define flags):
+```
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-## 📱 Screenshots
+## Next Steps
 
-The app includes multiple screens for comprehensive nutrition tracking:
-- Splash screen with app initialization
-- User authentication (login/register)
-- Dashboard with daily nutrition overview
-- Camera capture for food scanning
-- Barcode scanner for packaged foods
-- Meal detail views with nutrition breakdown
-- Calendar view for meal history
-- Profile management and settings
-
-## 🧪 Development Features
-
-### Database Schema
-The app includes comprehensive database schemas for:
-- User profiles and authentication
-- Meal tracking with nutritional data
-- Weight history and progress tracking
-- Cached product information from barcode scans
-
-### Caching System
-- **Local SQLite**: Offline data storage
-- **Supabase Cache**: Cloud-based product information cache
-- **OpenFoodFacts Integration**: Fallback for unknown barcodes
-
-## 🚀 Deployment
-
-The backend can be deployed to various platforms:
-- Google Cloud Functions
-- AWS Lambda
-- Traditional VPS/Docker containers
-
-The Flutter app can be built for:
-- iOS App Store
-- Google Play Store
-- Web deployment
-
-## 🤝 Contributing
-
-This project demonstrates modern mobile development practices including:
-- Clean architecture patterns
-- Responsive design principles
-- Secure API key management
-- Comprehensive error handling
-- Offline-first data strategy
-
-## 📄 License
-
-This project is part of a portfolio demonstration showcasing full-stack mobile development capabilities.
+1. Enforce paywall (gate features behind subscription check)
+2. Switch to Riverpod dashboard
+3. Add Sentry crash reporting
+4. Wire photo capture to existing analysis API
+5. Implement real account deletion
