@@ -2,6 +2,11 @@
 
 An AI-powered food tracking app built with Flutter and FastAPI. Users can log meals via text, audio, or barcode scanning, track weight, and view nutrition data.
 
+![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-412991.svg?style=for-the-badge&logo=openai&logoColor=white)
+
 ## Current Status
 
 MVP with core features implemented. Stripe integration complete but paywall enforcement not yet wired. Built for iOS and Android.
