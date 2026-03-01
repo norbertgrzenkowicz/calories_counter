@@ -72,7 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    if (_lastCheckedDate != today) {
+    if (!DateUtils.isSameDay(_lastCheckedDate, today)) {
       setState(() {
         _selectedDate = today;
         _lastCheckedDate = today;
