@@ -111,11 +111,3 @@ Flutter (--dart-define flags):
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
-
-## Next Steps
-
-1. Enforce paywall (gate features behind subscription check)
-2. Switch to Riverpod dashboard
-3. Add Sentry crash reporting
-4. Wire photo capture to existing analysis API
-5. Implement real account deletion
