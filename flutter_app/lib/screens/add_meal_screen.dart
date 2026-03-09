@@ -1,12 +1,12 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../providers/meals_provider.dart';
+import '../services/chat_service.dart';
 import '../services/supabase_service.dart';
 import '../services/openfoodfacts_service.dart';
 import '../utils/app_page_route.dart';
@@ -55,9 +55,8 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   ProductNutrition? _scannedProduct;
   bool _isSubmitting = false;
 
-  // API endpoint using cloud function
-  static const String _apiBaseUrl =
-      'https://us-central1-white-faculty-417521.cloudfunctions.net/japer-api';
+  final _chatService = ChatService();
+  final _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -149,6 +148,105 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
         _isScanningBarcode = false;
       });
     }
+  }
+
+  Future<void> _addPhoto() async {
+    await _showPhotoSourceDialog();
+  }
+
+  Future<void> _showPhotoSourceDialog() async {
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        title: const Text('Add Photo', style: TextStyle(color: AppTheme.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.neonGreen),
+              title: const Text('Camera', style: TextStyle(color: AppTheme.textPrimary)),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.neonGreen),
+              title: const Text('Gallery', style: TextStyle(color: AppTheme.textPrimary)),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      await _pickImageFromSource(source);
+    }
+  }
+
+  Future<void> _pickImageFromSource(ImageSource source) async {
+    try {
+      final xFile = await _imagePicker.pickImage(source: source, imageQuality: 85);
+      if (xFile == null) return;
+
+      final validationResult = await FileUploadValidator.validateImageFile(xFile);
+      if (validationResult != FileValidationResult.valid) {
+        if (mounted) {
+          AppSnackbar.error(context, FileUploadValidator.getErrorMessage(validationResult));
+        }
+        return;
+      }
+
+      setState(() {
+        _photoPath = xFile.path;
+        _hasAnalyzedPhoto = false;
+        _analysisResult = null;
+      });
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.error(context, 'Failed to pick image: $e');
+      }
+    }
+  }
+
+  Future<void> _analyzePhoto() async {
+    if (_photoPath == null) return;
+
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      final result = await _chatService.analyzeFoodFromImage(File(_photoPath!));
+      setState(() {
+        _analysisResult = result;
+        _hasAnalyzedPhoto = true;
+      });
+    } catch (e) {
+      AppLogger.error('Photo analysis failed', e);
+      if (mounted) {
+        AppSnackbar.error(context, 'Analysis failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
+    }
+  }
+
+  void _acceptAnalysis() {
+    if (_analysisResult == null) return;
+
+    setState(() {
+      _nameController.text = _analysisResult!['meal_name'] as String? ?? '';
+      _caloriesController.text = (_analysisResult!['calories'] as int).toString();
+      _proteinsController.text = (_analysisResult!['protein'] as int).toString();
+      _fatsController.text = (_analysisResult!['fats'] as int).toString();
+      _carbsController.text = (_analysisResult!['carbs'] as int).toString();
+    });
+
+    AppSnackbar.success(context, 'Nutrition values filled from photo analysis!');
   }
 
   void _acceptBarcodeNutrition() {
@@ -371,6 +469,99 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
+                // Photo preview
+                if (_photoPath != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      File(_photoPath!),
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                // Add Photo button
+                OutlinedButton.icon(
+                  onPressed: _isAnalyzing ? null : _addPhoto,
+                  icon: _isAnalyzing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.camera_alt),
+                  label: Text(_isAnalyzing ? 'Analyzing...' : (_photoPath != null ? 'Change Photo' : 'Add Photo')),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                  ),
+                ),
+                if (_photoPath != null && !_hasAnalyzedPhoto) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isAnalyzing ? null : _analyzePhoto,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Analyze with AI'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      foregroundColor: AppTheme.neonGreen,
+                      side: const BorderSide(color: AppTheme.neonGreen),
+                    ),
+                  ),
+                ],
+                // AI analysis results
+                if (_hasAnalyzedPhoto && _analysisResult != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.neonGreen.withOpacity(0.5)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.auto_awesome, color: AppTheme.neonGreen, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'AI Analysis: ${_analysisResult!['meal_name']}',
+                              style: const TextStyle(
+                                color: AppTheme.neonGreen,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${_analysisResult!['calories']} kcal  '
+                          'P: ${_analysisResult!['protein']}g  '
+                          'C: ${_analysisResult!['carbs']}g  '
+                          'F: ${_analysisResult!['fats']}g',
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _acceptAnalysis,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.neonGreen,
+                              foregroundColor: AppTheme.darkBackground,
+                            ),
+                            child: const Text('Accept & Fill Values'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: _isScanningBarcode ? null : _scanBarcode,

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 enum FileValidationResult {
   valid,
@@ -55,6 +56,11 @@ class FileUploadValidator {
     } catch (e) {
       return FileValidationResult.accessDenied;
     }
+  }
+
+  static Future<FileValidationResult> validateImageFile(XFile file) async {
+    final ioFile = File(file.path);
+    return await validateFile(ioFile);
   }
 
   static String getErrorMessage(FileValidationResult result) {

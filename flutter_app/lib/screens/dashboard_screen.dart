@@ -1000,6 +1000,81 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  void _handleSendImage(File imageFile) async {
+    final userMessage = ChatMessage.user(
+      content: imageFile.path,
+      type: MessageType.image,
+    );
+
+    setState(() {
+      _chatMessages.add(userMessage);
+      _isProcessingMessage = true;
+    });
+
+    _scrollToBottom();
+
+    try {
+      final supabaseService = SupabaseService();
+      final uploadedUrl = await supabaseService.uploadChatMedia(
+        imageFile,
+        userMessage.id,
+        'image',
+      );
+
+      final finalUserMessage = uploadedUrl != null
+          ? userMessage.copyWith(content: uploadedUrl)
+          : userMessage;
+
+      final messageIndex =
+          _chatMessages.indexWhere((m) => m.id == userMessage.id);
+      if (messageIndex != -1) {
+        setState(() {
+          _chatMessages[messageIndex] = finalUserMessage;
+        });
+      }
+
+      await _saveChatMessage(finalUserMessage);
+
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      final loadingMessage = ChatMessage.loading();
+      setState(() {
+        _chatMessages.add(loadingMessage);
+      });
+      _scrollToBottom();
+
+      final nutritionData = await _chatService.analyzeFoodFromImage(imageFile);
+
+      final aiMessage = ChatMessage.aiResponse(
+        content: 'Food analyzed from image',
+        nutritionData: nutritionData,
+      );
+
+      setState(() {
+        final index =
+            _chatMessages.indexWhere((m) => m.id == loadingMessage.id);
+        if (index != -1) {
+          _chatMessages[index] = aiMessage;
+        } else {
+          _chatMessages.add(aiMessage);
+        }
+        _isProcessingMessage = false;
+      });
+
+      await _saveChatMessage(aiMessage);
+
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _isProcessingMessage = false;
+      });
+
+      if (mounted) {
+        AppSnackbar.error(context, 'Failed to analyze image: $e');
+      }
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_chatScrollController.hasClients) {
@@ -1206,6 +1281,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             ChatInputBar(
               onSendText: _handleSendText,
               onSendAudio: _handleSendAudio,
+              onSendImage: _handleSendImage,
               isProcessing: _isProcessingMessage,
             ),
           ],
