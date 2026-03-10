@@ -9,6 +9,7 @@ import '../services/nutrition_calculator_service.dart';
 import '../providers/subscription_provider.dart';
 import '../utils/app_page_route.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/input_sanitizer.dart';
 import '../widgets/keyboard_toolbar.dart';
 import 'subscription_screen.dart';
 
@@ -125,23 +126,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         id: _currentProfile?.id,
         fullName: _nameController.text.trim(),
         gender: _selectedGender,
-        heightCm: double.parse(_heightController.text),
-        currentWeightKg: double.parse(_weightController.text),
+        heightCm: InputSanitizer.parseDouble(_heightController.text)!,
+        currentWeightKg: InputSanitizer.parseDouble(_weightController.text)!,
         targetWeightKg: _targetWeightController.text.isNotEmpty
-            ? double.parse(_targetWeightController.text)
+            ? InputSanitizer.parseDouble(_targetWeightController.text)
             : null,
         dateOfBirth: _dateOfBirth,
         goal: _selectedGoal,
         activityLevel:
             NutritionCalculatorService.getPALValue(_selectedActivityKey),
-        weeklyWeightLossTarget: double.parse(_weeklyTargetController.text),
+        weeklyWeightLossTarget: InputSanitizer.parseDouble(_weeklyTargetController.text)!,
         weightLossStartDate: _selectedGoal == 'weight_loss' &&
                 _currentProfile?.weightLossStartDate == null
             ? DateTime.now()
             : _currentProfile?.weightLossStartDate,
         initialWeightKg: _selectedGoal == 'weight_loss' &&
                 _currentProfile?.initialWeightKg == null
-            ? double.parse(_weightController.text)
+            ? InputSanitizer.parseDouble(_weightController.text)
             : _currentProfile?.initialWeightKg,
       );
 
@@ -655,7 +656,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter your height';
                                 }
-                                final height = double.tryParse(value);
+                                final height = InputSanitizer.parseDouble(value);
                                 if (height == null ||
                                     height < 100 ||
                                     height > 250) {
@@ -685,7 +686,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter your current weight';
                                 }
-                                final weight = double.tryParse(value);
+                                final weight = InputSanitizer.parseDouble(value);
                                 if (weight == null ||
                                     weight < 30 ||
                                     weight > 300) {
@@ -713,7 +714,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       decimal: true),
                               validator: (value) {
                                 if (value != null && value.isNotEmpty) {
-                                  final weight = double.tryParse(value);
+                                  final weight = InputSanitizer.parseDouble(value);
                                   if (weight == null ||
                                       weight < 30 ||
                                       weight > 300) {
@@ -798,7 +799,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter weekly target';
                                   }
-                                  final target = double.tryParse(value);
+                                  final target = InputSanitizer.parseDouble(value);
                                   if (target == null ||
                                       target <= 0 ||
                                       target > 2.0) {
