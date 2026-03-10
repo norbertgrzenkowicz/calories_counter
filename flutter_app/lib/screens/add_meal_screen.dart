@@ -306,8 +306,8 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
         if (sanitizedName.isEmpty) {
           throw Exception('Meal name is required');
         }
-        if (sanitizedCalories <= 0) {
-          throw Exception('Calories must be greater than 0');
+        if (sanitizedCalories < 0) {
+          throw Exception('Calories cannot be negative');
         }
 
         final meal = Meal(
@@ -397,8 +397,8 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     if (parsed == null) {
                       return 'Please enter a valid number';
                     }
-                    if (parsed <= 0) {
-                      return 'Calories must be greater than 0';
+                    if (parsed < 0) {
+                      return 'Calories cannot be negative';
                     }
                     return null;
                   },
