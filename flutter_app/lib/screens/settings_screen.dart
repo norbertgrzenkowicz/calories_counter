@@ -7,6 +7,7 @@ import '../models/subscription.dart';
 import '../utils/app_page_route.dart';
 import '../utils/app_snackbar.dart';
 import 'export_data_screen.dart';
+import 'privacy_policy_screen.dart';
 import 'subscription_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -73,9 +74,9 @@ class SettingsScreen extends ConsumerWidget {
               _buildSettingsTile(
                 context: context,
                 icon: Icons.security,
-                title: 'Privacy & Security',
-                subtitle: 'Manage your privacy settings',
-                onTap: () => _showComingSoon(context),
+                title: 'Privacy Policy',
+                subtitle: 'How we handle your data',
+                onTap: () => _navigateToPrivacyPolicy(context),
               ),
             ],
           ),
@@ -201,6 +202,13 @@ class SettingsScreen extends ConsumerWidget {
     }
     // User is eligible for trial
     return 'Start 7-day free trial';
+  }
+
+  void _navigateToPrivacyPolicy(BuildContext context) {
+    Navigator.push(
+      context,
+      AppPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+    );
   }
 
   void _navigateToExportData(BuildContext context) {

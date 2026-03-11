@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_scanner/screens/register_screen.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
+import 'package:food_scanner/screens/privacy_policy_screen.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
 import 'package:food_scanner/providers/auth_provider.dart';
@@ -53,6 +54,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       AppLogger.error('Login failed', e);
     }
+  }
+
+  void _goToPrivacyPolicy() {
+    Navigator.of(context).push(
+      AppPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+    );
   }
 
   void _goToRegisterScreen() {
@@ -131,6 +138,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 16),
               _buildRegisterLink(),
+              const SizedBox(height: 8),
+              _buildPrivacyPolicyLink(),
             ],
           ),
         ),
@@ -163,6 +172,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppTheme.neonGreen, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyPolicyLink() {
+    return Center(
+      child: TextButton(
+        onPressed: _goToPrivacyPolicy,
+        child: const Text(
+          'Privacy Policy',
+          style: TextStyle(
+            color: AppTheme.textSecondary,
+            fontSize: 12,
+          ),
         ),
       ),
     );
