@@ -5,10 +5,11 @@ import 'package:food_scanner/screens/register_screen.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
 import 'package:food_scanner/theme/app_theme.dart';
 import 'package:food_scanner/widgets/custom_button.dart';
+import 'package:food_scanner/widgets/cookie_consent_banner.dart';
 import 'package:food_scanner/providers/auth_provider.dart';
+import 'package:food_scanner/services/cookie_consent_service.dart';
 import 'package:food_scanner/utils/app_page_route.dart';
 import 'package:food_scanner/utils/app_snackbar.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -46,9 +47,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final authState = ref.read(authNotifierProvider);
       if (authState.isAuthenticated && mounted) {
         AppLogger.logUserAction('login_successful');
-        Navigator.of(context).pushReplacement(
-          AppPageRoute(builder: (context) => const DashboardScreen()),
-        );
+
+        // Show cookie consent on first login
+        final hasAnswered = await CookieConsentService.hasAnswered();
+        if (!hasAnswered && mounted) {
+          await showCookieConsentBanner(context);
+        }
+
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            AppPageRoute(builder: (context) => const DashboardScreen()),
+          );
+        }
       }
     } catch (e) {
       AppLogger.error('Login failed', e);
