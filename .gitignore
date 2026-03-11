@@ -1,9 +1,10 @@
 .gemini-clipboard/
 
-# Ignore all markdown files except README.md and CLAUDE.md
+# Ignore all markdown files except README.md, CLAUDE.md, and REQUIREMENTS.md
 *.md
 !README.md
 !CLAUDE.md
+!REQUIREMENTS.md
 
 # Environment variables
 .env
