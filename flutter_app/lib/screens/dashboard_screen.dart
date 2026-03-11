@@ -1078,8 +1078,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_chatScrollController.hasClients) {
+        // With reverse:true, offset 0 is the bottom (newest messages)
         _chatScrollController.animateTo(
-          _chatScrollController.position.maxScrollExtent,
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -1350,10 +1351,14 @@ class _DashboardScreenState extends State<DashboardScreen>
     return ListView.builder(
       controller: _chatScrollController,
       padding: const EdgeInsets.symmetric(vertical: 16),
+      reverse: true,
+      physics: const BouncingScrollPhysics(),
       itemCount: _chatMessages.length,
       itemBuilder: (context, index) {
-        final message = _chatMessages[index];
+        // Reverse index so newest messages appear at the bottom
+        final message = _chatMessages[_chatMessages.length - 1 - index];
         return ChatMessageBubble(
+          key: ValueKey(message.id),
           message: message,
           onAddToMeals: message.nutritionData != null &&
                   !message.isDiscarded &&
