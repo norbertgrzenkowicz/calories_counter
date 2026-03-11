@@ -201,6 +201,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<void>> resetPassword(String email) async {
+    try {
+      AppLogger.info('Sending password reset email');
+      await _supabaseService.client.auth.resetPasswordForEmail(email);
+      AppLogger.info('Password reset email sent');
+      return const Result.success(null);
+    } on AuthException catch (e) {
+      AppLogger.error('Password reset failed', e);
+      return Result.failure(AppError.authentication(e.message));
+    } catch (e) {
+      AppLogger.error('Unexpected error during password reset', e);
+      return Result.failure(
+        AppError.unknown('An unexpected error occurred: ${e.toString()}'),
+      );
+    }
+  }
+
+  @override
   Future<Result<void>> deleteAccount() async {
     try {
       AppLogger.info('Attempting account deletion');

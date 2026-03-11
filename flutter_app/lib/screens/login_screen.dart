@@ -1,6 +1,7 @@
 import '../core/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:food_scanner/screens/forgot_password_screen.dart';
 import 'package:food_scanner/screens/register_screen.dart';
 import 'package:food_scanner/screens/dashboard_screen.dart';
 import 'package:food_scanner/theme/app_theme.dart';
@@ -58,6 +59,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _goToRegisterScreen() {
     Navigator.of(context).push(
       AppPageRoute(builder: (context) => const RegisterScreen()),
+    );
+  }
+
+  void _goToForgotPasswordScreen() {
+    Navigator.of(context).push(
+      AppPageRoute(builder: (context) => const ForgotPasswordScreen()),
     );
   }
 
@@ -123,7 +130,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 icon: Icons.lock_outline,
                 obscureText: true,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _goToForgotPasswordScreen,
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               CustomButton(
                 text: 'Log In',
                 isLoading: authState.isLoading,

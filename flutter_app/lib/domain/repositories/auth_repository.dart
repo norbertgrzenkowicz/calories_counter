@@ -50,4 +50,10 @@ abstract class AuthRepository {
   /// Returns [Result.success] on successful account deletion,
   /// or [Result.failure] with appropriate error.
   Future<Result<void>> deleteAccount();
+
+  /// Send password reset email to the given address
+  ///
+  /// Returns [Result.success] on successful email dispatch,
+  /// or [Result.failure] with appropriate error.
+  Future<Result<void>> resetPassword(String email);
 }
