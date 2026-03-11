@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
+import '../providers/auth_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../models/subscription.dart';
 import '../utils/app_page_route.dart';
@@ -81,6 +82,20 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           _buildSection(
+            title: 'Danger Zone',
+            children: [
+              _buildSettingsTile(
+                context: context,
+                icon: Icons.delete_forever,
+                title: 'Delete Account',
+                subtitle: 'Permanently delete your account and all data',
+                onTap: () => _confirmDeleteAccount(context, ref),
+                isDestructive: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildSection(
             title: 'Support',
             children: [
               _buildSettingsTile(
@@ -146,10 +161,12 @@ class SettingsScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    bool isDestructive = false,
   }) {
+    final color = isDestructive ? Colors.redAccent : AppTheme.neonGreen;
     return ListTile(
-      leading: Icon(icon, color: AppTheme.neonGreen),
-      title: Text(title),
+      leading: Icon(icon, color: color),
+      title: Text(title, style: isDestructive ? const TextStyle(color: Colors.redAccent) : null),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
@@ -253,6 +270,55 @@ class SettingsScreen extends ConsumerWidget {
       Navigator.pop(context); // Close loading dialog
       AppSnackbar.error(context, 'Error: $e');
     }
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(color: Colors.redAccent),
+        ),
+        content: const Text(
+          'This will permanently delete your account and ALL associated data '
+          '(meals, weight history, profile). This cannot be undone.\n\n'
+          'Are you absolutely sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Delete Forever'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final deleted = await ref.read(authNotifierProvider.notifier).deleteAccount();
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // close loading
+
+    if (!deleted) {
+      final error = ref.read(authNotifierProvider).error;
+      AppSnackbar.error(context, error ?? 'Account deletion failed');
+    }
+    // On success the auth state changes to unauthenticated and the app
+    // navigates away automatically via the auth state listener in main.
   }
 
   void _showComingSoon(BuildContext context) {
