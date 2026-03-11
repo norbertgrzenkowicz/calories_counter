@@ -1,0 +1,9 @@
+Initial release of Yapper — AI-powered food scanner and nutrition tracker.
+
+• Instant calorie and macro analysis from photos
+• Text and voice meal description
+• Barcode scanner for packaged foods
+• Daily dashboard with macro breakdown
+• Weight tracking with trend charts
+• Calendar meal history
+• 7-day free trial included

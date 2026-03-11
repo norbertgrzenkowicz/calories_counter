@@ -1,0 +1,47 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload metadata and screenshots to App Store Connect"
+  lane :metadata do
+    deliver(
+      app_identifier: "com.norbert.food_scanner",
+      metadata_path: "./fastlane/metadata",
+      screenshots_path: "./fastlane/screenshots",
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      overwrite_screenshots: true,
+      submit_for_review: false,
+      force: true
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    build_app(
+      scheme: "Runner",
+      workspace: "flutter_app/ios/Runner.xcworkspace",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.norbert.food_scanner" => "Yapper App Store"
+        }
+      }
+    )
+    upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
+
+  desc "Submit to App Store"
+  lane :release do
+    deliver(
+      app_identifier: "com.norbert.food_scanner",
+      metadata_path: "./fastlane/metadata",
+      screenshots_path: "./fastlane/screenshots",
+      submit_for_review: true,
+      automatic_release: false,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false
+      }
+    )
+  end
+end

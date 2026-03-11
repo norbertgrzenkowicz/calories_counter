@@ -1,0 +1,34 @@
+Yapper turns your camera into an instant nutrition expert. Snap a photo of any meal, describe it in text, or speak it aloud — and get accurate calorie and macro breakdowns in seconds. No more tedious manual logging.
+
+INSTANT FOOD ANALYSIS
+• Photograph any meal and get calories, protein, carbs, and fats instantly
+• Powered by GPT-4 Vision AI for accurate food recognition
+• Describe meals in text or voice — Yapper handles the rest
+• Scan barcodes for packaged food nutrition data
+
+COMPREHENSIVE TRACKING
+• Daily calorie and macro dashboard
+• Calendar view to review any past day at a glance
+• Weight tracking with trend charts
+• Weekly and monthly progress summaries
+
+BARCODE SCANNER
+• Scan packaged foods for instant nutrition data
+• Millions of products in the database via Open Food Facts
+• Quick-add to your daily log
+
+GOALS & PROGRESS
+• Set calorie and macro targets aligned to your goals
+• Visual charts showing progress over time
+• Weight-to-calorie correlation insights
+
+CLEAN & FAST
+• Designed for people who want results, not complexity
+• 15-second logging workflow — snap, confirm, done
+• Dark mode support
+• No ads. No clutter.
+
+FREE TRIAL
+Try all features free for 7 days. Then continue with Premium at $4.99/month or $29.99/year.
+
+Whether you're cutting weight, building muscle, or simply eating healthier — Yapper gives you the data to stay in control.
