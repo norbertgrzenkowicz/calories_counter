@@ -14,6 +14,8 @@ import '../utils/app_snackbar.dart';
 import '../utils/file_upload_validator.dart';
 import '../utils/input_sanitizer.dart';
 import 'barcode_scanner_screen.dart';
+import 'recipe_import_screen.dart';
+import '../services/recipe_import_service.dart';
 
 class AddMealScreen extends ConsumerStatefulWidget {
   final VoidCallback onMealAdded;
@@ -54,6 +56,8 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   bool _isScanningBarcode = false;
   ProductNutrition? _scannedProduct;
   bool _isSubmitting = false;
+  bool _isImportingRecipe = false;
+  RecipeNutrition? _importedRecipe;
 
   final _chatService = ChatService();
   final _imagePicker = ImagePicker();
@@ -147,6 +151,29 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       setState(() {
         _isScanningBarcode = false;
       });
+    }
+  }
+
+  Future<void> _importRecipe() async {
+    setState(() => _isImportingRecipe = true);
+    try {
+      final result = await Navigator.push<RecipeNutrition>(
+        context,
+        AppPageRoute(builder: (context) => const RecipeImportScreen()),
+      );
+      if (result != null && mounted) {
+        setState(() {
+          _importedRecipe = result;
+          _nameController.text = result.name;
+          _caloriesController.text = result.calories.toString();
+          _proteinsController.text = result.protein.toStringAsFixed(1);
+          _fatsController.text = result.fat.toStringAsFixed(1);
+          _carbsController.text = result.carbs.toStringAsFixed(1);
+        });
+        AppSnackbar.success(context, 'Recipe imported! Review and submit.');
+      }
+    } finally {
+      if (mounted) setState(() => _isImportingRecipe = false);
     }
   }
 
@@ -681,6 +708,51 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                             ),
                           ),
                         ],
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _isImportingRecipe ? null : _importRecipe,
+                  icon: _isImportingRecipe
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.link),
+                  label: Text(_isImportingRecipe ? 'Opening...' : 'Import Recipe URL'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    foregroundColor: AppTheme.neonGreen,
+                    side: const BorderSide(color: AppTheme.neonGreen),
+                  ),
+                ),
+                if (_importedRecipe != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.neonGreen.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.link, color: AppTheme.neonGreen, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Imported: ${_importedRecipe!.name}',
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
