@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_logger.dart';
 import '../core/environment.dart';
+import 'barcode_local_cache_service.dart';
 import 'openfoodfacts_service.dart';
 
 class SupabaseService {
@@ -614,24 +615,36 @@ class SupabaseService {
     }
   }
 
-  /// Combined method to get product with caching logic
+  /// Combined method to get product with caching logic.
+  /// Lookup order: local device cache → Supabase cloud cache → OpenFoodFacts API.
+  /// On any online hit the result is also written to local cache for offline use.
   Future<ProductNutrition?> getProductWithCache(String barcode) async {
+    final localCache = BarcodeCacheService();
+
+    // 1. Local offline cache (always available, no network needed)
+    final localProduct = await localCache.get(barcode);
+    if (localProduct != null) {
+      developer.log('Local offline cache hit: $barcode',
+          name: 'SupabaseService');
+      return localProduct;
+    }
+
     try {
-      // First try to get from cache
+      // 2. Supabase cloud cache
       final cachedProduct = await getCachedProduct(barcode);
       if (cachedProduct != null) {
-        developer.log('Using cached product: $barcode',
-            name: 'SupabaseService');
+        developer.log('Supabase cache hit: $barcode', name: 'SupabaseService');
+        await localCache.put(cachedProduct);
         return cachedProduct;
       }
 
-      // If not in cache, fetch from OpenFoodFacts
+      // 3. Fetch from OpenFoodFacts API
       developer.log('Cache miss, fetching from OpenFoodFacts: $barcode',
           name: 'SupabaseService');
       final product = await OpenFoodFactsService.getProductByBarcode(barcode);
 
-      // If found, cache it for future use
       if (product != null) {
+        await localCache.put(product);
         await cacheProduct(product);
         return product;
       }
