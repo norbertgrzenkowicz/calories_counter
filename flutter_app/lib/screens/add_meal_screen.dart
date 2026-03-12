@@ -14,6 +14,7 @@ import '../utils/app_snackbar.dart';
 import '../utils/file_upload_validator.dart';
 import '../utils/input_sanitizer.dart';
 import 'barcode_scanner_screen.dart';
+import 'custom_foods_screen.dart';
 
 class AddMealScreen extends ConsumerStatefulWidget {
   final VoidCallback onMealAdded;
@@ -264,6 +265,26 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       if (mounted) {
         AppSnackbar.success(context, 'Product nutrition accepted! Values filled in.');
       }
+    }
+  }
+
+  Future<void> _pickFromMyFoods() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      AppPageRoute(
+        builder: (_) => const CustomFoodsScreen(selectMode: true),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _nameController.text = result['name'] as String? ?? '';
+        _caloriesController.text = result['calories'].toString();
+        _proteinsController.text = result['proteins'].toString();
+        _fatsController.text = result['fats'].toString();
+        _carbsController.text = result['carbs'].toString();
+      });
+      AppSnackbar.success(context, 'Values filled from custom food!');
     }
   }
 
@@ -685,6 +706,17 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     ),
                   ),
                 ],
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _pickFromMyFoods,
+                  icon: const Icon(Icons.food_bank_outlined),
+                  label: const Text('Pick from My Foods'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    foregroundColor: AppTheme.neonGreen,
+                    side: const BorderSide(color: AppTheme.neonGreen),
+                  ),
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitForm,
