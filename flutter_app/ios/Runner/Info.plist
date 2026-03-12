@@ -60,6 +60,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Food Scanner uses your camera to scan barcodes and capture product details for your meal logs.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Food Scanner uses your microphone to let you describe meals by voice for quick logging.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location access helps Food Scanner tailor nutrition insights and reminders based on where you log meals.</string>
 </dict>

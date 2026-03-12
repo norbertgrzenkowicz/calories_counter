@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import '../theme/app_theme.dart';
 import '../core/app_logger.dart';
 import '../utils/app_snackbar.dart';
@@ -25,13 +27,28 @@ class ChatInputBar extends StatefulWidget {
   State<ChatInputBar> createState() => _ChatInputBarState();
 }
 
-class _ChatInputBarState extends State<ChatInputBar> {
+class _ChatInputBarState extends State<ChatInputBar>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
+  final AudioRecorder _recorder = AudioRecorder();
+
+  bool _isRecording = false;
+  int _recordingSeconds = 0;
+
+  // Pulsing animation for the mic button while recording
+  late final AnimationController _pulseController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+    lowerBound: 0.7,
+    upperBound: 1.0,
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
     _textController.dispose();
+    _recorder.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -85,11 +102,103 @@ class _ChatInputBarState extends State<ChatInputBar> {
     }
   }
 
-  // Audio recording temporarily disabled due to package compatibility issues
-  Future<void> _handleAudioRecording() async {
+  Future<void> _handleMicTap() async {
     if (widget.isProcessing) return;
 
-    AppSnackbar.warning(context, 'Audio recording temporarily unavailable');
+    if (_isRecording) {
+      await _stopRecording();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        AppSnackbar.error(context, 'Microphone permission denied');
+      }
+      return;
+    }
+
+    try {
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 64000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
+
+      setState(() {
+        _isRecording = true;
+        _recordingSeconds = 0;
+      });
+
+      // Tick the recording timer every second
+      _tickRecordingTimer();
+
+      HapticFeedback.mediumImpact();
+      AppLogger.debug('Voice recording started: $path');
+    } catch (e) {
+      AppLogger.error('Failed to start recording', e);
+      if (mounted) {
+        AppSnackbar.error(context, 'Failed to start recording: $e');
+      }
+    }
+  }
+
+  void _tickRecordingTimer() {
+    if (!_isRecording) return;
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted || !_isRecording) return;
+      setState(() => _recordingSeconds++);
+      _tickRecordingTimer();
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final path = await _recorder.stop();
+
+      setState(() {
+        _isRecording = false;
+        _recordingSeconds = 0;
+      });
+
+      HapticFeedback.mediumImpact();
+
+      if (path == null) {
+        AppLogger.warning('Recording stopped but no file path returned');
+        return;
+      }
+
+      final audioFile = File(path);
+      if (!audioFile.existsSync() || audioFile.lengthSync() == 0) {
+        AppLogger.warning('Recorded file is empty or missing: $path');
+        if (mounted) {
+          AppSnackbar.warning(context, 'Recording too short — try again');
+        }
+        return;
+      }
+
+      AppLogger.debug('Voice recording stopped: $path');
+      widget.onSendAudio(audioFile, 'm4a');
+    } catch (e) {
+      AppLogger.error('Failed to stop recording', e);
+      setState(() {
+        _isRecording = false;
+        _recordingSeconds = 0;
+      });
+      if (mounted) {
+        AppSnackbar.error(context, 'Failed to save recording: $e');
+      }
+    }
   }
 
   void _handleSendText() {
@@ -101,6 +210,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
     HapticFeedback.lightImpact();
     widget.onSendText(text);
     _textController.clear();
+  }
+
+  String get _recordingLabel {
+    final m = _recordingSeconds ~/ 60;
+    final s = _recordingSeconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -115,41 +230,68 @@ class _ChatInputBarState extends State<ChatInputBar> {
       ),
       child: Row(
         children: [
-          // Audio button (temporarily disabled)
-          IconButton(
-            onPressed: widget.isProcessing ? null : _handleAudioRecording,
-            icon: Icon(
-              Icons.mic_off,
-              color: AppTheme.textTertiary,
+          // Mic button — tap to record, tap again to stop & send
+          ScaleTransition(
+            scale: _isRecording ? _pulseController : const AlwaysStoppedAnimation(1.0),
+            child: IconButton(
+              onPressed: widget.isProcessing ? null : _handleMicTap,
+              icon: Icon(
+                _isRecording ? Icons.stop_circle : Icons.mic,
+                color: _isRecording
+                    ? Colors.redAccent
+                    : widget.isProcessing
+                        ? AppTheme.textTertiary
+                        : AppTheme.neonGreen,
+              ),
+              tooltip: _isRecording ? 'Stop recording' : 'Record voice message',
             ),
-            tooltip: 'Audio recording unavailable',
           ),
-          // Camera button
-          IconButton(
-            onPressed: widget.isProcessing ? null : _handleImagePicker,
-            icon: Icon(
-              Icons.camera_alt,
-              color: widget.isProcessing ? AppTheme.textTertiary : AppTheme.neonGreen,
+
+          // Recording timer — shown in place of camera when recording
+          if (_isRecording)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Text(
+                _recordingLabel,
+                style: const TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else
+            // Camera button
+            IconButton(
+              onPressed: widget.isProcessing ? null : _handleImagePicker,
+              icon: Icon(
+                Icons.camera_alt,
+                color: widget.isProcessing ? AppTheme.textTertiary : AppTheme.neonGreen,
+              ),
+              tooltip: 'Send photo for analysis',
             ),
-            tooltip: 'Send photo for analysis',
-          ),
+
           // Text input
           Expanded(
             child: TextField(
               controller: _textController,
               decoration: InputDecoration(
-                hintText: 'Describe your food...',
-                hintStyle: const TextStyle(
-                  color: AppTheme.textTertiary,
+                hintText: _isRecording ? 'Recording...' : 'Describe your food...',
+                hintStyle: TextStyle(
+                  color: _isRecording ? Colors.redAccent : AppTheme.textTertiary,
                   fontSize: 14,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: AppTheme.borderColor),
+                  borderSide: BorderSide(
+                    color: _isRecording ? Colors.redAccent : AppTheme.borderColor,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: AppTheme.borderColor),
+                  borderSide: BorderSide(
+                    color: _isRecording ? Colors.redAccent : AppTheme.borderColor,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -166,17 +308,19 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 color: AppTheme.textPrimary,
                 fontSize: 14,
               ),
+              enabled: !_isRecording,
               maxLines: null,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _handleSendText(),
             ),
           ),
+
           // Send button
           IconButton(
-            onPressed: widget.isProcessing ? null : _handleSendText,
+            onPressed: (widget.isProcessing || _isRecording) ? null : _handleSendText,
             icon: Icon(
               Icons.send,
-              color: widget.isProcessing
+              color: (widget.isProcessing || _isRecording)
                   ? AppTheme.textTertiary
                   : AppTheme.neonGreen,
             ),
