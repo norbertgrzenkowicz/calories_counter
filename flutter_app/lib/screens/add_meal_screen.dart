@@ -22,6 +22,7 @@ class AddMealScreen extends ConsumerStatefulWidget {
   final int? initialProtein;
   final int? initialCarbs;
   final int? initialFats;
+  final File? initialImageFile;
 
   const AddMealScreen({
     super.key,
@@ -31,6 +32,7 @@ class AddMealScreen extends ConsumerStatefulWidget {
     this.initialProtein,
     this.initialCarbs,
     this.initialFats,
+    this.initialImageFile,
   });
 
   static void _defaultCallback() {}
@@ -61,6 +63,11 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Pre-load screenshot (or other image) passed by caller.
+    if (widget.initialImageFile != null) {
+      _photoPath = widget.initialImageFile!.path;
+    }
 
     // Pre-fill nutrition values if provided from chat
     if (widget.initialCalories != null) {

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../utils/app_snackbar.dart';
 import '../providers/auth_provider.dart';
 import '../providers/meals_provider.dart';
 import '../providers/profile_provider.dart';
+import '../services/screenshot_service.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'add_meal_screen.dart';
@@ -27,6 +29,7 @@ class _DashboardScreenRiverpodState
   int _selectedIndex = 0;
   DateTime _selectedDate = DateTime.now();
   DateTime _lastCheckedDate = DateTime.now();
+  final _screenshotService = ScreenshotService();
 
   @override
   void initState() {
@@ -47,6 +50,7 @@ class _DashboardScreenRiverpodState
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkForNewDay();
+      _checkForNewScreenshot();
     }
   }
 
@@ -60,6 +64,115 @@ class _DashboardScreenRiverpodState
         _lastCheckedDate = today;
       });
     }
+  }
+
+  Future<void> _checkForNewScreenshot() async {
+    try {
+      final screenshotFile = await _screenshotService.checkForNewScreenshot();
+      if (screenshotFile != null && mounted) {
+        _showScreenshotMealOffer(screenshotFile);
+      }
+    } catch (e) {
+      AppLogger.error('Screenshot check failed', e);
+    }
+  }
+
+  void _showScreenshotMealOffer(File screenshotFile) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade600,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    screenshotFile,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'New screenshot detected',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Looks like you took a screenshot. Want to log a meal from it?',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    child: const Text('Dismiss'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      Navigator.of(context).push(
+                        AppPageRoute(
+                          builder: (_) => AddMealScreen(
+                            selectedDate: _selectedDate,
+                            initialImageFile: screenshotFile,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.neonGreen,
+                      foregroundColor: AppTheme.darkBackground,
+                    ),
+                    icon: const Icon(Icons.auto_awesome, size: 16),
+                    label: const Text('Analyze & Log'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onItemTapped(int index) {

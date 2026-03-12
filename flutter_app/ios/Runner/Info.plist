@@ -58,6 +58,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Food Scanner reads your Screenshots album to let you quickly log meals from food screenshots.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Food Scanner uses your camera to scan barcodes and capture product details for your meal logs.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
