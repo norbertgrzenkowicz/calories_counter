@@ -7,9 +7,14 @@ import json
 import re
 import base64
 import io
+import logging
 from openai import OpenAI
 from dotenv import load_dotenv
 from subscription_routes import router as subscription_router, webhook_router
+import openclaw_client
+from openclaw_client import OpenClawError
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -43,6 +48,23 @@ class TextRequest(BaseModel):
 class AudioRequest(BaseModel):
     audio: str
     format: Optional[str] = "mp3"
+
+class MealContext(BaseModel):
+    meal_name: str
+    calories: int
+    protein: int
+    carbs: int
+    fats: int
+
+class ChatMessageRequest(BaseModel):
+    user_id: str
+    message: str
+    context_meals: Optional[list[MealContext]] = []
+
+class ChatMessageResponse(BaseModel):
+    response: str
+    action: Optional[str] = None
+    meal_data: Optional[dict] = None
 
 class FoodAnalysisResponse(BaseModel):
     meal_name: str
@@ -98,6 +120,54 @@ async def analyze_food_audio(request: AudioRequest, user_id: str = Header(..., a
         carbs=nutrition['carbs'],
         fats=nutrition['fats']
     )
+
+@app.post("/chat/message", response_model=ChatMessageResponse)
+async def chat_message(request: ChatMessageRequest):
+    """
+    Conversational nutrition assistant endpoint.
+
+    Routes to OpenClaw gateway when configured (persistent user sessions, memory).
+    Falls back to OpenAI when OPENCLAW_TOKEN is not set or gateway is unreachable.
+    """
+    if not request.message or not request.message.strip():
+        raise HTTPException(status_code=400, detail="No message provided")
+
+    meals_dicts = [m.model_dump() for m in (request.context_meals or [])]
+
+    # --- Try OpenClaw first ---
+    if openclaw_client.is_configured():
+        try:
+            result = openclaw_client.chat(
+                user_message=request.message,
+                user_id=request.user_id,
+                context_meals=meals_dicts,
+            )
+            return ChatMessageResponse(**result)
+        except OpenClawError as exc:
+            logger.warning("OpenClaw unavailable, falling back to OpenAI: %s", exc)
+
+    # --- Fallback: OpenAI ---
+    return _openai_chat_fallback(request.message, meals_dicts)
+
+
+def _openai_chat_fallback(message: str, context_meals: list[dict]) -> ChatMessageResponse:
+    """Stateless OpenAI fallback for when OpenClaw is not configured or unreachable."""
+    system_prompt = openclaw_client._build_system_prompt(context_meals)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-5-nano",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message},
+            ],
+        )
+        raw = response.choices[0].message.content.strip()
+        result = openclaw_client._parse_response(raw)
+        return ChatMessageResponse(**result)
+    except Exception as exc:
+        logger.error("OpenAI fallback error: %s", exc)
+        raise HTTPException(status_code=503, detail="Chat service temporarily unavailable")
+
 
 # Backward compatibility: keep old endpoint pointing to image analysis
 @app.post("/analyze_food", response_model=FoodAnalysisResponse)
