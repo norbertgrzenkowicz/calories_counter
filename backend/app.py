@@ -137,7 +137,7 @@ async def chat_message(request: ChatMessageRequest):
     # --- Try OpenClaw first ---
     if openclaw_client.is_configured():
         try:
-            result = openclaw_client.chat(
+            result = await openclaw_client.chat(
                 user_message=request.message,
                 user_id=request.user_id,
                 context_meals=meals_dicts,
@@ -147,10 +147,10 @@ async def chat_message(request: ChatMessageRequest):
             logger.warning("OpenClaw unavailable, falling back to OpenAI: %s", exc)
 
     # --- Fallback: OpenAI ---
-    return _openai_chat_fallback(request.message, meals_dicts)
+    return await _openai_chat_fallback(request.message, meals_dicts)
 
 
-def _openai_chat_fallback(message: str, context_meals: list[dict]) -> ChatMessageResponse:
+async def _openai_chat_fallback(message: str, context_meals: list[dict]) -> ChatMessageResponse:
     """Stateless OpenAI fallback for when OpenClaw is not configured or unreachable."""
     system_prompt = openclaw_client._build_system_prompt(context_meals)
     try:

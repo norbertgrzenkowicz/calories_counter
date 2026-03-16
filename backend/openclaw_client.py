@@ -13,13 +13,17 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-OPENCLAW_HOST = os.getenv("OPENCLAW_HOST", "127.0.0.1")
-OPENCLAW_PORT = os.getenv("OPENCLAW_PORT", "18789")
-OPENCLAW_TOKEN = os.getenv("OPENCLAW_TOKEN", "")
-OPENCLAW_AGENT = os.getenv("OPENCLAW_AGENT", "main")
-
-_BASE_URL = f"http://{OPENCLAW_HOST}:{OPENCLAW_PORT}"
 _TIMEOUT = 30.0  # seconds
+
+
+def _get_config() -> tuple[str, str, str, str]:
+    """Fetch config just-in-time to avoid loading before dotenv."""
+    return (
+        os.getenv("OPENCLAW_HOST", "127.0.0.1"),
+        os.getenv("OPENCLAW_PORT", "18789"),
+        os.getenv("OPENCLAW_TOKEN", ""),
+        os.getenv("OPENCLAW_AGENT", "main"),
+    )
 
 NUTRITION_SYSTEM_PROMPT = """\
 You are a personal nutrition assistant for Yapper, an AI-powered food tracking app.
@@ -47,7 +51,8 @@ The user's recent meals (last {count}):
 
 def is_configured() -> bool:
     """Return True if OpenClaw gateway credentials are set."""
-    return bool(OPENCLAW_TOKEN)
+    _, _, token, _ = _get_config()
+    return bool(token)
 
 
 def _build_meal_context(context_meals: list[dict]) -> str:
@@ -69,7 +74,7 @@ def _build_system_prompt(context_meals: list[dict]) -> str:
     return NUTRITION_SYSTEM_PROMPT.format(meal_context=meal_context)
 
 
-def chat(
+async def chat(
     user_message: str,
     user_id: str,
     context_meals: Optional[list[dict]] = None,
@@ -90,8 +95,11 @@ def chat(
     if context_meals is None:
         context_meals = []
 
+    host, port, token, agent = _get_config()
+    base_url = f"http://{host}:{port}"
+
     system_prompt = _build_system_prompt(context_meals)
-    model = f"openclaw:{OPENCLAW_AGENT}"
+    model = f"openclaw:{agent}"
 
     payload = {
         "model": model,
@@ -103,16 +111,16 @@ def chat(
     }
 
     headers = {
-        "Authorization": f"Bearer {OPENCLAW_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
 
-    url = f"{_BASE_URL}/v1/chat/completions"
-    logger.info("OpenClaw request: user=%s url=%s", user_id, url)
+    url = f"{base_url}/v1/chat/completions"
+    logger.info("OpenClaw request: user=%s model=%s", user_id, model)
 
     try:
-        with httpx.Client(timeout=_TIMEOUT) as http:
-            resp = http.post(url, json=payload, headers=headers)
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as http:
+            resp = await http.post(url, json=payload, headers=headers)
         resp.raise_for_status()
     except httpx.HTTPStatusError as exc:
         raise OpenClawError(f"Gateway returned {exc.response.status_code}") from exc
@@ -120,7 +128,11 @@ def chat(
         raise OpenClawError(f"Gateway unreachable: {exc}") from exc
 
     data = resp.json()
-    raw = data["choices"][0]["message"]["content"]
+    try:
+        raw = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        logger.warning("Unexpected OpenClaw response format: %s", data)
+        raw = ""
     return _parse_response(raw)
 
 
