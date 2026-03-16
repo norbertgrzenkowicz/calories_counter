@@ -37,22 +37,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
+    if (!_isValidEmail(email)) {
+      AppSnackbar.error(context, 'Please enter a valid email address');
+      return;
+    }
+
     AppLogger.logUserAction('login_attempt');
 
     try {
+      // First sign out any existing session to ensure clean state
+      await ref.read(authNotifierProvider.notifier).signOut();
+
       await ref.read(authNotifierProvider.notifier).signIn(email, password);
 
-      // Check if login was successful
+      // Give a tiny delay for state to update, then check
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      // Check if login was successful - use fresh read
       final authState = ref.read(authNotifierProvider);
-      if (authState.isAuthenticated && mounted) {
+      if (!mounted) return;
+
+      if (authState.isAuthenticated) {
         AppLogger.logUserAction('login_successful');
         Navigator.of(context).pushReplacement(
           AppPageRoute(builder: (context) => const DashboardScreen()),
         );
       }
+      // If not authenticated, error will be shown via listener below
     } catch (e) {
       AppLogger.error('Login failed', e);
     }
+  }
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(email);
   }
 
   void _goToRegisterScreen() {

@@ -183,6 +183,26 @@ class SupabaseService {
     return user.emailConfirmedAt != null;
   }
 
+  // Check if email exists in database
+  // Returns true if email is registered, false otherwise
+  Future<bool> isEmailRegistered(String email) async {
+    try {
+      if (!isInitialized) return false;
+
+      final response = await client
+          .from('user_profiles')
+          .select('uid')
+          .eq('email', email.toLowerCase())
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      developer.log('Failed to check email registration: $e',
+          name: 'SupabaseService');
+      return false;
+    }
+  }
+
   // Fetch meals for a specific date range and current user
   Future<List<Map<String, dynamic>>> getMealsByDateRange({
     required DateTime startDate,
@@ -662,7 +682,8 @@ class SupabaseService {
       // Format date as YYYY-MM-DD for DATE comparison
       final dateStr = date.toIso8601String().split('T')[0];
 
-      developer.log('Fetching chat messages for user: $userId on date: $dateStr',
+      developer.log(
+          'Fetching chat messages for user: $userId on date: $dateStr',
           name: 'SupabaseService');
 
       final response = await client
@@ -707,8 +728,7 @@ class SupabaseService {
       developer.log('Chat message saved successfully', name: 'SupabaseService');
       return response;
     } catch (e) {
-      developer.log('Failed to save chat message: $e',
-          name: 'SupabaseService');
+      developer.log('Failed to save chat message: $e', name: 'SupabaseService');
       rethrow;
     }
   }
@@ -798,8 +818,7 @@ class SupabaseService {
       // Create storage path: chat/{uid}/{date}/{messageId}.{ext}
       final now = DateTime.now();
       final dateStr = now.toIso8601String().split('T')[0]; // YYYY-MM-DD
-      final storagePath =
-          'chat/$userId/$dateStr/$messageId.$extension';
+      final storagePath = 'chat/$userId/$dateStr/$messageId.$extension';
 
       developer.log('Uploading chat $mediaType to: $storagePath',
           name: 'SupabaseService');
@@ -833,8 +852,7 @@ class SupabaseService {
         return signedUrl;
       }
     } catch (e) {
-      developer.log('Failed to upload chat media: $e',
-          name: 'SupabaseService');
+      developer.log('Failed to upload chat media: $e', name: 'SupabaseService');
       AppLogger.error('Chat media upload failed', e);
       // Don't rethrow - media upload failure should not prevent message creation
       return null;
@@ -858,8 +876,7 @@ class SupabaseService {
             name: 'SupabaseService');
       }
     } catch (e) {
-      developer.log('Failed to delete chat media: $e',
-          name: 'SupabaseService');
+      developer.log('Failed to delete chat media: $e', name: 'SupabaseService');
       // Don't rethrow - media deletion failure should not prevent other operations
     }
   }

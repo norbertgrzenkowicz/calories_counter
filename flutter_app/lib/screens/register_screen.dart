@@ -42,8 +42,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (response.user != null) {
         AppLogger.logUserAction('user_registration_successful');
 
+        if (response.user!.identities == null ||
+            response.user!.identities!.isEmpty) {
+          if (!mounted) return;
+          AppSnackbar.error(
+              context, 'An account with this email already exists');
+          return;
+        }
+
         if (!mounted) return;
-        AppSnackbar.success(context, 'Registration successful! Check your email to verify your account.');
+        AppSnackbar.success(context,
+            'Registration successful! Check your email to verify your account.');
         Navigator.of(context).pop();
       } else {
         AppLogger.error('Registration failed: No user returned');
@@ -75,7 +84,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (_passwordController.text.length < 6) {
-      AppSnackbar.warning(context, 'Password must be at least 6 characters long');
+      AppSnackbar.warning(
+          context, 'Password must be at least 6 characters long');
       return false;
     }
 

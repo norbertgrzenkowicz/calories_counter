@@ -21,7 +21,6 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       if (response.user != null) {
-        // Reject users who haven't verified their email
         if (response.user!.emailConfirmedAt == null) {
           AppLogger.warning('Sign in rejected - email not verified');
           await _supabaseService.client.auth.signOut();
@@ -37,21 +36,25 @@ class AuthRepositoryImpl implements AuthRepository {
       } else {
         AppLogger.warning('Sign in failed - no user returned');
         return const Result.failure(
-          AppError.authentication('Invalid credentials'),
+          AppError.authentication('Invalid email or password'),
         );
       }
     } on AuthException catch (e) {
       AppLogger.error('Authentication failed', e);
 
-      // Map Supabase auth errors to our error types
-      if (e.statusCode == '400') {
-        return Result.failure(
-          AppError.validation('Invalid email or password format'),
-        );
-      } else if (e.statusCode == '422') {
-        return Result.failure(
-          AppError.authentication('Invalid credentials'),
-        );
+      if (e.statusCode == '400' || e.statusCode == '422') {
+        final isRegistered = await _supabaseService.isEmailRegistered(email);
+
+        if (!isRegistered) {
+          return const Result.failure(
+            AppError.authentication('Invalid email or password'),
+          );
+        } else {
+          return const Result.failure(
+            AppError.authentication(
+                'Please verify your email to authorize your account.'),
+          );
+        }
       } else {
         return Result.failure(
           AppError.authentication(e.message),
@@ -77,6 +80,15 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (response.user != null) {
         final userId = response.user!.id;
+
+        if (response.user!.identities == null ||
+            response.user!.identities!.isEmpty) {
+          AppLogger.warning('Registration rejected - email already registered');
+          return Result.failure(
+            AppError.conflict('An account with this email already exists'),
+          );
+        }
+
         AppLogger.info('User registered successfully: $userId');
 
         // Create user profile in user_profiles table
@@ -89,7 +101,8 @@ class AuthRepositoryImpl implements AuthRepository {
             // Required fields for BMR calculations
             'gender': 'male', // Default - user should update in onboarding
             'height_cm': 170.0, // Default average height - user should update
-            'current_weight_kg': 70.0, // Default average weight - user should update
+            'current_weight_kg':
+                70.0, // Default average weight - user should update
             'goal': 'maintaining', // Has default in schema
             'activity_level': 1.2, // Has default in schema (sedentary)
             'weekly_weight_loss_target': 0.5, // Has default in schema
