@@ -14,7 +14,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from app import parse_nutrition_json as _parse_nutrition_json
+from food_analysis import parse_nutrition_json as _parse_nutrition_json
 
 
 WORD_TO_NUMBER = {
@@ -124,8 +124,6 @@ def _aggregate_list_payload(items: Iterable[dict]) -> Dict[str, int | str]:
 
 def parse_nutrition_json(raw_content: str) -> Dict[str, int | str]:
     parsed = _parse_nutrition_json(raw_content)
-    if isinstance(parsed, list):
-        parsed = _aggregate_list_payload(parsed)
     return {
         "meal_name": parsed.get("meal_name", "Unknown Meal"),
         "calories": _coerce_int(parsed.get("calories", 0)),

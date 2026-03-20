@@ -1,17 +1,20 @@
-from fastapi import FastAPI, HTTPException, Header
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
-import os
-import json
-import re
+from __future__ import annotations
+
 import base64
 import io
-from openai import OpenAI
+import os
+from typing import List, Optional
+
 from dotenv import load_dotenv
+from fastapi import FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
+from pydantic import BaseModel, Field
+
+import food_analysis as fa
 from subscription_routes import router as subscription_router, webhook_router
 
-# Load environment variables
+
 load_dotenv()
 
 app = FastAPI()
@@ -24,199 +27,140 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include subscription routes
 app.include_router(subscription_router)
 app.include_router(webhook_router)
 
-api_key = os.getenv('OPENAI_API_KEY')
+api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     print("WARNING: OPENAI_API_KEY environment variable not set!")
 client = OpenAI(api_key=api_key)
 
+
 class ImageRequest(BaseModel):
-    image: str
+    image: Optional[str] = None
+    image_url: Optional[str] = None
     filename: Optional[str] = "image.jpg"
+    context_text: Optional[str] = None
+
 
 class TextRequest(BaseModel):
     text: str
+
 
 class AudioRequest(BaseModel):
     audio: str
     format: Optional[str] = "mp3"
 
-class FoodAnalysisResponse(BaseModel):
+
+class FoodAnalysisResponseFlat(BaseModel):
     meal_name: str
     calories: int
     protein: int
     carbs: int
     fats: int
+    analysis_version: Optional[str] = None
+    status: Optional[str] = None
+    confidence: Optional[float] = None
+    confidence_label: Optional[str] = None
+    estimation_method: Optional[str] = None
+    clarifying_question: Optional[str] = None
+    assumptions: Optional[List[str]] = Field(default=None)
+    flags: Optional[List[str]] = Field(default=None)
+    items: Optional[List[fa.FoodAnalysisItem]] = Field(default=None)
 
-@app.post("/analyze_food/image", response_model=FoodAnalysisResponse)
-async def analyze_food_image(request: ImageRequest, user_id: str = Header(..., alias="X-User-ID")):
-    """Analyze food from image (free feature)"""
-    if not request.image:
-        raise HTTPException(status_code=400, detail="No image provided")
 
-    nutrition = predict_nutrition(request.image)
+@app.post("/analyze_food/image", response_model=fa.FoodAnalysisResponseV2)
+async def analyze_food_image(
+    request: ImageRequest,
+    user_id: str = Header(..., alias="X-User-ID"),
+):
+    if not request.image and not request.image_url:
+        raise HTTPException(
+            status_code=400,
+            detail="Either image or image_url must be provided",
+        )
 
-    return FoodAnalysisResponse(
-        meal_name=nutrition['meal_name'],
-        calories=nutrition['calories'],
-        protein=nutrition['protein'],
-        carbs=nutrition['carbs'],
-        fats=nutrition['fats']
-    )
+    try:
+        result = fa.analyze_image(
+            client,
+            image_data=request.image or None,
+            image_url=None if request.image else request.image_url,
+            context_text=request.context_text or None,
+        )
+        return fa.FoodAnalysisResponseV2(**result)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        print(f"Image analysis error: {exc}")
+        raise HTTPException(status_code=500, detail="Image analysis failed") from exc
 
-@app.post("/analyze_food/text", response_model=FoodAnalysisResponse)
-async def analyze_food_text(request: TextRequest, user_id: str = Header(..., alias="X-User-ID")):
-    """Analyze food from text description (free feature)"""
+
+@app.post("/analyze_food/text", response_model=FoodAnalysisResponseFlat)
+async def analyze_food_text(
+    request: TextRequest,
+    user_id: str = Header(..., alias="X-User-ID"),
+):
     if not request.text or not request.text.strip():
         raise HTTPException(status_code=400, detail="No text description provided")
 
-    nutrition = predict_nutrition_from_text(request.text)
+    try:
+        nutrition = fa.analyze_text(client, request.text)
+        return FoodAnalysisResponseFlat(**nutrition)
+    except Exception as exc:
+        print(f"Text analysis error: {exc}")
+        raise HTTPException(status_code=500, detail="Text analysis failed") from exc
 
-    return FoodAnalysisResponse(
-        meal_name=nutrition['meal_name'],
-        calories=nutrition['calories'],
-        protein=nutrition['protein'],
-        carbs=nutrition['carbs'],
-        fats=nutrition['fats']
-    )
 
-@app.post("/analyze_food/audio", response_model=FoodAnalysisResponse)
-async def analyze_food_audio(request: AudioRequest, user_id: str = Header(..., alias="X-User-ID")):
-    """Analyze food from audio description (free feature)"""
+@app.post("/analyze_food/audio", response_model=FoodAnalysisResponseFlat)
+async def analyze_food_audio(
+    request: AudioRequest,
+    user_id: str = Header(..., alias="X-User-ID"),
+):
     if not request.audio:
         raise HTTPException(status_code=400, detail="No audio provided")
 
     nutrition = predict_nutrition_from_audio(request.audio, request.format)
+    return FoodAnalysisResponseFlat(**nutrition)
 
-    return FoodAnalysisResponse(
-        meal_name=nutrition['meal_name'],
-        calories=nutrition['calories'],
-        protein=nutrition['protein'],
-        carbs=nutrition['carbs'],
-        fats=nutrition['fats']
-    )
 
-# Backward compatibility: keep old endpoint pointing to image analysis
-@app.post("/analyze_food", response_model=FoodAnalysisResponse)
-async def analyze_food(request: ImageRequest, user_id: str = Header(..., alias="X-User-ID")):
-    """Legacy endpoint - redirects to image analysis (free feature)"""
+@app.post("/analyze_food", response_model=fa.FoodAnalysisResponseV2)
+async def analyze_food(
+    request: ImageRequest,
+    user_id: str = Header(..., alias="X-User-ID"),
+):
     return await analyze_food_image(request, user_id)
 
 
 def parse_nutrition_json(raw_content: str) -> dict:
-    """Extract and parse nutrition JSON from OpenAI response"""
-    print(f"Raw OpenAI response: {raw_content}")
+    return fa.parse_nutrition_json(raw_content)
 
-    # Extract JSON from markdown code blocks if present
-    json_match = re.search(r'```json\s*(\{.*?\})\s*```', raw_content, re.DOTALL)
-    if json_match:
-        json_content = json_match.group(1)
-    else:
-        json_content = raw_content
-
-    result = json.loads(json_content)
-    return {
-        'meal_name': result.get('meal_name', 'Unknown Meal'),
-        'calories': int(result.get('calories', 0)),
-        'protein': int(result.get('protein', 0)),
-        'carbs': int(result.get('carbs', 0)),
-        'fats': int(result.get('fats', 0))
-    }
-
-def predict_nutrition(image_data: str) -> dict:
-    """Predict nutrition from base64-encoded image"""
-    try:
-        response = client.chat.completions.create(
-            model="gpt-5-nano",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a nutrition expert. Analyze food images and estimate nutritional values. Account for perspective distortion, plate size variations, camera angles, lighting conditions, and portion visibility. Consider that food may be partially hidden, stacked, or viewed from different angles. Generate a descriptive meal name based on what you see. Return only a JSON object with meal_name (string), calories, protein, carbs, and fats as integers (grams for macronutrients)."
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Estimate the nutritional content of this food and give it a descriptive name. Consider perspective, portion size, and any visual distortions. Return JSON format: {\"meal_name\": \"descriptive name\", \"calories\": number, \"protein\": grams, \"carbs\": grams, \"fats\": grams}"},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_data}"
-                            }
-                        }
-                    ]
-                }
-            ]
-        )
-    except Exception as e:
-        print(f"OpenAI API error: {e}")
-        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
-
-    try:
-        raw_content = response.choices[0].message.content.strip()
-        return parse_nutrition_json(raw_content)
-    except (ValueError, json.JSONDecodeError) as e:
-        print(f"JSON parsing error: {e}")
-        print(f"Raw content: {response.choices[0].message.content}")
-        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
-
-def predict_nutrition_from_text(text_description: str) -> dict:
-    """Predict nutrition from text description of food"""
-    try:
-        response = client.chat.completions.create(
-            model="gpt-5-nano",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a nutrition expert. Analyze text descriptions of food and ingredients to estimate nutritional values. Parse quantities, ingredient names, and cooking methods. Use standard nutrition databases knowledge to calculate totals. Generate a descriptive meal name based on the ingredients. Return only a JSON object with meal_name (string), calories, protein, carbs, and fats as integers (grams for macronutrients)."
-                },
-                {
-                    "role": "user",
-                    "content": f"Estimate the total nutritional content of this food description and give it a descriptive name: \"{text_description}\". Return JSON format: {{\"meal_name\": \"descriptive name\", \"calories\": number, \"protein\": grams, \"carbs\": grams, \"fats\": grams}}"
-                }
-            ]
-        )
-    except Exception as e:
-        print(f"OpenAI API error: {e}")
-        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
-
-    try:
-        raw_content = response.choices[0].message.content.strip()
-        return parse_nutrition_json(raw_content)
-    except (ValueError, json.JSONDecodeError) as e:
-        print(f"JSON parsing error: {e}")
-        print(f"Raw content: {response.choices[0].message.content}")
-        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
 
 def predict_nutrition_from_audio(audio_data: str, audio_format: str = "mp3") -> dict:
-    """Predict nutrition from base64-encoded audio by transcribing then analyzing"""
     try:
-        # Decode base64 audio
         audio_bytes = base64.b64decode(audio_data)
-
-        # Create a file-like object for Whisper API
         audio_file = io.BytesIO(audio_bytes)
         audio_file.name = f"audio.{audio_format}"
 
-        # Transcribe audio using Whisper
         transcription = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_file
+            file=audio_file,
         )
-
         transcribed_text = transcription.text
         print(f"Transcribed audio: {transcribed_text}")
+        return fa.analyze_text(client, transcribed_text)
+    except Exception as exc:
+        print(f"Audio processing error: {exc}")
+        return {
+            "meal_name": "Unknown Meal",
+            "calories": 0,
+            "protein": 0,
+            "carbs": 0,
+            "fats": 0,
+        }
 
-        # Use text-based prediction on transcription
-        return predict_nutrition_from_text(transcribed_text)
-
-    except Exception as e:
-        print(f"Audio processing error: {e}")
-        return {'meal_name': 'Unknown Meal', 'calories': 0, 'protein': 0, 'carbs': 0, 'fats': 0}
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)

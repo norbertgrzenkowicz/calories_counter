@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../core/app_logger.dart';
+import '../models/food_analysis_result.dart';
 import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../providers/meals_provider.dart';
@@ -46,10 +47,11 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   final _proteinsController = TextEditingController();
   final _fatsController = TextEditingController();
   final _carbsController = TextEditingController();
+  final _clarificationController = TextEditingController();
   String? _photoPath;
   bool _isAnalyzing = false;
   bool _hasAnalyzedPhoto = false;
-  Map<String, dynamic>? _analysisResult;
+  FoodAnalysisResult? _analysisResult;
   String? _scannedBarcode;
   bool _isScanningBarcode = false;
   ProductNutrition? _scannedProduct;
@@ -84,6 +86,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     _proteinsController.dispose();
     _fatsController.dispose();
     _carbsController.dispose();
+    _clarificationController.dispose();
     super.dispose();
   }
 
@@ -95,9 +98,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     try {
       final result = await Navigator.push<String>(
         context,
-        AppPageRoute(
-          builder: (context) => const BarcodeScannerScreen(),
-        ),
+        AppPageRoute(builder: (context) => const BarcodeScannerScreen()),
       );
 
       if (result != null && mounted) {
@@ -129,14 +130,17 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
           // Product not found - show placeholder
           // Sanitize the barcode result before displaying
           final sanitizedBarcode = InputSanitizer.sanitizeBarcode(result);
-          final displayBarcode = sanitizedBarcode ?? 'Invalid';
+          final displayBarcode = sanitizedBarcode;
 
           setState(() {
             _scannedProduct = null;
             _nameController.text = 'Unknown Product ($displayBarcode)';
           });
 
-          AppSnackbar.warning(context, 'Product not found in database. You can enter nutrition manually.');
+          AppSnackbar.warning(
+            context,
+            'Product not found in database. You can enter nutrition manually.',
+          );
         }
       }
     } catch (e) {
@@ -159,18 +163,30 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.cardBackground,
-        title: const Text('Add Photo', style: TextStyle(color: AppTheme.textPrimary)),
+        title: const Text(
+          'Add Photo',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppTheme.neonGreen),
-              title: const Text('Camera', style: TextStyle(color: AppTheme.textPrimary)),
+              title: const Text(
+                'Camera',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppTheme.neonGreen),
-              title: const Text('Gallery', style: TextStyle(color: AppTheme.textPrimary)),
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppTheme.neonGreen,
+              ),
+              title: const Text(
+                'Gallery',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -185,13 +201,21 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
 
   Future<void> _pickImageFromSource(ImageSource source) async {
     try {
-      final xFile = await _imagePicker.pickImage(source: source, imageQuality: 85);
+      final xFile = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
       if (xFile == null) return;
 
-      final validationResult = await FileUploadValidator.validateImageFile(xFile);
+      final validationResult = await FileUploadValidator.validateImageFile(
+        xFile,
+      );
       if (validationResult != FileValidationResult.valid) {
         if (mounted) {
-          AppSnackbar.error(context, FileUploadValidator.getErrorMessage(validationResult));
+          AppSnackbar.error(
+            context,
+            FileUploadValidator.getErrorMessage(validationResult),
+          );
         }
         return;
       }
@@ -200,6 +224,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
         _photoPath = xFile.path;
         _hasAnalyzedPhoto = false;
         _analysisResult = null;
+        _clarificationController.clear();
       });
     } catch (e) {
       if (mounted) {
@@ -216,10 +241,15 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     });
 
     try {
-      final result = await _chatService.analyzeFoodFromImage(File(_photoPath!));
+      final result = await _chatService.analyzeFoodFromImage(
+        imageFile: File(_photoPath!),
+      );
       setState(() {
         _analysisResult = result;
         _hasAnalyzedPhoto = true;
+        if (result.isComplete) {
+          _clarificationController.clear();
+        }
       });
     } catch (e) {
       AppLogger.error('Photo analysis failed', e);
@@ -239,14 +269,55 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     if (_analysisResult == null) return;
 
     setState(() {
-      _nameController.text = _analysisResult!['meal_name'] as String? ?? '';
-      _caloriesController.text = (_analysisResult!['calories'] as int).toString();
-      _proteinsController.text = (_analysisResult!['protein'] as int).toString();
-      _fatsController.text = (_analysisResult!['fats'] as int).toString();
-      _carbsController.text = (_analysisResult!['carbs'] as int).toString();
+      _nameController.text = _analysisResult!.mealName;
+      _caloriesController.text = _analysisResult!.calories.toString();
+      _proteinsController.text = _analysisResult!.protein.toString();
+      _fatsController.text = _analysisResult!.fats.toString();
+      _carbsController.text = _analysisResult!.carbs.toString();
     });
 
-    AppSnackbar.success(context, 'Nutrition values filled from photo analysis!');
+    AppSnackbar.success(
+      context,
+      'Nutrition values filled from photo analysis!',
+    );
+  }
+
+  Future<void> _refineAnalysis() async {
+    if (_photoPath == null || _analysisResult == null) return;
+
+    final clarificationText = _clarificationController.text.trim();
+    if (clarificationText.isEmpty) {
+      AppSnackbar.warning(context, 'Answer the clarification question first');
+      return;
+    }
+
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      final result = await _chatService.analyzeFoodFromImage(
+        imageFile: File(_photoPath!),
+        contextText: clarificationText,
+      );
+
+      setState(() {
+        _analysisResult = result;
+        _hasAnalyzedPhoto = true;
+        _clarificationController.clear();
+      });
+    } catch (e) {
+      AppLogger.error('Photo refinement failed', e);
+      if (mounted) {
+        AppSnackbar.error(context, 'Refinement failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
+    }
   }
 
   void _acceptBarcodeNutrition() {
@@ -262,7 +333,10 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       });
 
       if (mounted) {
-        AppSnackbar.success(context, 'Product nutrition accepted! Values filled in.');
+        AppSnackbar.success(
+          context,
+          'Product nutrition accepted! Values filled in.',
+        );
       }
     }
   }
@@ -283,14 +357,17 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
         // Upload photo if one was taken (keep using SupabaseService directly for storage)
         if (_photoPath != null) {
           final fileName = 'meal_${DateTime.now().millisecondsSinceEpoch}.jpg';
-          photoUrl =
-              await supabaseService.uploadMealPhoto(_photoPath!, fileName);
+          photoUrl = await supabaseService.uploadMealPhoto(
+            _photoPath!,
+            fileName,
+          );
           AppLogger.debug('Photo uploaded successfully');
         }
 
         // Sanitize input data
-        final sanitizedName =
-            InputSanitizer.sanitizeMealName(_nameController.text);
+        final sanitizedName = InputSanitizer.sanitizeMealName(
+          _nameController.text,
+        );
         final sanitizedCalories =
             InputSanitizer.sanitizeCalories(_caloriesController.text) ?? 0;
         final sanitizedProteins =
@@ -350,13 +427,327 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     }
   }
 
+  Widget _buildAnalysisCard() {
+    final analysis = _analysisResult!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: analysis.needsClarification
+              ? AppTheme.neonYellow.withOpacity(0.45)
+              : AppTheme.neonGreen.withOpacity(0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.auto_awesome,
+                color: AppTheme.neonGreen,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  analysis.mealName,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              _buildConfidenceChip(analysis),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${analysis.calories} kcal  '
+            'P: ${analysis.protein}g  '
+            'C: ${analysis.carbs}g  '
+            'F: ${analysis.fats}g',
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            analysis.needsClarification
+                ? 'Provisional estimate'
+                : 'Ready to use',
+            style: TextStyle(
+              color: analysis.needsClarification
+                  ? AppTheme.neonYellow
+                  : AppTheme.neonGreen,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          if (analysis.assumptions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildStringSection('Assumptions', analysis.assumptions),
+          ],
+          if (analysis.flags.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: analysis.flags
+                  .map(
+                    (flag) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.borderColor,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        flag.replaceAll('_', ' '),
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+          if (analysis.items.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Item breakdown',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...analysis.items.map(_buildAnalysisItemTile),
+          ],
+          if (analysis.needsClarification &&
+              analysis.clarifyingQuestion != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.neonYellow.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.neonYellow.withOpacity(0.25),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Clarification',
+                    style: TextStyle(
+                      color: AppTheme.neonYellow,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    analysis.clarifyingQuestion!,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _clarificationController,
+                    enabled: !_isAnalyzing,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Add the missing detail',
+                      hintStyle: const TextStyle(color: AppTheme.textTertiary),
+                      filled: true,
+                      fillColor: AppTheme.darkBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppTheme.borderColor,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppTheme.borderColor,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppTheme.neonYellow,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isAnalyzing ? null : _refineAnalysis,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.neonYellow,
+                            foregroundColor: AppTheme.darkBackground,
+                          ),
+                          child: const Text('Refine estimate'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _isAnalyzing ? null : _acceptAnalysis,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.textPrimary,
+                            side: BorderSide(
+                              color: AppTheme.textSecondary.withOpacity(0.35),
+                            ),
+                          ),
+                          child: const Text('Use current estimate'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _acceptAnalysis,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.neonGreen,
+                  foregroundColor: AppTheme.darkBackground,
+                ),
+                child: const Text('Accept analysis'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfidenceChip(FoodAnalysisResult analysis) {
+    final color = switch (analysis.confidenceLabel) {
+      'high' => AppTheme.neonGreen,
+      'medium' => AppTheme.neonYellow,
+      _ => AppTheme.neonRed,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withOpacity(0.32)),
+      ),
+      child: Text(
+        '${analysis.confidenceLabel} ${(analysis.confidence * 100).round()}%',
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStringSection(String title, List<String> values) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(height: 6),
+        ...values.map(
+          (value) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              '• $value',
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAnalysisItemTile(FoodAnalysisItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.darkBackground,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.name,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+          if (item.portionText.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              item.portionText,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            '${item.calories} kcal  '
+            'P: ${item.protein}g  '
+            'C: ${item.carbs}g  '
+            'F: ${item.fats}g',
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: Text(
-            'Add Meal - ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}'),
+          'Add Meal - ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}',
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -493,7 +884,11 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.camera_alt),
-                  label: Text(_isAnalyzing ? 'Analyzing...' : (_photoPath != null ? 'Change Photo' : 'Add Photo')),
+                  label: Text(
+                    _isAnalyzing
+                        ? 'Analyzing...'
+                        : (_photoPath != null ? 'Change Photo' : 'Add Photo'),
+                  ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.all(16),
                   ),
@@ -514,53 +909,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                 // AI analysis results
                 if (_hasAnalyzedPhoto && _analysisResult != null) ...[
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardBackground,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.neonGreen.withOpacity(0.5)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.auto_awesome, color: AppTheme.neonGreen, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'AI Analysis: ${_analysisResult!['meal_name']}',
-                              style: const TextStyle(
-                                color: AppTheme.neonGreen,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${_analysisResult!['calories']} kcal  '
-                          'P: ${_analysisResult!['protein']}g  '
-                          'C: ${_analysisResult!['carbs']}g  '
-                          'F: ${_analysisResult!['fats']}g',
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _acceptAnalysis,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.neonGreen,
-                              foregroundColor: AppTheme.darkBackground,
-                            ),
-                            child: const Text('Accept & Fill Values'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildAnalysisCard(),
                 ],
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
@@ -572,8 +921,9 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.qr_code_scanner),
-                  label:
-                      Text(_isScanningBarcode ? 'Scanning...' : 'Scan Barcode'),
+                  label: Text(
+                    _isScanningBarcode ? 'Scanning...' : 'Scan Barcode',
+                  ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.all(16),
                   ),
@@ -588,19 +938,22 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                           : Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: _scannedProduct != null
-                              ? Colors.green.shade200
-                              : Colors.orange.shade200),
+                        color: _scannedProduct != null
+                            ? Colors.green.shade200
+                            : Colors.orange.shade200,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.qr_code,
-                                color: _scannedProduct != null
-                                    ? Colors.green.shade700
-                                    : Colors.orange.shade700),
+                            Icon(
+                              Icons.qr_code,
+                              color: _scannedProduct != null
+                                  ? Colors.green.shade700
+                                  : Colors.orange.shade700,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -624,7 +977,9 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                               ? _scannedProduct!.displayName
                               : 'Barcode: $_scannedBarcode',
                           style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         if (_scannedProduct != null &&
                             _scannedProduct!.hasBasicNutrition) ...[
@@ -642,20 +997,24 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                             children: [
                               if (_scannedProduct!.caloriesPer100g != null)
                                 Text(
-                                    '${_scannedProduct!.caloriesPer100g!.round()} kcal  ',
-                                    style: const TextStyle(fontSize: 12)),
+                                  '${_scannedProduct!.caloriesPer100g!.round()} kcal  ',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               if (_scannedProduct!.proteinPer100g != null)
                                 Text(
-                                    'P: ${_scannedProduct!.proteinPer100g!.toStringAsFixed(1)}g  ',
-                                    style: const TextStyle(fontSize: 12)),
+                                  'P: ${_scannedProduct!.proteinPer100g!.toStringAsFixed(1)}g  ',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               if (_scannedProduct!.carbsPer100g != null)
                                 Text(
-                                    'C: ${_scannedProduct!.carbsPer100g!.toStringAsFixed(1)}g  ',
-                                    style: const TextStyle(fontSize: 12)),
+                                  'C: ${_scannedProduct!.carbsPer100g!.toStringAsFixed(1)}g  ',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               if (_scannedProduct!.fatPer100g != null)
                                 Text(
-                                    'F: ${_scannedProduct!.fatPer100g!.toStringAsFixed(1)}g',
-                                    style: const TextStyle(fontSize: 12)),
+                                  'F: ${_scannedProduct!.fatPer100g!.toStringAsFixed(1)}g',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -667,8 +1026,9 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
                               ),
-                              child:
-                                  const Text('Accept & Fill Nutrition Values'),
+                              child: const Text(
+                                'Accept & Fill Nutrition Values',
+                              ),
                             ),
                           ),
                         ] else if (_scannedProduct == null) ...[
@@ -703,8 +1063,9 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             ),
                             SizedBox(width: 8),
