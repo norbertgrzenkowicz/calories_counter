@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
     meal_name TEXT, -- Name of the meal (set when discarded)
     meal_id BIGINT, -- Foreign key reference to the added meal (for tracking deletions)
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- true if the associated meal has been deleted
+    is_edited BOOLEAN NOT NULL DEFAULT FALSE, -- true if the chat message has been edited
     date DATE NOT NULL, -- Which day this chat belongs to (user's local date)
     timestamp TIMESTAMPTZ NOT NULL, -- Exact time message was created
     created_at TIMESTAMPTZ DEFAULT NOW() -- When row was inserted to DB

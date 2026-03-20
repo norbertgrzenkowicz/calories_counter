@@ -802,12 +802,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       // Create new meal with updated nutrition data
       final newMeal = Meal(
         name: newNutritionData['meal_name'] as String? ?? 'Updated Meal',
-        calories: (newNutritionData['calories'] ?? 0) is int
-            ? newNutritionData['calories']
-            : (newNutritionData['calories'] ?? 0).toInt(),
-        proteins: (newNutritionData['protein'] ?? 0).toDouble(),
-        carbs: (newNutritionData['carbs'] ?? 0).toDouble(),
-        fats: (newNutritionData['fats'] ?? 0).toDouble(),
+        calories: (newNutritionData['calories'] as num? ?? 0).toInt(),
+        proteins: (newNutritionData['protein'] as num? ?? 0).toDouble(),
+        carbs: (newNutritionData['carbs'] as num? ?? 0).toDouble(),
+        fats: (newNutritionData['fats'] as num? ?? 0).toDouble(),
         date: mealDate,
       );
 
