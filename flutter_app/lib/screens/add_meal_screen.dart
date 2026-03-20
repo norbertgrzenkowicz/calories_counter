@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../core/app_logger.dart';
 import '../theme/app_theme.dart';
+import '../models/food_analysis_result.dart';
 import '../models/meal.dart';
 import '../providers/meals_provider.dart';
 import '../services/chat_service.dart';
@@ -46,10 +47,12 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   final _proteinsController = TextEditingController();
   final _fatsController = TextEditingController();
   final _carbsController = TextEditingController();
+  final _clarificationController = TextEditingController();
+
   String? _photoPath;
   bool _isAnalyzing = false;
   bool _hasAnalyzedPhoto = false;
-  Map<String, dynamic>? _analysisResult;
+  FoodAnalysisResult? _analysisResult;
   String? _scannedBarcode;
   bool _isScanningBarcode = false;
   ProductNutrition? _scannedProduct;
@@ -84,6 +87,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     _proteinsController.dispose();
     _fatsController.dispose();
     _carbsController.dispose();
+    _clarificationController.dispose();
     super.dispose();
   }
 
@@ -200,6 +204,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
         _photoPath = xFile.path;
         _hasAnalyzedPhoto = false;
         _analysisResult = null;
+        _clarificationController.clear();
       });
     } catch (e) {
       if (mounted) {
@@ -208,7 +213,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     }
   }
 
-  Future<void> _analyzePhoto() async {
+  Future<void> _analyzePhoto({String? contextText}) async {
     if (_photoPath == null) return;
 
     setState(() {
@@ -216,10 +221,14 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     });
 
     try {
-      final result = await _chatService.analyzeFoodFromImage(File(_photoPath!));
+      final result = await _chatService.analyzeFoodFromImage(
+        File(_photoPath!),
+        contextText: contextText,
+      );
       setState(() {
         _analysisResult = result;
         _hasAnalyzedPhoto = true;
+        _clarificationController.clear();
       });
     } catch (e) {
       AppLogger.error('Photo analysis failed', e);
@@ -239,11 +248,11 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     if (_analysisResult == null) return;
 
     setState(() {
-      _nameController.text = _analysisResult!['meal_name'] as String? ?? '';
-      _caloriesController.text = (_analysisResult!['calories'] as int).toString();
-      _proteinsController.text = (_analysisResult!['protein'] as int).toString();
-      _fatsController.text = (_analysisResult!['fats'] as int).toString();
-      _carbsController.text = (_analysisResult!['carbs'] as int).toString();
+      _nameController.text = _analysisResult!.mealName;
+      _caloriesController.text = _analysisResult!.calories.toString();
+      _proteinsController.text = _analysisResult!.protein.toString();
+      _fatsController.text = _analysisResult!.fats.toString();
+      _carbsController.text = _analysisResult!.carbs.toString();
     });
 
     AppSnackbar.success(context, 'Nutrition values filled from photo analysis!');
@@ -350,6 +359,10 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -410,7 +423,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     labelText: 'Proteins (g)',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter proteins';
@@ -432,7 +445,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     labelText: 'Fats (g)',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter fats';
@@ -454,7 +467,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     labelText: 'Carbs (g)',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter carbs';
@@ -501,7 +514,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                 if (_photoPath != null && !_hasAnalyzedPhoto) ...[
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
-                    onPressed: _isAnalyzing ? null : _analyzePhoto,
+                    onPressed: _isAnalyzing ? null : () => _analyzePhoto(),
                     icon: const Icon(Icons.auto_awesome),
                     label: const Text('Analyze with AI'),
                     style: OutlinedButton.styleFrom(
@@ -511,56 +524,10 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     ),
                   ),
                 ],
-                // AI analysis results
+                // AI analysis results (v2)
                 if (_hasAnalyzedPhoto && _analysisResult != null) ...[
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardBackground,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.neonGreen.withOpacity(0.5)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.auto_awesome, color: AppTheme.neonGreen, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'AI Analysis: ${_analysisResult!['meal_name']}',
-                              style: const TextStyle(
-                                color: AppTheme.neonGreen,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${_analysisResult!['calories']} kcal  '
-                          'P: ${_analysisResult!['protein']}g  '
-                          'C: ${_analysisResult!['carbs']}g  '
-                          'F: ${_analysisResult!['fats']}g',
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _acceptAnalysis,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.neonGreen,
-                              foregroundColor: AppTheme.darkBackground,
-                            ),
-                            child: const Text('Accept & Fill Values'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildAnalysisCard(_analysisResult!),
                 ],
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
@@ -580,110 +547,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                 ),
                 if (_scannedBarcode != null) ...[
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _scannedProduct != null
-                          ? Colors.green.shade50
-                          : Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: _scannedProduct != null
-                              ? Colors.green.shade200
-                              : Colors.orange.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.qr_code,
-                                color: _scannedProduct != null
-                                    ? Colors.green.shade700
-                                    : Colors.orange.shade700),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _scannedProduct != null
-                                    ? 'Product Found:'
-                                    : 'Barcode Scanned:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: _scannedProduct != null
-                                      ? Colors.green.shade700
-                                      : Colors.orange.shade700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _scannedProduct != null
-                              ? _scannedProduct!.displayName
-                              : 'Barcode: $_scannedBarcode',
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
-                        ),
-                        if (_scannedProduct != null &&
-                            _scannedProduct!.hasBasicNutrition) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Nutrition per 100g:',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              if (_scannedProduct!.caloriesPer100g != null)
-                                Text(
-                                    '${_scannedProduct!.caloriesPer100g!.round()} kcal  ',
-                                    style: const TextStyle(fontSize: 12)),
-                              if (_scannedProduct!.proteinPer100g != null)
-                                Text(
-                                    'P: ${_scannedProduct!.proteinPer100g!.toStringAsFixed(1)}g  ',
-                                    style: const TextStyle(fontSize: 12)),
-                              if (_scannedProduct!.carbsPer100g != null)
-                                Text(
-                                    'C: ${_scannedProduct!.carbsPer100g!.toStringAsFixed(1)}g  ',
-                                    style: const TextStyle(fontSize: 12)),
-                              if (_scannedProduct!.fatPer100g != null)
-                                Text(
-                                    'F: ${_scannedProduct!.fatPer100g!.toStringAsFixed(1)}g',
-                                    style: const TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _acceptBarcodeNutrition,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                              ),
-                              child:
-                                  const Text('Accept & Fill Nutrition Values'),
-                            ),
-                          ),
-                        ] else if (_scannedProduct == null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Product not found in OpenFoodFacts database.\nYou can enter nutrition information manually.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange.shade700,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                  _buildBarcodeCard(),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -717,6 +581,344 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Analysis card (v2)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildAnalysisCard(FoodAnalysisResult result) {
+    final needsClarification = result.needsClarification;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: needsClarification
+              ? AppTheme.neonYellow.withOpacity(0.5)
+              : AppTheme.neonGreen.withOpacity(0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome,
+                color: needsClarification ? AppTheme.neonYellow : AppTheme.neonGreen,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  result.mealName,
+                  style: TextStyle(
+                    color: needsClarification ? AppTheme.neonYellow : AppTheme.neonGreen,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              _buildConfidenceBadge(result),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Macros
+          Text(
+            '${result.calories} kcal  '
+            'P: ${result.protein}g  '
+            'C: ${result.carbs}g  '
+            'F: ${result.fats}g',
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          ),
+          // Assumptions
+          if (result.assumptions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Assumptions:',
+              style: const TextStyle(
+                color: AppTheme.textTertiary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            ...result.assumptions.map(
+              (a) => Text(
+                '• $a',
+                style: const TextStyle(color: AppTheme.textTertiary, fontSize: 11),
+              ),
+            ),
+          ],
+          // Item breakdown
+          if (result.items.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Items:',
+              style: const TextStyle(
+                color: AppTheme.textTertiary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            ...result.items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  '• ${item.name} (${item.portionText}) — ${item.calories} kcal',
+                  style: const TextStyle(color: AppTheme.textTertiary, fontSize: 11),
+                ),
+              ),
+            ),
+          ],
+          // Clarification flow
+          if (needsClarification && result.clarifyingQuestion != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppTheme.neonYellow.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppTheme.neonYellow.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.help_outline, color: AppTheme.neonYellow, size: 14),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          result.clarifyingQuestion!,
+                          style: const TextStyle(
+                            color: AppTheme.neonYellow,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _clarificationController,
+                    style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Your answer...',
+                      hintStyle: const TextStyle(color: AppTheme.textTertiary, fontSize: 13),
+                      isDense: true,
+                      filled: true,
+                      fillColor: AppTheme.borderColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _isAnalyzing ? null : _acceptAnalysis,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            foregroundColor: AppTheme.textSecondary,
+                            side: const BorderSide(color: AppTheme.borderColor),
+                          ),
+                          child: const Text('Use current estimate', style: TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isAnalyzing
+                              ? null
+                              : () {
+                                  final answer = _clarificationController.text.trim();
+                                  if (answer.isEmpty) {
+                                    AppSnackbar.warning(context, 'Please enter an answer');
+                                    return;
+                                  }
+                                  _analyzePhoto(contextText: answer);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.neonYellow,
+                            foregroundColor: AppTheme.darkBackground,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          child: _isAnalyzing
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text('Refine estimate', style: TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+          // Accept button (only for complete results)
+          if (!needsClarification) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _acceptAnalysis,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.neonGreen,
+                  foregroundColor: AppTheme.darkBackground,
+                ),
+                child: const Text('Accept & Fill Values'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfidenceBadge(FoodAnalysisResult result) {
+    Color color;
+    switch (result.confidenceLabel) {
+      case 'high':
+        color = AppTheme.neonGreen;
+        break;
+      case 'medium':
+        color = AppTheme.neonYellow;
+        break;
+      default:
+        color = AppTheme.neonRed;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Text(
+        result.confidenceLabel.toUpperCase(),
+        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Widget _buildBarcodeCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _scannedProduct != null
+            ? Colors.green.shade50
+            : Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+            color: _scannedProduct != null
+                ? Colors.green.shade200
+                : Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.qr_code,
+                  color: _scannedProduct != null
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _scannedProduct != null
+                      ? 'Product Found:'
+                      : 'Barcode Scanned:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: _scannedProduct != null
+                        ? Colors.green.shade700
+                        : Colors.orange.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _scannedProduct != null
+                ? _scannedProduct!.displayName
+                : 'Barcode: $_scannedBarcode',
+            style: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          if (_scannedProduct != null &&
+              _scannedProduct!.hasBasicNutrition) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Nutrition per 100g:',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                if (_scannedProduct!.caloriesPer100g != null)
+                  Text(
+                      '${_scannedProduct!.caloriesPer100g!.round()} kcal  ',
+                      style: const TextStyle(fontSize: 12)),
+                if (_scannedProduct!.proteinPer100g != null)
+                  Text(
+                      'P: ${_scannedProduct!.proteinPer100g!.toStringAsFixed(1)}g  ',
+                      style: const TextStyle(fontSize: 12)),
+                if (_scannedProduct!.carbsPer100g != null)
+                  Text(
+                      'C: ${_scannedProduct!.carbsPer100g!.toStringAsFixed(1)}g  ',
+                      style: const TextStyle(fontSize: 12)),
+                if (_scannedProduct!.fatPer100g != null)
+                  Text(
+                      'F: ${_scannedProduct!.fatPer100g!.toStringAsFixed(1)}g',
+                      style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _acceptBarcodeNutrition,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child:
+                    const Text('Accept & Fill Nutrition Values'),
+              ),
+            ),
+          ] else if (_scannedProduct == null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Product not found in OpenFoodFacts database.\nYou can enter nutrition information manually.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange.shade700,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

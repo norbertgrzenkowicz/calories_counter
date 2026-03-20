@@ -126,12 +126,24 @@ def parse_nutrition_json(raw_content: str) -> Dict[str, int | str]:
     parsed = _parse_nutrition_json(raw_content)
     if isinstance(parsed, list):
         parsed = _aggregate_list_payload(parsed)
+    # v2 response: if items present, recompute totals (mirrors food_analysis normalization)
+    items = parsed.get("items")
+    if isinstance(items, list) and items:
+        calories = sum(_coerce_int(i.get("calories", 0)) for i in items if isinstance(i, dict))
+        protein = sum(_coerce_int(i.get("protein", 0)) for i in items if isinstance(i, dict))
+        carbs = sum(_coerce_int(i.get("carbs", 0)) for i in items if isinstance(i, dict))
+        fats = sum(_coerce_int(i.get("fats", 0)) for i in items if isinstance(i, dict))
+    else:
+        calories = _coerce_int(parsed.get("calories", 0))
+        protein = _coerce_int(parsed.get("protein", 0))
+        carbs = _coerce_int(parsed.get("carbs", 0))
+        fats = _coerce_int(parsed.get("fats", 0))
     return {
         "meal_name": parsed.get("meal_name", "Unknown Meal"),
-        "calories": _coerce_int(parsed.get("calories", 0)),
-        "protein": _coerce_int(parsed.get("protein", 0)),
-        "carbs": _coerce_int(parsed.get("carbs", 0)),
-        "fats": _coerce_int(parsed.get("fats", 0)),
+        "calories": calories,
+        "protein": protein,
+        "carbs": carbs,
+        "fats": fats,
     }
 
 

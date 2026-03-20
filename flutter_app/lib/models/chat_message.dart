@@ -21,6 +21,10 @@ class ChatMessage {
   final int? mealId; // Database ID of the added meal (for tracking)
   final bool isDeleted; // true if the associated meal has been deleted
   final bool isEdited; // true if the message has been edited by the user
+  // For provisional image AI messages: the message_id of the originating image user message.
+  // Stored inside nutritionData['source_user_message_id'] for persistence,
+  // but also surfaced here for convenient access.
+  final String? sourceUserMessageId;
 
   ChatMessage({
     String? id,
@@ -36,6 +40,7 @@ class ChatMessage {
     this.mealId,
     this.isDeleted = false,
     this.isEdited = false,
+    this.sourceUserMessageId,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -113,6 +118,7 @@ class ChatMessage {
     int? mealId,
     bool? isDeleted,
     bool? isEdited,
+    String? sourceUserMessageId,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -128,6 +134,7 @@ class ChatMessage {
       mealId: mealId ?? this.mealId,
       isDeleted: isDeleted ?? this.isDeleted,
       isEdited: isEdited ?? this.isEdited,
+      sourceUserMessageId: sourceUserMessageId ?? this.sourceUserMessageId,
     );
   }
 
@@ -186,6 +193,10 @@ class ChatMessage {
           : Map<String, dynamic>.from(data['nutrition_data'] as Map);
     }
 
+    // Restore sourceUserMessageId from persisted nutrition_data if present
+    final sourceUserMessageId =
+        nutritionData?['source_user_message_id'] as String?;
+
     return ChatMessage(
       id: data['message_id'] as String,
       content: data['content'] as String? ?? '',
@@ -199,6 +210,7 @@ class ChatMessage {
       mealId: data['meal_id'] as int?,
       isDeleted: data['is_deleted'] as bool? ?? false,
       isEdited: data['is_edited'] as bool? ?? false,
+      sourceUserMessageId: sourceUserMessageId,
     );
   }
 

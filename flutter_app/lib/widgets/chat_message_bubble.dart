@@ -212,6 +212,10 @@ class ChatMessageBubble extends ConsumerWidget {
   final VoidCallback? onAddToMeals;
   final VoidCallback? onDiscard;
   final VoidCallback? onEditMessage;
+  // Called when user taps "Answer" on a provisional clarification bubble.
+  // The outer widget handles routing the next text to image refinement;
+  // we only need to signal that the user wants to reply.
+  final VoidCallback? onAnswerClarification;
 
   const ChatMessageBubble({
     super.key,
@@ -219,6 +223,7 @@ class ChatMessageBubble extends ConsumerWidget {
     this.onAddToMeals,
     this.onDiscard,
     this.onEditMessage,
+    this.onAnswerClarification,
   });
 
   @override
@@ -349,6 +354,11 @@ class ChatMessageBubble extends ConsumerWidget {
     }
   }
 
+  bool get _isProvisional {
+    final status = message.nutritionData?['status'] as String?;
+    return status == 'needs_clarification';
+  }
+
   Widget _buildAIMessage(BuildContext context, WidgetRef ref) {
     // If message is deleted, show red deleted version (highest priority)
     if (message.isDeleted) {
@@ -365,6 +375,17 @@ class ChatMessageBubble extends ConsumerWidget {
       return _buildAddedMessage(context, ref);
     }
 
+    final provisional = _isProvisional;
+    final borderColor = provisional
+        ? AppTheme.neonYellow.withOpacity(0.4)
+        : AppTheme.borderColor;
+    final headerColor = provisional ? AppTheme.neonYellow : AppTheme.neonGreen;
+    final headerLabel = provisional ? 'Provisional Analysis' : 'AI Analysis';
+
+    // Clarifying question from stored nutrition data
+    final clarifyingQuestion =
+        message.nutritionData?['clarifying_question'] as String?;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
@@ -379,10 +400,7 @@ class ChatMessageBubble extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.borderColor,
-                      width: 1,
-                    ),
+                    border: Border.all(color: borderColor, width: 1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,49 +410,119 @@ class ChatMessageBubble extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: AppTheme.neonGreen.withOpacity(0.2),
+                              color: headerColor.withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
-                              Icons.psychology,
-                              color: AppTheme.neonGreen,
+                            child: Icon(
+                              provisional ? Icons.help_outline : Icons.psychology,
+                              color: headerColor,
                               size: 16,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            'AI Analysis',
+                          Text(
+                            headerLabel,
                             style: TextStyle(
-                              color: AppTheme.neonGreen,
+                              color: headerColor,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          if (provisional) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.neonYellow.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                    color: AppTheme.neonYellow.withOpacity(0.4)),
+                              ),
+                              child: const Text(
+                                'NEEDS CLARIFICATION',
+                                style: TextStyle(
+                                  color: AppTheme.neonYellow,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 12),
                       if (message.nutritionData != null) ...[
                         _buildNutritionInfo(),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: onAddToMeals,
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Add to Today\'s Meals'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.neonGreen,
-                              foregroundColor: AppTheme.darkBackground,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                        // Clarification question block
+                        if (provisional && clarifyingQuestion != null) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.neonYellow.withOpacity(0.06),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: AppTheme.neonYellow.withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  clarifyingQuestion,
+                                  style: const TextStyle(
+                                    color: AppTheme.neonYellow,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                if (onAnswerClarification != null) ...[
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton(
+                                      onPressed: onAnswerClarification,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppTheme.neonYellow,
+                                        side: const BorderSide(
+                                            color: AppTheme.neonYellow),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                      ),
+                                      child: const Text(
+                                        'Answer this question',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                        // Add button — only for final (complete) results
+                        if (!provisional) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: onAddToMeals,
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Add to Today\'s Meals'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.neonGreen,
+                                foregroundColor: AppTheme.darkBackground,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ] else ...[
                         Text(
                           message.content,
@@ -447,8 +535,8 @@ class ChatMessageBubble extends ConsumerWidget {
                     ],
                   ),
                 ),
-                // X button in upper right corner (only for messages with nutrition data)
-                if (message.nutritionData != null && onDiscard != null)
+                // X button — only for final (non-provisional) messages with nutrition data
+                if (message.nutritionData != null && onDiscard != null && !provisional)
                   Positioned(
                     top: 4,
                     right: 4,

@@ -9,6 +9,7 @@ import '../models/user_profile.dart';
 import '../models/chat_message.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
+import '../models/food_analysis_result.dart';
 import '../services/chat_service.dart';
 import '../utils/app_page_route.dart';
 import '../utils/app_snackbar.dart';
@@ -47,6 +48,11 @@ class _DashboardScreenState extends State<DashboardScreen>
   bool _didDismissKeyboardInDrag = false;
   bool _isEditingMessage = false;
   String? _messageBeingEditedId;
+
+  // Pending clarification state: if non-null, the next user text message
+  // is treated as a clarification answer for the provisional image analysis
+  // identified by this AI message ID.
+  String? _pendingClarificationAiMessageId;
 
   @override
   void initState() {
@@ -124,6 +130,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       // Check for deleted meals and update chat message states
       await _syncMealDeletionStates();
 
+      // Recover any unresolved pending clarification
+      _recoverPendingClarification();
+
       // Scroll to bottom after loading messages
       _scrollToBottom();
     } catch (e) {
@@ -172,6 +181,31 @@ class _DashboardScreenState extends State<DashboardScreen>
     } catch (e) {
       print('Error syncing meal deletion states: $e');
       // Don't throw - continue even if sync fails
+    }
+  }
+
+  /// Scan loaded messages for the most recent unresolved needs_clarification
+  /// AI message and restore pending clarification state.
+  void _recoverPendingClarification() {
+    String? recoveredId;
+    for (int i = _chatMessages.length - 1; i >= 0; i--) {
+      final msg = _chatMessages[i];
+      if (!msg.isUser &&
+          !msg.isAdded &&
+          !msg.isDiscarded &&
+          !msg.isDeleted &&
+          !msg.isLoading) {
+        final status = msg.nutritionData?['status'] as String?;
+        if (status == 'needs_clarification') {
+          recoveredId = msg.id;
+          break;
+        }
+      }
+    }
+    if (_pendingClarificationAiMessageId != recoveredId) {
+      setState(() {
+        _pendingClarificationAiMessageId = recoveredId;
+      });
     }
   }
 
@@ -844,6 +878,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   void _handleSendText(String text) async {
     if (text.trim().isEmpty) return;
 
+    // If there is an active pending image clarification, route this text as the answer.
+    if (_pendingClarificationAiMessageId != null) {
+      await _handleSendClarification(text);
+      return;
+    }
+
     // Add user message
     final userMessage = ChatMessage.user(
       content: text,
@@ -1041,10 +1081,105 @@ class _DashboardScreenState extends State<DashboardScreen>
       });
       _scrollToBottom();
 
-      final nutritionData = await _chatService.analyzeFoodFromImage(imageFile);
+      final analysisResult = await _chatService.analyzeFoodFromImage(imageFile);
+
+      // Build nutrition payload — include v2 fields + source link for recovery
+      final nutritionData = analysisResult.toJson()
+        ..['source_user_message_id'] = finalUserMessage.id;
 
       final aiMessage = ChatMessage.aiResponse(
         content: 'Food analyzed from image',
+        nutritionData: nutritionData,
+      );
+
+      final isProvisional = analysisResult.needsClarification;
+
+      setState(() {
+        final index =
+            _chatMessages.indexWhere((m) => m.id == loadingMessage.id);
+        if (index != -1) {
+          _chatMessages[index] = aiMessage;
+        } else {
+          _chatMessages.add(aiMessage);
+        }
+        _isProcessingMessage = false;
+        // If provisional: set pending clarification; if a new image comes in,
+        // abandon the old session automatically.
+        _pendingClarificationAiMessageId = isProvisional ? aiMessage.id : null;
+      });
+
+      await _saveChatMessage(aiMessage);
+
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _isProcessingMessage = false;
+      });
+
+      if (mounted) {
+        AppSnackbar.error(context, 'Failed to analyze image: $e');
+      }
+    }
+  }
+
+  /// Handle a user text message that is a clarification answer for a pending
+  /// provisional image analysis.
+  Future<void> _handleSendClarification(String answerText) async {
+    final pendingAiId = _pendingClarificationAiMessageId;
+    if (pendingAiId == null) return;
+
+    // Find the provisional AI message to get source_user_message_id
+    final aiMsgIndex = _chatMessages.indexWhere((m) => m.id == pendingAiId);
+    if (aiMsgIndex == -1) {
+      // Session lost — treat as regular text
+      setState(() => _pendingClarificationAiMessageId = null);
+      _handleSendText(answerText);
+      return;
+    }
+
+    final provisionalAiMsg = _chatMessages[aiMsgIndex];
+    final sourceUserMsgId =
+        provisionalAiMsg.nutritionData?['source_user_message_id'] as String?;
+
+    // Find the originating image user message to get the image source
+    ChatMessage? sourceUserMsg;
+    if (sourceUserMsgId != null) {
+      final idx = _chatMessages.indexWhere((m) => m.id == sourceUserMsgId);
+      if (idx != -1) sourceUserMsg = _chatMessages[idx];
+    }
+
+    // Determine image source: stored URL or local path
+    final imageSource = sourceUserMsg?.content; // URL or local path
+
+    // Clear pending clarification state immediately
+    setState(() => _pendingClarificationAiMessageId = null);
+
+    // Add user clarification text message
+    final userMessage = ChatMessage.user(
+      content: answerText,
+      type: MessageType.text,
+    );
+    setState(() {
+      _chatMessages.add(userMessage);
+      _isProcessingMessage = true;
+    });
+    await _saveChatMessage(userMessage);
+    _scrollToBottom();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    final loadingMessage = ChatMessage.loading();
+    setState(() => _chatMessages.add(loadingMessage));
+    _scrollToBottom();
+
+    try {
+      final analysisResult = await _callImageRefinement(
+          imageSource: imageSource, contextText: answerText);
+
+      final nutritionData = analysisResult.toJson()
+        ..['source_user_message_id'] = sourceUserMsgId ?? '';
+
+      final aiMessage = ChatMessage.aiResponse(
+        content: 'Refined food analysis',
         nutritionData: nutritionData,
       );
 
@@ -1060,17 +1195,39 @@ class _DashboardScreenState extends State<DashboardScreen>
       });
 
       await _saveChatMessage(aiMessage);
-
       _scrollToBottom();
     } catch (e) {
       setState(() {
+        _chatMessages.removeWhere((m) => m.id == loadingMessage.id);
         _isProcessingMessage = false;
       });
-
       if (mounted) {
-        AppSnackbar.error(context, 'Failed to analyze image: $e');
+        AppSnackbar.error(context, 'Failed to refine analysis: $e');
       }
     }
+  }
+
+  /// Call image analysis for refinement, preferring local file then URL.
+  Future<FoodAnalysisResult> _callImageRefinement({
+    required String? imageSource,
+    required String contextText,
+  }) async {
+    if (imageSource != null && imageSource.isNotEmpty) {
+      // Check if it's a local file path (not https)
+      if (!imageSource.startsWith('http')) {
+        final localFile = File(imageSource);
+        if (await localFile.exists()) {
+          return _chatService.analyzeFoodFromImage(
+            localFile,
+            contextText: contextText,
+          );
+        }
+      }
+      // Fall back to URL-based refinement
+      return _chatService.refineFoodFromImageUrl(imageSource, contextText);
+    }
+    // No image available at all
+    throw Exception('Image source unavailable for refinement');
   }
 
   void _scrollToBottom() {
@@ -1351,16 +1508,23 @@ class _DashboardScreenState extends State<DashboardScreen>
       itemCount: _chatMessages.length,
       itemBuilder: (context, index) {
         final message = _chatMessages[index];
+        // Determine if this AI message is provisional (needs_clarification)
+        final isProvisional = !message.isUser &&
+            message.nutritionData?['status'] == 'needs_clarification';
+
         return ChatMessageBubble(
           message: message,
+          // Add/discard only for final (complete) results
           onAddToMeals: message.nutritionData != null &&
                   !message.isDiscarded &&
-                  !message.isAdded
+                  !message.isAdded &&
+                  !isProvisional
               ? () => _addMealWithNutrition(message.id, message.nutritionData!)
               : null,
           onDiscard: message.nutritionData != null &&
                   !message.isDiscarded &&
-                  !message.isAdded
+                  !message.isAdded &&
+                  !isProvisional
               ? () => _discardMessage(message.id)
               : null,
           onEditMessage: message.isUser &&
@@ -1368,6 +1532,16 @@ class _DashboardScreenState extends State<DashboardScreen>
                   !message.isLoading &&
                   !message.isDiscarded
               ? () => _handleEditMessage(message)
+              : null,
+          // Answer clarification button shown only on the active provisional msg
+          onAnswerClarification: isProvisional &&
+                  message.id == _pendingClarificationAiMessageId
+              ? () {
+                  // Focus chat input — user will type their answer and submit
+                  // The next text submit will be intercepted by _handleSendText
+                  AppSnackbar.info(context,
+                      'Type your answer in the chat below and send it.');
+                }
               : null,
         );
       },
