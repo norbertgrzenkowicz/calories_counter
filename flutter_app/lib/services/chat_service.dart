@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:http/http.dart' as http;
+
 import '../core/app_logger.dart';
+import '../models/food_analysis_result.dart';
 import 'supabase_service.dart';
 
 class ChatService {
@@ -10,21 +13,15 @@ class ChatService {
 
   final SupabaseService _supabaseService = SupabaseService();
 
-  /// Get headers with authentication
   Map<String, String> _getHeaders() {
     final userId = _supabaseService.getCurrentUserId();
     if (userId == null) {
       throw Exception('User not authenticated');
     }
 
-    return {
-      'Content-Type': 'application/json',
-      'X-User-ID': userId,
-    };
+    return {'Content-Type': 'application/json', 'X-User-ID': userId};
   }
 
-  /// Analyze food from text description
-  /// Returns nutrition data: {meal_name, calories, protein, carbs, fats}
   Future<Map<String, dynamic>> analyzeFoodFromText(String text) async {
     try {
       AppLogger.debug('Analyzing food from text: $text');
@@ -35,99 +32,111 @@ class ChatService {
         body: jsonEncode({'text': text}),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        AppLogger.debug('Text analysis successful: $data');
-
-        return {
-          'meal_name': data['meal_name'] as String? ?? 'My Meal',
-          'calories': data['calories'] as int,
-          'protein': data['protein'] as int,
-          'carbs': data['carbs'] as int,
-          'fats': data['fats'] as int,
-        };
-      } else {
+      if (response.statusCode != 200) {
         throw Exception(
-            'Failed to analyze text: ${response.statusCode} - ${response.body}');
+          'Failed to analyze text: ${response.statusCode} - ${response.body}',
+        );
       }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final analysis = FoodAnalysisResult.fromJson(data);
+      AppLogger.debug('Text analysis successful: $data');
+
+      return {
+        'meal_name': analysis.mealName,
+        'calories': analysis.calories,
+        'protein': analysis.protein,
+        'carbs': analysis.carbs,
+        'fats': analysis.fats,
+      };
     } catch (e) {
       AppLogger.error('Text analysis error', e);
       rethrow;
     }
   }
 
-  /// Analyze food from image file
-  /// Returns nutrition data: {meal_name, calories, protein, carbs, fats}
-  Future<Map<String, dynamic>> analyzeFoodFromImage(File imageFile) async {
+  Future<FoodAnalysisResult> analyzeFoodFromImage({
+    File? imageFile,
+    String? contextText,
+    String? imageUrl,
+  }) async {
     try {
-      AppLogger.debug('Analyzing food from image: ${imageFile.path}');
+      if (imageFile == null && (imageUrl == null || imageUrl.trim().isEmpty)) {
+        throw Exception('Either imageFile or imageUrl must be provided');
+      }
 
-      final bytes = await imageFile.readAsBytes();
-      final base64Image = base64Encode(bytes);
+      AppLogger.debug(
+        'Analyzing food from image: ${imageFile?.path ?? imageUrl}',
+      );
+
+      final body = <String, dynamic>{};
+      if (imageFile != null) {
+        final bytes = await imageFile.readAsBytes();
+        body['image'] = base64Encode(bytes);
+      }
+      if (imageUrl != null && imageUrl.trim().isNotEmpty) {
+        body['image_url'] = imageUrl.trim();
+      }
+      if (contextText != null && contextText.trim().isNotEmpty) {
+        body['context_text'] = contextText.trim();
+      }
 
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/analyze_food/image'),
         headers: _getHeaders(),
-        body: jsonEncode({'image': base64Image}),
+        body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        AppLogger.debug('Image analysis successful: $data');
-
-        return {
-          'meal_name': data['meal_name'] as String? ?? 'My Meal',
-          'calories': data['calories'] as int,
-          'protein': data['protein'] as int,
-          'carbs': data['carbs'] as int,
-          'fats': data['fats'] as int,
-        };
-      } else {
+      if (response.statusCode != 200) {
         throw Exception(
-            'Failed to analyze image: ${response.statusCode} - ${response.body}');
+          'Failed to analyze image: ${response.statusCode} - ${response.body}',
+        );
       }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      AppLogger.debug('Image analysis successful: $data');
+      return FoodAnalysisResult.fromJson(data);
     } catch (e) {
       AppLogger.error('Image analysis error', e);
       rethrow;
     }
   }
 
-  /// Analyze food from audio file
-  /// Returns nutrition data: {meal_name, calories, protein, carbs, fats}
   Future<Map<String, dynamic>> analyzeFoodFromAudio(
-      File audioFile, String format) async {
+    File audioFile,
+    String format,
+  ) async {
     try {
       AppLogger.debug(
-          'Analyzing food from audio: ${audioFile.path} (format: $format)');
+        'Analyzing food from audio: ${audioFile.path} (format: $format)',
+      );
 
-      // Read audio and convert to base64
       final bytes = await audioFile.readAsBytes();
       final base64Audio = base64Encode(bytes);
 
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/analyze_food/audio'),
         headers: _getHeaders(),
-        body: jsonEncode({
-          'audio': base64Audio,
-          'format': format,
-        }),
+        body: jsonEncode({'audio': base64Audio, 'format': format}),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        AppLogger.debug('Audio analysis successful: $data');
-
-        return {
-          'meal_name': data['meal_name'] as String? ?? 'My Meal',
-          'calories': data['calories'] as int,
-          'protein': data['protein'] as int,
-          'carbs': data['carbs'] as int,
-          'fats': data['fats'] as int,
-        };
-      } else {
+      if (response.statusCode != 200) {
         throw Exception(
-            'Failed to analyze audio: ${response.statusCode} - ${response.body}');
+          'Failed to analyze audio: ${response.statusCode} - ${response.body}',
+        );
       }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final analysis = FoodAnalysisResult.fromJson(data);
+      AppLogger.debug('Audio analysis successful: $data');
+
+      return {
+        'meal_name': analysis.mealName,
+        'calories': analysis.calories,
+        'protein': analysis.protein,
+        'carbs': analysis.carbs,
+        'fats': analysis.fats,
+      };
     } catch (e) {
       AppLogger.error('Audio analysis error', e);
       rethrow;

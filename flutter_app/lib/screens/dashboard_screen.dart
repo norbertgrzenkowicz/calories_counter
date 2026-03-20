@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../models/meal.dart';
 import '../models/user_profile.dart';
 import '../models/chat_message.dart';
+import '../models/food_analysis_result.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
 import '../services/chat_service.dart';
@@ -22,6 +23,23 @@ import 'add_meal_screen.dart';
 import 'weight_tracking_screen.dart';
 import 'meal_detail_screen.dart';
 import 'settings_screen.dart';
+
+class _PendingImageClarification {
+  final String sourceUserMessageId;
+  final String clarifyingQuestion;
+
+  const _PendingImageClarification({
+    required this.sourceUserMessageId,
+    required this.clarifyingQuestion,
+  });
+}
+
+class _ResolvedImageSource {
+  final File? imageFile;
+  final String? imageUrl;
+
+  const _ResolvedImageSource({this.imageFile, this.imageUrl});
+}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -47,6 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   bool _didDismissKeyboardInDrag = false;
   bool _isEditingMessage = false;
   String? _messageBeingEditedId;
+  _PendingImageClarification? _pendingImageClarification;
 
   @override
   void initState() {
@@ -110,8 +129,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         return;
       }
 
-      final response =
-          await supabaseService.getChatMessagesByDate(_selectedDate);
+      final response = await supabaseService.getChatMessagesByDate(
+        _selectedDate,
+      );
       final messages = response
           .map<ChatMessage>((data) => ChatMessage.fromSupabase(data))
           .toList();
@@ -119,6 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       setState(() {
         _chatMessages.clear();
         _chatMessages.addAll(messages);
+        _pendingImageClarification = _findPendingClarification(messages);
       });
 
       // Check for deleted meals and update chat message states
@@ -182,8 +203,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Complete Your Profile',
-            style: TextStyle(color: AppTheme.textPrimary)),
+        title: const Text(
+          'Complete Your Profile',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
         content: const Text(
           'To get personalized calorie and nutrition targets, please complete your profile with your basic information.',
           style: TextStyle(color: AppTheme.textSecondary),
@@ -191,16 +214,20 @@ class _DashboardScreenState extends State<DashboardScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Skip for Now',
-                style: TextStyle(color: AppTheme.textSecondary)),
+            child: const Text(
+              'Skip for Now',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               _navigateToProfile();
             },
-            child: const Text('Complete Profile',
-                style: TextStyle(color: AppTheme.neonGreen)),
+            child: const Text(
+              'Complete Profile',
+              style: TextStyle(color: AppTheme.neonGreen),
+            ),
           ),
         ],
       ),
@@ -208,9 +235,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _navigateToProfile() async {
-    final result = await Navigator.of(context).push(
-      AppPageRoute(builder: (context) => const ProfileScreen()),
-    );
+    final result = await Navigator.of(
+      context,
+    ).push(AppPageRoute(builder: (context) => const ProfileScreen()));
 
     // Reload profile after returning from profile screen
     if (result != null || mounted) {
@@ -226,8 +253,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
 
       final response = await supabaseService.getAllUserMeals();
-      final meals =
-          response.map<Meal>((data) => Meal.fromSupabase(data)).toList();
+      final meals = response
+          .map<Meal>((data) => Meal.fromSupabase(data))
+          .toList();
 
       return meals;
     } catch (e) {
@@ -255,7 +283,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     HapticFeedback.selectionClick();
     setState(() {
       _selectedDate = DateTime(
-          _selectedDate.year, _selectedDate.month, _selectedDate.day - 1);
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day - 1,
+      );
       _meals = _getMealsFromSupabase();
     });
     _loadChatMessages(); // Reload messages for the new date
@@ -265,7 +296,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     HapticFeedback.selectionClick();
     setState(() {
       _selectedDate = DateTime(
-          _selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day + 1,
+      );
       _meals = _getMealsFromSupabase();
     });
     _loadChatMessages(); // Reload messages for the new date
@@ -294,6 +328,158 @@ class _DashboardScreenState extends State<DashboardScreen>
     }).toList();
   }
 
+  FoodAnalysisResult? _analysisFromNutritionData(
+    Map<String, dynamic>? nutritionData,
+  ) {
+    if (nutritionData == null) {
+      return null;
+    }
+
+    try {
+      return FoodAnalysisResult.fromJson(nutritionData);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FoodAnalysisResult? _analysisFromMessage(ChatMessage message) {
+    return _analysisFromNutritionData(message.nutritionData);
+  }
+
+  String? _sourceUserMessageIdFrom(ChatMessage message) {
+    final nutritionData = message.nutritionData;
+    if (nutritionData == null) {
+      return null;
+    }
+
+    final sourceUserMessageId = nutritionData['source_user_message_id'];
+    if (sourceUserMessageId == null) {
+      return null;
+    }
+
+    final value = sourceUserMessageId.toString().trim();
+    return value.isEmpty ? null : value;
+  }
+
+  ChatMessage? _findMessageById(String messageId) {
+    for (final message in _chatMessages) {
+      if (message.id == messageId) {
+        return message;
+      }
+    }
+    return null;
+  }
+
+  _PendingImageClarification? _findPendingClarification(
+    List<ChatMessage> messages,
+  ) {
+    final resolvedSourceIds = <String>{};
+
+    for (final message in messages.reversed) {
+      final analysis = _analysisFromMessage(message);
+      final sourceUserMessageId = _sourceUserMessageIdFrom(message);
+      if (!message.isUser &&
+          analysis != null &&
+          sourceUserMessageId != null &&
+          analysis.isComplete) {
+        resolvedSourceIds.add(sourceUserMessageId);
+      }
+    }
+
+    for (final message in messages.reversed) {
+      if (message.isUser) {
+        continue;
+      }
+
+      final analysis = _analysisFromMessage(message);
+      final sourceUserMessageId = _sourceUserMessageIdFrom(message);
+      if (analysis == null || sourceUserMessageId == null) {
+        continue;
+      }
+
+      if (analysis.needsClarification &&
+          !resolvedSourceIds.contains(sourceUserMessageId)) {
+        return _PendingImageClarification(
+          sourceUserMessageId: sourceUserMessageId,
+          clarifyingQuestion: analysis.clarifyingQuestion ?? '',
+        );
+      }
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic> _buildImageNutritionPayload(
+    FoodAnalysisResult analysis, {
+    required String sourceUserMessageId,
+  }) {
+    final payload = analysis.toJson();
+    payload['source_user_message_id'] = sourceUserMessageId;
+    return payload;
+  }
+
+  void _setPendingClarification(
+    FoodAnalysisResult analysis, {
+    required String sourceUserMessageId,
+  }) {
+    if (!analysis.needsClarification) {
+      _pendingImageClarification = null;
+      return;
+    }
+
+    _pendingImageClarification = _PendingImageClarification(
+      sourceUserMessageId: sourceUserMessageId,
+      clarifyingQuestion: analysis.clarifyingQuestion ?? '',
+    );
+  }
+
+  _ResolvedImageSource? _resolveImageSource(String sourceUserMessageId) {
+    final sourceMessage = _findMessageById(sourceUserMessageId);
+    if (sourceMessage == null) {
+      return null;
+    }
+
+    final content = sourceMessage.content.trim();
+    if (content.isEmpty) {
+      return null;
+    }
+
+    final uri = Uri.tryParse(content);
+    if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+      return _ResolvedImageSource(imageUrl: content);
+    }
+
+    final file = File(content);
+    if (file.existsSync()) {
+      return _ResolvedImageSource(imageFile: file);
+    }
+
+    return null;
+  }
+
+  bool _isClarificationReplyMessage(int index) {
+    if (index < 0 || index >= _chatMessages.length) {
+      return false;
+    }
+
+    final message = _chatMessages[index];
+    if (!message.isUser || message.type != MessageType.text) {
+      return false;
+    }
+
+    if (index + 1 >= _chatMessages.length) {
+      return false;
+    }
+
+    final pairedAiMessage = _chatMessages[index + 1];
+    if (pairedAiMessage.isUser || pairedAiMessage.nutritionData == null) {
+      return false;
+    }
+
+    final sourceUserMessageId = _sourceUserMessageIdFrom(pairedAiMessage);
+    return sourceUserMessageId != null && sourceUserMessageId != message.id;
+  }
+
   void _onMealTapped(int mealIndex) async {
     final meals = await _getMealsForSelectedDate();
     if (mealIndex < meals.length) {
@@ -301,9 +487,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       Navigator.push(
         context,
         AppPageRoute(
-            builder: (context) => MealDetailScreen(
-                  meal: meals[mealIndex],
-                )),
+          builder: (context) => MealDetailScreen(meal: meals[mealIndex]),
+        ),
       ).then((_) {
         // Refresh data when returning from detail screen
         setState(() {
@@ -320,10 +505,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     // Navigate directly to meal detail screen with the actual meal object
     Navigator.push(
       context,
-      AppPageRoute(
-          builder: (context) => MealDetailScreen(
-                meal: meal,
-              )),
+      AppPageRoute(builder: (context) => MealDetailScreen(meal: meal)),
     ).then((_) {
       // Refresh data when returning from detail screen
       setState(() {
@@ -335,19 +517,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _openCalendar() async {
-    Navigator.of(context).push(
-      AppPageRoute(
-        builder: (context) => const CalendarScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(AppPageRoute(builder: (context) => const CalendarScreen()));
   }
 
   void _openWeightTracking() async {
-    final result = await Navigator.of(context).push(
-      AppPageRoute(
-        builder: (context) => const WeightTrackingScreen(),
-      ),
-    );
+    final result = await Navigator.of(
+      context,
+    ).push(AppPageRoute(builder: (context) => const WeightTrackingScreen()));
 
     // Reload profile after returning from weight tracking (in case weight changed)
     if (result != null || mounted) {
@@ -371,14 +549,16 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _addMealWithNutrition(
-      String messageId, Map<String, dynamic> nutritionData) async {
+    String messageId,
+    Map<String, dynamic> nutritionData,
+  ) async {
     HapticFeedback.mediumImpact();
-    // Get meal name from API response
-    final mealName = nutritionData['meal_name'] as String? ?? 'My Meal';
-    final calories = (nutritionData['calories'] as num?)?.toInt() ?? 0;
-    final protein = (nutritionData['protein'] as num?)?.toDouble() ?? 0.0;
-    final carbs = (nutritionData['carbs'] as num?)?.toDouble() ?? 0.0;
-    final fats = (nutritionData['fats'] as num?)?.toDouble() ?? 0.0;
+    final analysis = _analysisFromNutritionData(nutritionData);
+    final mealName = analysis?.mealName ?? 'My Meal';
+    final calories = analysis?.calories ?? 0;
+    final protein = (analysis?.protein ?? 0).toDouble();
+    final carbs = (analysis?.carbs ?? 0).toDouble();
+    final fats = (analysis?.fats ?? 0).toDouble();
 
     try {
       final supabaseService = SupabaseService();
@@ -434,13 +614,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     // Find the message to get its meal name
     final message = _chatMessages.firstWhere((m) => m.id == messageId);
     final defaultMealName =
-        message.nutritionData?['meal_name'] as String? ?? 'My Meal';
+        _analysisFromMessage(message)?.mealName ?? 'My Meal';
 
     final result = await showDialog<String?>(
       context: context,
-      builder: (context) => _DiscardMealDialog(
-        defaultMealName: defaultMealName,
-      ),
+      builder: (context) =>
+          _DiscardMealDialog(defaultMealName: defaultMealName),
     );
 
     if (result != null && result.isNotEmpty && mounted) {
@@ -471,11 +650,14 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // Message edit handlers
   void _handleEditMessage(ChatMessage message) async {
+    final messageIndex = _chatMessages.indexWhere((m) => m.id == message.id);
+
     // Validate message is editable
     if (!message.isUser ||
         message.type != MessageType.text ||
         message.isLoading ||
-        message.isDiscarded) {
+        message.isDiscarded ||
+        _isClarificationReplyMessage(messageIndex)) {
       return;
     }
 
@@ -623,9 +805,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Edit Message',
           style: TextStyle(color: AppTheme.textPrimary),
@@ -644,9 +824,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.neonGreen,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.neonGreen),
             child: const Text('Update'),
           ),
         ],
@@ -655,7 +833,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _editUserMessage(
-      String messageId, String newContent, ChatMessage originalMessage) async {
+    String messageId,
+    String newContent,
+    ChatMessage originalMessage,
+  ) async {
     setState(() {
       _isEditingMessage = true;
       _messageBeingEditedId = messageId;
@@ -843,12 +1024,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   // Chat message handlers
   void _handleSendText(String text) async {
     if (text.trim().isEmpty) return;
+    final pendingClarification = _pendingImageClarification;
 
-    // Add user message
-    final userMessage = ChatMessage.user(
-      content: text,
-      type: MessageType.text,
-    );
+    final userMessage = ChatMessage.user(content: text, type: MessageType.text);
 
     setState(() {
       _chatMessages.add(userMessage);
@@ -871,30 +1049,66 @@ class _DashboardScreenState extends State<DashboardScreen>
     _scrollToBottom();
 
     try {
-      // Call API
-      final nutritionData = await _chatService.analyzeFoodFromText(text);
-
-      // Add AI response
-      final aiMessage = ChatMessage.aiResponse(
-        content: 'Food analyzed successfully',
-        nutritionData: nutritionData,
-      );
-
-      setState(() {
-        // Replace loading message with AI response
-        final index =
-            _chatMessages.indexWhere((m) => m.id == loadingMessage.id);
-        if (index != -1) {
-          _chatMessages[index] = aiMessage;
-        } else {
-          // Fallback: add to end if loading message not found
-          _chatMessages.add(aiMessage);
+      if (pendingClarification != null) {
+        final imageSource = _resolveImageSource(
+          pendingClarification.sourceUserMessageId,
+        );
+        if (imageSource == null) {
+          throw Exception(
+            'The original image is no longer available for refinement',
+          );
         }
-        _isProcessingMessage = false;
-      });
 
-      // Save AI message to database
-      await _saveChatMessage(aiMessage);
+        final analysis = await _chatService.analyzeFoodFromImage(
+          imageFile: imageSource.imageFile,
+          imageUrl: imageSource.imageUrl,
+          contextText: text,
+        );
+
+        final aiMessage = ChatMessage.aiResponse(
+          content: 'Refined image analysis',
+          nutritionData: _buildImageNutritionPayload(
+            analysis,
+            sourceUserMessageId: pendingClarification.sourceUserMessageId,
+          ),
+        );
+
+        setState(() {
+          final index = _chatMessages.indexWhere(
+            (m) => m.id == loadingMessage.id,
+          );
+          if (index != -1) {
+            _chatMessages[index] = aiMessage;
+          } else {
+            _chatMessages.add(aiMessage);
+          }
+          _isProcessingMessage = false;
+          _pendingImageClarification = null;
+        });
+
+        await _saveChatMessage(aiMessage);
+      } else {
+        final nutritionData = await _chatService.analyzeFoodFromText(text);
+
+        final aiMessage = ChatMessage.aiResponse(
+          content: 'Food analyzed successfully',
+          nutritionData: nutritionData,
+        );
+
+        setState(() {
+          final index = _chatMessages.indexWhere(
+            (m) => m.id == loadingMessage.id,
+          );
+          if (index != -1) {
+            _chatMessages[index] = aiMessage;
+          } else {
+            _chatMessages.add(aiMessage);
+          }
+          _isProcessingMessage = false;
+        });
+
+        await _saveChatMessage(aiMessage);
+      }
 
       _scrollToBottom();
     } catch (e) {
@@ -939,8 +1153,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           : userMessage;
 
       // Update in UI
-      final messageIndex =
-          _chatMessages.indexWhere((m) => m.id == userMessage.id);
+      final messageIndex = _chatMessages.indexWhere(
+        (m) => m.id == userMessage.id,
+      );
       if (messageIndex != -1) {
         setState(() {
           _chatMessages[messageIndex] = finalUserMessage;
@@ -961,8 +1176,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       _scrollToBottom();
 
       // Call API for analysis
-      final nutritionData =
-          await _chatService.analyzeFoodFromAudio(audioFile, format);
+      final nutritionData = await _chatService.analyzeFoodFromAudio(
+        audioFile,
+        format,
+      );
 
       // Add AI response
       final aiMessage = ChatMessage.aiResponse(
@@ -972,8 +1189,9 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       setState(() {
         // Replace loading message with AI response
-        final index =
-            _chatMessages.indexWhere((m) => m.id == loadingMessage.id);
+        final index = _chatMessages.indexWhere(
+          (m) => m.id == loadingMessage.id,
+        );
         if (index != -1) {
           _chatMessages[index] = aiMessage;
         } else {
@@ -1005,6 +1223,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
 
     setState(() {
+      _pendingImageClarification = null;
       _chatMessages.add(userMessage);
       _isProcessingMessage = true;
     });
@@ -1023,8 +1242,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           ? userMessage.copyWith(content: uploadedUrl)
           : userMessage;
 
-      final messageIndex =
-          _chatMessages.indexWhere((m) => m.id == userMessage.id);
+      final messageIndex = _chatMessages.indexWhere(
+        (m) => m.id == userMessage.id,
+      );
       if (messageIndex != -1) {
         setState(() {
           _chatMessages[messageIndex] = finalUserMessage;
@@ -1041,22 +1261,33 @@ class _DashboardScreenState extends State<DashboardScreen>
       });
       _scrollToBottom();
 
-      final nutritionData = await _chatService.analyzeFoodFromImage(imageFile);
-
+      final analysis = await _chatService.analyzeFoodFromImage(
+        imageFile: imageFile,
+      );
       final aiMessage = ChatMessage.aiResponse(
-        content: 'Food analyzed from image',
-        nutritionData: nutritionData,
+        content: analysis.needsClarification
+            ? 'Provisional image analysis'
+            : 'Food analyzed from image',
+        nutritionData: _buildImageNutritionPayload(
+          analysis,
+          sourceUserMessageId: finalUserMessage.id,
+        ),
       );
 
       setState(() {
-        final index =
-            _chatMessages.indexWhere((m) => m.id == loadingMessage.id);
+        final index = _chatMessages.indexWhere(
+          (m) => m.id == loadingMessage.id,
+        );
         if (index != -1) {
           _chatMessages[index] = aiMessage;
         } else {
           _chatMessages.add(aiMessage);
         }
         _isProcessingMessage = false;
+        _setPendingClarification(
+          analysis,
+          sourceUserMessageId: finalUserMessage.id,
+        );
       });
 
       await _saveChatMessage(aiMessage);
@@ -1132,7 +1363,9 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   /// Update a chat message in database
   Future<void> _updateChatMessage(
-      String messageId, Map<String, dynamic> updates) async {
+    String messageId,
+    Map<String, dynamic> updates,
+  ) async {
     try {
       final supabaseService = SupabaseService();
       if (!supabaseService.isInitialized) {
@@ -1261,9 +1494,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             // Subscription banner
             const SubscriptionBanner(),
             // Chat messages area
-            Expanded(
-              child: _buildChatMessages(),
-            ),
+            Expanded(child: _buildChatMessages()),
             // Compact nutrition bars at bottom
             FutureBuilder<List<Meal>>(
               future: _getMealsForSelectedDate(),
@@ -1281,6 +1512,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               onSendAudio: _handleSendAudio,
               onSendImage: _handleSendImage,
               isProcessing: _isProcessingMessage,
+              inputHintText: _pendingImageClarification != null
+                  ? 'Answer the image question...'
+                  : null,
             ),
           ],
         ),
@@ -1318,9 +1552,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       const SizedBox(height: 24),
                       Text(
                         'Start tracking your food!',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
+                        style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: AppTheme.textPrimary,
@@ -1331,8 +1563,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       Text(
                         'Describe what you ate or record audio.\nOur AI will analyze the nutrition for you.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
+                          color: AppTheme.textSecondary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -1351,22 +1583,26 @@ class _DashboardScreenState extends State<DashboardScreen>
       itemCount: _chatMessages.length,
       itemBuilder: (context, index) {
         final message = _chatMessages[index];
+        final analysis = _analysisFromMessage(message);
+        final canActOnNutrition =
+            analysis != null &&
+            analysis.isComplete &&
+            !message.isDiscarded &&
+            !message.isAdded;
         return ChatMessageBubble(
           message: message,
-          onAddToMeals: message.nutritionData != null &&
-                  !message.isDiscarded &&
-                  !message.isAdded
+          onAddToMeals: canActOnNutrition
               ? () => _addMealWithNutrition(message.id, message.nutritionData!)
               : null,
-          onDiscard: message.nutritionData != null &&
-                  !message.isDiscarded &&
-                  !message.isAdded
+          onDiscard: canActOnNutrition
               ? () => _discardMessage(message.id)
               : null,
-          onEditMessage: message.isUser &&
+          onEditMessage:
+              message.isUser &&
                   message.type == MessageType.text &&
                   !message.isLoading &&
-                  !message.isDiscarded
+                  !message.isDiscarded &&
+                  !_isClarificationReplyMessage(index)
               ? () => _handleEditMessage(message)
               : null,
         );
@@ -1406,14 +1642,22 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
 
         final selectedDateMeals = snapshot.data ?? [];
-        final totalCalories =
-            selectedDateMeals.fold(0, (sum, meal) => sum + meal.calories);
-        final totalProteins =
-            selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.proteins);
-        final totalCarbs =
-            selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.carbs);
-        final totalFats =
-            selectedDateMeals.fold(0.0, (sum, meal) => sum + meal.fats);
+        final totalCalories = selectedDateMeals.fold(
+          0,
+          (sum, meal) => sum + meal.calories,
+        );
+        final totalProteins = selectedDateMeals.fold(
+          0.0,
+          (sum, meal) => sum + meal.proteins,
+        );
+        final totalCarbs = selectedDateMeals.fold(
+          0.0,
+          (sum, meal) => sum + meal.carbs,
+        );
+        final totalFats = selectedDateMeals.fold(
+          0.0,
+          (sum, meal) => sum + meal.fats,
+        );
 
         // Get dynamic targets from user profile or use defaults
         int targetCalories = 2000;
@@ -1425,7 +1669,8 @@ class _DashboardScreenState extends State<DashboardScreen>
             _userProfile!.hasRequiredDataForCalculations) {
           final nutritionProfile =
               NutritionCalculatorService.calculateCompleteNutritionProfile(
-                  _userProfile!);
+                _userProfile!,
+              );
           targetCalories = (nutritionProfile['targetCalories'] as int?) ?? 2000;
           final macros =
               nutritionProfile['macros'] as Map<String, double>? ?? {};
@@ -1447,8 +1692,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                     Text(
                       'Daily Nutrition',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     if (_userProfile == null ||
                         !_userProfile!.hasRequiredDataForCalculations) ...[
@@ -1456,12 +1701,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                         onTap: _navigateToProfile,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.neonOrange.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: AppTheme.neonOrange.withOpacity(0.3)),
+                              color: AppTheme.neonOrange.withOpacity(0.3),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -1487,12 +1735,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ] else ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.neonGreen.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: AppTheme.neonGreen.withOpacity(0.3)),
+                            color: AppTheme.neonGreen.withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1561,19 +1812,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.flag,
-                          size: 16,
-                          color: AppTheme.neonGreen,
-                        ),
+                        Icon(Icons.flag, size: 16, color: AppTheme.neonGreen),
                         const SizedBox(width: 8),
                         Text(
                           'Goal: ${_userProfile!.goalDisplayName}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.textPrimary,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
                         ),
                       ],
                     ),
@@ -1619,9 +1866,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.textPrimary,
-                    ),
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.textPrimary,
+                ),
               ),
             ),
             if (remaining != null) ...[
@@ -1682,9 +1929,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         Text(
           '${(progress * 100).toStringAsFixed(0)}% of target',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textTertiary,
-                fontSize: 11,
-              ),
+            color: AppTheme.textTertiary,
+            fontSize: 11,
+          ),
         ),
       ],
     );
@@ -1694,10 +1941,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Your Meals',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+        Text('Your Meals', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 16),
         FutureBuilder<List<Meal>>(
           future: _getMealsForSelectedDate(),
@@ -1732,16 +1976,16 @@ class _DashboardScreenState extends State<DashboardScreen>
             const SizedBox(height: 16),
             Text(
               'No meals added today',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 8),
             Text(
               'Tap the + button to add your first meal',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textTertiary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.textTertiary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1794,8 +2038,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.fastfood,
-                                      size: 24, color: AppTheme.textTertiary),
+                                  Icon(
+                                    Icons.fastfood,
+                                    size: 24,
+                                    color: AppTheme.textTertiary,
+                                  ),
                                   SizedBox(height: 4),
                                   Text(
                                     'No photo',
@@ -1820,8 +2067,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.fastfood,
-                                size: 24, color: AppTheme.textTertiary),
+                            Icon(
+                              Icons.fastfood,
+                              size: 24,
+                              color: AppTheme.textTertiary,
+                            ),
                             SizedBox(height: 4),
                             Text(
                               'No photo',
@@ -1837,9 +2087,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               const SizedBox(height: 12),
               Text(
                 meal.name,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1847,9 +2097,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               const SizedBox(height: 4),
               Text(
                 '${meal.calories} cal',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1864,9 +2114,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
-        border: Border(
-          top: BorderSide(color: AppTheme.borderColor, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppTheme.borderColor, width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1953,9 +2201,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 class _DiscardMealDialog extends StatefulWidget {
   final String defaultMealName;
 
-  const _DiscardMealDialog({
-    required this.defaultMealName,
-  });
+  const _DiscardMealDialog({required this.defaultMealName});
 
   @override
   State<_DiscardMealDialog> createState() => _DiscardMealDialogState();
@@ -1990,18 +2236,17 @@ class _DiscardMealDialogState extends State<_DiscardMealDialog> {
     return AlertDialog(
       backgroundColor: AppTheme.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Discard Meal',
-          style: TextStyle(color: AppTheme.textPrimary)),
+      title: const Text(
+        'Discard Meal',
+        style: TextStyle(color: AppTheme.textPrimary),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Enter a name for this discarded meal:',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -2020,8 +2265,10 @@ class _DiscardMealDialogState extends State<_DiscardMealDialog> {
       actions: [
         TextButton(
           onPressed: _handleCancel,
-          child: const Text('Cancel',
-              style: TextStyle(color: AppTheme.textSecondary)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppTheme.textSecondary),
+          ),
         ),
         ElevatedButton(
           onPressed: _handleDiscard,

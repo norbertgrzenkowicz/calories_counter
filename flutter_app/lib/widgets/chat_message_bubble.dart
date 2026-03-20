@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/food_analysis_result.dart';
 import '../theme/app_theme.dart';
 import '../models/chat_message.dart';
 import '../providers/meals_provider.dart';
@@ -11,10 +12,7 @@ class _AnimatedUserBubble extends StatefulWidget {
   final Widget child;
   final VoidCallback? onLongPress;
 
-  const _AnimatedUserBubble({
-    required this.child,
-    this.onLongPress,
-  });
+  const _AnimatedUserBubble({required this.child, this.onLongPress});
 
   @override
   State<_AnimatedUserBubble> createState() => _AnimatedUserBubbleState();
@@ -36,12 +34,10 @@ class _AnimatedUserBubbleState extends State<_AnimatedUserBubble>
     );
 
     // Scale: grow UP first (1.0 -> 1.08) on press - like bubble popping up
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOut,
-      ),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.08,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -81,10 +77,7 @@ class _AnimatedUserBubbleState extends State<_AnimatedUserBubble>
       onLongPressEnd: widget.onLongPress != null ? _onLongPressEnd : null,
       onLongPress: () {}, // Required for long press to work
       onLongPressCancel: widget.onLongPress != null ? _onLongPressCancel : null,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
 }
@@ -140,10 +133,7 @@ class _LoadingBubbleState extends State<_LoadingBubble>
               decoration: BoxDecoration(
                 color: AppTheme.cardBackground,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppTheme.borderColor,
-                  width: 1,
-                ),
+                border: Border.all(color: AppTheme.borderColor, width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -242,11 +232,15 @@ class ChatMessageBubble extends ConsumerWidget {
         children: [
           Flexible(
             child: _AnimatedUserBubble(
-              onLongPress: message.type == MessageType.text && onEditMessage != null
+              onLongPress:
+                  message.type == MessageType.text && onEditMessage != null
                   ? onEditMessage
                   : null,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.neonBlue.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(16),
@@ -281,14 +275,16 @@ class ChatMessageBubble extends ConsumerWidget {
   }
 
   Widget _buildUserContent() {
+    final imageUri = Uri.tryParse(message.content);
+    final isNetworkImage =
+        imageUri != null &&
+        (imageUri.scheme == 'http' || imageUri.scheme == 'https');
+
     switch (message.type) {
       case MessageType.text:
         return Text(
           message.content,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
         );
       case MessageType.image:
         return Column(
@@ -296,34 +292,30 @@ class ChatMessageBubble extends ConsumerWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                File(message.content),
-                width: 200,
-                height: 150,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 200,
-                    height: 150,
-                    color: AppTheme.borderColor,
-                    child: const Center(
-                      child: Icon(
-                        Icons.image,
-                        color: AppTheme.textTertiary,
-                        size: 40,
-                      ),
+              child: isNetworkImage
+                  ? Image.network(
+                      message.content,
+                      width: 200,
+                      height: 150,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildImagePlaceholder();
+                      },
+                    )
+                  : Image.file(
+                      File(message.content),
+                      width: 200,
+                      height: 150,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildImagePlaceholder();
+                      },
                     ),
-                  );
-                },
-              ),
             ),
             const SizedBox(height: 4),
             const Text(
               '📷 Image',
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
             ),
           ],
         );
@@ -331,28 +323,34 @@ class ChatMessageBubble extends ConsumerWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.mic,
-              color: AppTheme.neonBlue,
-              size: 20,
-            ),
+            const Icon(Icons.mic, color: AppTheme.neonBlue, size: 20),
             const SizedBox(width: 8),
             const Text(
               'Audio message',
-              style: TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
             ),
           ],
         );
     }
   }
 
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 200,
+      height: 150,
+      color: AppTheme.borderColor,
+      child: const Center(
+        child: Icon(Icons.image, color: AppTheme.textTertiary, size: 40),
+      ),
+    );
+  }
+
   Widget _buildAIMessage(BuildContext context, WidgetRef ref) {
+    final analysis = _analysisFromMessage();
+
     // If message is deleted, show red deleted version (highest priority)
     if (message.isDeleted) {
-      return _buildDeletedMessage();
+      return _buildDeletedMessage(analysis);
     }
 
     // If message is discarded, show compact version
@@ -379,10 +377,7 @@ class ChatMessageBubble extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.borderColor,
-                      width: 1,
-                    ),
+                    border: Border.all(color: AppTheme.borderColor, width: 1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,28 +408,73 @@ class ChatMessageBubble extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (message.nutritionData != null) ...[
-                        _buildNutritionInfo(),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: onAddToMeals,
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Add to Today\'s Meals'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.neonGreen,
-                              foregroundColor: AppTheme.darkBackground,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                      if (analysis != null) ...[
+                        _buildNutritionInfo(analysis),
+                        if (analysis.needsClarification) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.neonYellow.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.neonYellow.withOpacity(0.2),
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Clarification needed',
+                                  style: TextStyle(
+                                    color: AppTheme.neonYellow,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  analysis.clarifyingQuestion ??
+                                      'Answer the pending question to refine this image.',
+                                  style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Add and discard stay disabled until the refined result is complete.',
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: onAddToMeals,
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Add to Today\'s Meals'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.neonGreen,
+                                foregroundColor: AppTheme.darkBackground,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ] else ...[
                         Text(
                           message.content,
@@ -448,7 +488,9 @@ class ChatMessageBubble extends ConsumerWidget {
                   ),
                 ),
                 // X button in upper right corner (only for messages with nutrition data)
-                if (message.nutritionData != null && onDiscard != null)
+                if (analysis != null &&
+                    analysis.isComplete &&
+                    onDiscard != null)
                   Positioned(
                     top: 4,
                     right: 4,
@@ -499,11 +541,7 @@ class ChatMessageBubble extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.block,
-                  size: 14,
-                  color: AppTheme.textTertiary,
-                ),
+                const Icon(Icons.block, size: 14, color: AppTheme.textTertiary),
                 const SizedBox(width: 6),
                 Text(
                   'Discarded: ${message.mealName ?? "Meal"}',
@@ -522,12 +560,12 @@ class ChatMessageBubble extends ConsumerWidget {
   }
 
   Widget _buildAddedMessage(BuildContext context, WidgetRef ref) {
-    final nutrition = message.nutritionData!;
-    final mealName = nutrition['meal_name'] as String? ?? 'Meal';
-    final calories = nutrition['calories'] ?? 0;
-    final protein = nutrition['protein'] ?? 0;
-    final carbs = nutrition['carbs'] ?? 0;
-    final fats = nutrition['fats'] ?? 0;
+    final analysis = _analysisFromMessage();
+    final mealName = analysis?.mealName ?? 'Meal';
+    final calories = analysis?.calories ?? 0;
+    final protein = analysis?.protein ?? 0;
+    final carbs = analysis?.carbs ?? 0;
+    final fats = analysis?.fats ?? 0;
 
     final messageContent = Container(
       padding: const EdgeInsets.all(12),
@@ -673,20 +711,17 @@ class ChatMessageBubble extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Flexible(child: messageContent),
-        ],
+        children: [Flexible(child: messageContent)],
       ),
     );
   }
 
-  Widget _buildDeletedMessage() {
-    final nutrition = message.nutritionData!;
-    final mealName = nutrition['meal_name'] as String? ?? 'Meal';
-    final calories = nutrition['calories'] ?? 0;
-    final protein = nutrition['protein'] ?? 0;
-    final carbs = nutrition['carbs'] ?? 0;
-    final fats = nutrition['fats'] ?? 0;
+  Widget _buildDeletedMessage(FoodAnalysisResult? analysis) {
+    final mealName = analysis?.mealName ?? 'Meal';
+    final calories = analysis?.calories ?? 0;
+    final protein = analysis?.protein ?? 0;
+    final carbs = analysis?.carbs ?? 0;
+    final fats = analysis?.fats ?? 0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -753,12 +788,22 @@ class ChatMessageBubble extends ConsumerWidget {
     );
   }
 
-  Widget _buildNutritionInfo() {
-    final nutrition = message.nutritionData!;
-    final calories = nutrition['calories'] ?? 0;
-    final protein = nutrition['protein'] ?? 0;
-    final carbs = nutrition['carbs'] ?? 0;
-    final fats = nutrition['fats'] ?? 0;
+  FoodAnalysisResult? _analysisFromMessage() {
+    if (message.nutritionData == null) {
+      return null;
+    }
+    try {
+      return FoodAnalysisResult.fromJson(message.nutritionData!);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _buildNutritionInfo(FoodAnalysisResult analysis) {
+    final calories = analysis.calories;
+    final protein = analysis.protein;
+    final carbs = analysis.carbs;
+    final fats = analysis.fats;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -769,30 +814,129 @@ class ChatMessageBubble extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Nutrition Found:',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Text(
+                analysis.needsClarification
+                    ? 'Provisional nutrition'
+                    : 'Nutrition found',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _confidenceColor(
+                    analysis.confidenceLabel,
+                  ).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: _confidenceColor(
+                      analysis.confidenceLabel,
+                    ).withOpacity(0.25),
+                  ),
+                ),
+                child: Text(
+                  '${analysis.confidenceLabel} ${(analysis.confidence * 100).round()}%',
+                  style: TextStyle(
+                    color: _confidenceColor(analysis.confidenceLabel),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNutritionItem(Icons.local_fire_department, AppTheme.neonGreen, '$calories', 'kcal'),
-              _buildNutritionItem(Icons.fitness_center, AppTheme.neonRed, '${protein}g', 'protein'),
-              _buildNutritionItem(Icons.grain, AppTheme.neonYellow, '${carbs}g', 'carbs'),
-              _buildNutritionItem(Icons.water_drop, AppTheme.neonBlue, '${fats}g', 'fat'),
+              _buildNutritionItem(
+                Icons.local_fire_department,
+                AppTheme.neonGreen,
+                '$calories',
+                'kcal',
+              ),
+              _buildNutritionItem(
+                Icons.fitness_center,
+                AppTheme.neonRed,
+                '${protein}g',
+                'protein',
+              ),
+              _buildNutritionItem(
+                Icons.grain,
+                AppTheme.neonYellow,
+                '${carbs}g',
+                'carbs',
+              ),
+              _buildNutritionItem(
+                Icons.water_drop,
+                AppTheme.neonBlue,
+                '${fats}g',
+                'fat',
+              ),
             ],
           ),
+          if (analysis.assumptions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...analysis.assumptions
+                .take(3)
+                .map(
+                  (assumption) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      '• $assumption',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+          ],
+          if (analysis.items.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...analysis.items
+                .take(3)
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '${item.name} • ${item.portionText.isEmpty ? 'portion not specified' : item.portionText}',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildNutritionItem(IconData icon, Color color, String value, String label) {
+  Color _confidenceColor(String label) {
+    switch (label) {
+      case 'high':
+        return AppTheme.neonGreen;
+      case 'medium':
+        return AppTheme.neonYellow;
+      default:
+        return AppTheme.neonRed;
+    }
+  }
+
+  Widget _buildNutritionItem(
+    IconData icon,
+    Color color,
+    String value,
+    String label,
+  ) {
     return Column(
       children: [
         Icon(icon, size: 20, color: color),
@@ -807,10 +951,7 @@ class ChatMessageBubble extends ConsumerWidget {
         ),
         Text(
           label,
-          style: const TextStyle(
-            color: AppTheme.textTertiary,
-            fontSize: 10,
-          ),
+          style: const TextStyle(color: AppTheme.textTertiary, fontSize: 10),
         ),
       ],
     );

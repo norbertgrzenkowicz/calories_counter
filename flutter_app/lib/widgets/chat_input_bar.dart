@@ -12,6 +12,7 @@ class ChatInputBar extends StatefulWidget {
   final Function(File audio, String format) onSendAudio;
   final Function(File image) onSendImage;
   final bool isProcessing;
+  final String? inputHintText;
 
   const ChatInputBar({
     super.key,
@@ -19,6 +20,7 @@ class ChatInputBar extends StatefulWidget {
     required this.onSendAudio,
     required this.onSendImage,
     this.isProcessing = false,
+    this.inputHintText,
   });
 
   @override
@@ -42,18 +44,30 @@ class _ChatInputBarState extends State<ChatInputBar> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.cardBackground,
-        title: const Text('Send Photo', style: TextStyle(color: AppTheme.textPrimary)),
+        title: const Text(
+          'Send Photo',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppTheme.neonGreen),
-              title: const Text('Camera', style: TextStyle(color: AppTheme.textPrimary)),
+              title: const Text(
+                'Camera',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppTheme.neonGreen),
-              title: const Text('Gallery', style: TextStyle(color: AppTheme.textPrimary)),
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppTheme.neonGreen,
+              ),
+              title: const Text(
+                'Gallery',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -64,13 +78,21 @@ class _ChatInputBarState extends State<ChatInputBar> {
     if (source == null) return;
 
     try {
-      final xFile = await _imagePicker.pickImage(source: source, imageQuality: 85);
+      final xFile = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
       if (xFile == null) return;
 
-      final validationResult = await FileUploadValidator.validateImageFile(xFile);
+      final validationResult = await FileUploadValidator.validateImageFile(
+        xFile,
+      );
       if (validationResult != FileValidationResult.valid) {
         if (mounted) {
-          AppSnackbar.error(context, FileUploadValidator.getErrorMessage(validationResult));
+          AppSnackbar.error(
+            context,
+            FileUploadValidator.getErrorMessage(validationResult),
+          );
         }
         return;
       }
@@ -109,19 +131,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
-        border: Border(
-          top: BorderSide(color: AppTheme.borderColor, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppTheme.borderColor, width: 1)),
       ),
       child: Row(
         children: [
           // Audio button (temporarily disabled)
           IconButton(
             onPressed: widget.isProcessing ? null : _handleAudioRecording,
-            icon: Icon(
-              Icons.mic_off,
-              color: AppTheme.textTertiary,
-            ),
+            icon: Icon(Icons.mic_off, color: AppTheme.textTertiary),
             tooltip: 'Audio recording unavailable',
           ),
           // Camera button
@@ -129,7 +146,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
             onPressed: widget.isProcessing ? null : _handleImagePicker,
             icon: Icon(
               Icons.camera_alt,
-              color: widget.isProcessing ? AppTheme.textTertiary : AppTheme.neonGreen,
+              color: widget.isProcessing
+                  ? AppTheme.textTertiary
+                  : AppTheme.neonGreen,
             ),
             tooltip: 'Send photo for analysis',
           ),
@@ -138,7 +157,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
             child: TextField(
               controller: _textController,
               decoration: InputDecoration(
-                hintText: 'Describe your food...',
+                hintText: widget.inputHintText ?? 'Describe your food...',
                 hintStyle: const TextStyle(
                   color: AppTheme.textTertiary,
                   fontSize: 14,
@@ -162,10 +181,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 filled: true,
                 fillColor: AppTheme.darkBackground,
               ),
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
               maxLines: null,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _handleSendText(),
