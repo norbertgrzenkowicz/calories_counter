@@ -1,0 +1,22 @@
+---
+import { privacyContent } from "../data/legal/privacy";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+<BaseLayout title={privacyContent.title} pathname="/privacy">
+  <section class="legal-page">
+    <p class="section-label">Legal</p>
+    <h1>{privacyContent.title}</h1>
+    <p class="legal-page__lede">{privacyContent.intro}</p>
+    <p class="legal-page__updated">Updated {privacyContent.updatedAt}</p>
+    <div class="legal-page__sections">
+      {
+        privacyContent.sections.map((section) => (
+          <article class="legal-card">
+            <h2>{section.heading}</h2>
+            <p>{section.body}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>

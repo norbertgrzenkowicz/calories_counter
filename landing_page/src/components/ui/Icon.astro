@@ -1,0 +1,41 @@
+---
+const { name, class: className = "" } = Astro.props as {
+  name:
+    | "search"
+    | "timer"
+    | "layers"
+    | "camera"
+    | "brain"
+    | "spark"
+    | "barcode"
+    | "voice"
+    | "chart"
+    | "check";
+  class?: string;
+};
+
+const paths = {
+  search: "M15.5 15.5L21 21M10 17a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z",
+  timer: "M12 8v5l3 2M12 4V2M7 2h10M12 22a8 8 0 1 0 0-16a8 8 0 0 0 0 16Z",
+  layers: "M12 3l8 4.5L12 12L4 7.5L12 3Zm0 9l8 4.5L12 21L4 16.5L12 12Z",
+  camera: "M4 8h3l1.5-2h7L17 8h3v11H4V8Zm8 8a4 4 0 1 0 0-8a4 4 0 0 0 0 8Z",
+  brain: "M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0 0 6v1a3 3 0 0 0 3 3m6-14a3 3 0 0 1 3 3v1a3 3 0 0 1 0 6v1a3 3 0 0 1-3 3M9 9h6M9 15h6M12 4v14",
+  spark: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z",
+  barcode: "M5 6v12M8 6v12M12 6v12M15 6v12M18 6v12M20 9v6",
+  voice: "M12 4a3 3 0 0 1 3 3v4a3 3 0 1 1-6 0V7a3 3 0 0 1 3-3Zm0 14v3M7 11a5 5 0 1 0 10 0",
+  chart: "M5 19V9M12 19V5M19 19v-7",
+  check: "M5 12l4.2 4.2L19 7.4"
+};
+---
+<svg
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+  fill="none"
+  stroke="currentColor"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  stroke-width="1.6"
+  class={className}
+>
+  <path d={paths[name]} />
+</svg>

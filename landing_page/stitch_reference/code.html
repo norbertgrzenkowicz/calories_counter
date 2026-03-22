@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Yapper - Snap a Meal. Know Your Macros.</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface": "#131313",
+              "tertiary": "#fdffc8",
+              "surface-container-lowest": "#0e0e0e",
+              "on-background": "#e5e2e1",
+              "on-secondary": "#00315d",
+              "on-tertiary-fixed": "#1b1d00",
+              "error": "#ffb4ab",
+              "on-error-container": "#ffdad6",
+              "on-surface-variant": "#b9cbb9",
+              "on-tertiary": "#2f3300",
+              "error-container": "#93000a",
+              "tertiary-fixed": "#dfed1a",
+              "primary-fixed-dim": "#00e479",
+              "tertiary-container": "#dbe912",
+              "on-primary": "#003919",
+              "surface-container": "#201f1f",
+              "primary-container": "#00ff88",
+              "inverse-on-surface": "#313030",
+              "surface-container-high": "#2a2a2a",
+              "surface-container-highest": "#353534",
+              "surface-dim": "#131313",
+              "secondary": "#a4c9ff",
+              "on-secondary-container": "#002a52",
+              "outline": "#849585",
+              "inverse-surface": "#e5e2e1",
+              "on-primary-fixed": "#00210c",
+              "on-primary-fixed-variant": "#005228",
+              "on-surface": "#e5e2e1",
+              "on-primary-container": "#007139",
+              "outline-variant": "#3b4b3d",
+              "surface-container-low": "#1c1b1b",
+              "primary-fixed": "#60ff99",
+              "on-tertiary-container": "#606700",
+              "on-tertiary-fixed-variant": "#454a00",
+              "tertiary-fixed-dim": "#c3d000",
+              "background": "#131313",
+              "secondary-container": "#3492f6",
+              "primary": "#f1ffef",
+              "on-secondary-fixed-variant": "#004884",
+              "surface-bright": "#3a3939",
+              "surface-variant": "#353534",
+              "inverse-primary": "#006d37",
+              "surface-tint": "#00e479",
+              "secondary-fixed": "#d4e3ff",
+              "on-error": "#690005",
+              "secondary-fixed-dim": "#a4c9ff",
+              "on-secondary-fixed": "#001c39"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #0A0A0A; color: #E5E2E1; font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-panel { backdrop-filter: blur(20px); background: rgba(32, 31, 31, 0.7); }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden">
+<!-- Navbar -->
+<header class="fixed top-0 w-full z-50 bg-zinc-950/70 backdrop-blur-xl shadow-[0_0_20px_rgba(0,255,136,0.05)]">
+<nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-black text-white tracking-tighter">Yapper</div>
+<div class="flex items-center gap-8">
+<a class="text-zinc-400 hover:text-white transition-colors font-mono text-xs uppercase tracking-widest" href="#">Pricing</a>
+<button class="bg-primary-container text-on-primary font-bold px-5 py-2 rounded-full hover:scale-[0.98] transition-all duration-200 active:opacity-80 scale-95">Download Free</button>
+</div>
+</nav>
+</header>
+<main class="max-w-[1100px] mx-auto px-6">
+<!-- Hero Section -->
+<section class="pt-40 pb-20 md:pt-52 md:pb-32 flex flex-col md:flex-row items-center gap-16">
+<div class="flex-1 text-center md:text-left">
+<h1 class="text-5xl md:text-[52px] font-black leading-tight tracking-tight mb-6">
+                    Snap a Meal.<br/>Know Your Macros.
+                </h1>
+<p class="text-lg md:text-xl text-zinc-400 mb-10 max-w-lg mx-auto md:mx-0">
+                    AI reads your food from a photo in seconds. No manual database searching, no guesswork. Just real data.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-12">
+<button class="bg-primary-container text-on-primary font-bold px-8 py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,136,0.2)] hover:scale-[0.98] transition-all">Download on App Store</button>
+<button class="border border-outline-variant text-white px-8 py-4 rounded-xl hover:bg-white/5 transition-all">See How It Works</button>
+</div>
+<div class="flex items-center justify-center md:justify-start gap-3">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-background bg-zinc-800" data-alt="User avatar 1 placeholder"></div>
+<div class="w-8 h-8 rounded-full border-2 border-background bg-zinc-700" data-alt="User avatar 2 placeholder"></div>
+<div class="w-8 h-8 rounded-full border-2 border-background bg-zinc-600" data-alt="User avatar 3 placeholder"></div>
+</div>
+<span class="text-sm font-mono text-zinc-500 uppercase tracking-widest">
+                        ★★★★★ 4.8 · Used by 2,400+ · Free to start
+                    </span>
+</div>
+</div>
+<div class="flex-1 relative w-full max-w-[320px] md:max-w-none">
+<div class="relative aspect-[9/19] w-full max-w-[320px] mx-auto bg-zinc-900 rounded-[3rem] border-8 border-zinc-800 shadow-2xl overflow-hidden">
+<!-- Mockup Content -->
+<div class="p-8 flex flex-col h-full bg-[#0A0A0A]">
+<div class="flex justify-between items-center mb-8">
+<span class="material-symbols-outlined text-zinc-600" data-icon="menu">menu</span>
+<span class="font-bold text-sm">Today</span>
+<span class="material-symbols-outlined text-zinc-600" data-icon="settings">settings</span>
+</div>
+<div class="relative w-48 h-48 mx-auto mb-12 flex items-center justify-center">
+<svg class="absolute inset-0 transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-zinc-800" cx="50" cy="50" fill="transparent" r="45" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary-container" cx="50" cy="50" fill="transparent" r="45" stroke="currentColor" stroke-dasharray="282.7" stroke-dashoffset="70" stroke-width="8"></circle>
+</svg>
+<div class="text-center">
+<span class="block text-3xl font-black">1,420</span>
+<span class="text-[10px] uppercase font-mono text-zinc-500">kcal left</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="bg-zinc-800/50 p-4 rounded-xl border border-white/5">
+<div class="flex justify-between items-center mb-1">
+<span class="text-xs font-bold">Protein</span>
+<span class="text-xs font-mono text-primary-container">82g / 150g</span>
+</div>
+<div class="h-1 bg-zinc-700 rounded-full">
+<div class="h-full bg-primary-container w-[55%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Abstract Glow -->
+<div class="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-primary-container/5 blur-[120px] rounded-full"></div>
+</div>
+</section>
+<!-- Problem Section -->
+<section class="py-20">
+<div class="mb-16">
+<span class="text-primary-container font-mono text-xs uppercase tracking-[0.2em] mb-4 block">The Problem</span>
+<h2 class="text-3xl font-bold tracking-tight">Logging shouldn't be a full-time job.</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="space-y-4">
+<span class="material-symbols-outlined text-zinc-400 text-3xl" data-icon="search_off">search_off</span>
+<h3 class="text-xl font-bold">Searching databases kills motivation</h3>
+<p class="text-zinc-400 text-sm leading-relaxed">Endless scrolling through "Chicken Breast" variants is the #1 reason people stop tracking.</p>
+</div>
+<div class="space-y-4">
+<span class="material-symbols-outlined text-zinc-400 text-3xl" data-icon="timer">timer</span>
+<h3 class="text-xl font-bold">Manual logging takes 5 minutes</h3>
+<p class="text-zinc-400 text-sm leading-relaxed">Calculated over a year, you spend 90+ hours just typing into your phone. Life is too short.</p>
+</div>
+<div class="space-y-4">
+<span class="material-symbols-outlined text-zinc-400 text-3xl" data-icon="layers_clear">layers_clear</span>
+<h3 class="text-xl font-bold">Other apps are bloated</h3>
+<p class="text-zinc-400 text-sm leading-relaxed">Social feeds, ads, and confusing charts. You just want to know what you ate.</p>
+</div>
+</div>
+</section>
+<!-- How It Works -->
+<section class="py-20 border-t border-zinc-900/50">
+<div class="mb-20 text-center">
+<span class="text-primary-container font-mono text-xs uppercase tracking-[0.2em] mb-4 block">How Yapper Works</span>
+<h2 class="text-3xl font-bold tracking-tight">Zero to logged in three beats.</h2>
+</div>
+<div class="relative flex flex-col md:flex-row gap-12 justify-between items-start">
+<!-- Timeline Line -->
+<div class="hidden md:block absolute top-10 left-0 w-full h-px bg-zinc-800 border-t border-dashed border-zinc-700"></div>
+<div class="relative z-10 flex-1 flex flex-col items-center md:items-start text-center md:text-left">
+<div class="text-5xl font-black text-primary-container mb-6 drop-shadow-[0_0_15px_rgba(0,255,136,0.3)]">1</div>
+<h3 class="text-xl font-bold mb-2">Photo</h3>
+<p class="text-sm text-zinc-500 max-w-[200px]">Snap a quick picture of your plate or ingredients.</p>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center md:items-start text-center md:text-left">
+<div class="text-5xl font-black text-primary-container mb-6 drop-shadow-[0_0_15px_rgba(0,255,136,0.3)]">2</div>
+<h3 class="text-xl font-bold mb-2">AI Identification</h3>
+<p class="text-sm text-zinc-500 max-w-[200px]">Our neural engine identifies portions and ingredients.</p>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center md:items-start text-center md:text-left">
+<div class="text-5xl font-black text-primary-container mb-6 drop-shadow-[0_0_15px_rgba(0,255,136,0.3)]">3</div>
+<h3 class="text-xl font-bold mb-2">Instant Log</h3>
+<p class="text-sm text-zinc-500 max-w-[200px]">Calories and macros are added to your day automatically.</p>
+</div>
+</div>
+</section>
+<!-- Features Grid -->
+<section class="py-20">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Feature 1 -->
+<div class="bg-[#1A1A1A] p-8 rounded-3xl border border-white/5 hover:border-primary-container/20 transition-all group">
+<div class="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center mb-6 group-hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="camera">camera</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Photo Analysis</h3>
+<p class="text-zinc-400 text-sm leading-relaxed">State-of-the-art computer vision trained on millions of meals for 95% macro accuracy.</p>
+</div>
+<!-- Feature 2 -->
+<div class="bg-[#1A1A1A] p-8 rounded-3xl border border-white/5 hover:border-primary-container/20 transition-all group">
+<div class="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center mb-6 group-hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="barcode_scanner">barcode_scanner</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Barcode Scanner</h3>
+<p class="text-zinc-400 text-sm leading-relaxed">For packaged snacks, scan the code and get immediate info. Fast, reliable, and offline-ready.</p>
+</div>
+<!-- Feature 3 -->
+<div class="bg-[#1A1A1A] p-8 rounded-3xl border border-white/5 hover:border-primary-container/20 transition-all group">
+<div class="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center mb-6 group-hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="keyboard_voice">keyboard_voice</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Voice &amp; Text Logging</h3>
+<p class="text-zinc-400 text-sm leading-relaxed">"One large apple and two scrambled eggs." Speak or type naturally—the AI parses the rest.</p>
+</div>
+<!-- Feature 4 -->
+<div class="bg-[#1A1A1A] p-8 rounded-3xl border border-white/5 hover:border-primary-container/20 transition-all group">
+<div class="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center mb-6 group-hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Weight Trends</h3>
+<p class="text-zinc-400 text-sm leading-relaxed">Visualize your progress with high-precision charts that track weight against caloric intake.</p>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-20">
+<div class="mb-16 text-center">
+<span class="text-primary-container font-mono text-xs uppercase tracking-[0.2em] mb-4 block">Simple Pricing</span>
+<h2 class="text-3xl font-bold tracking-tight">Invest in your health, not a subscription.</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+<!-- Free Tier -->
+<div class="bg-[#1A1A1A] p-10 rounded-3xl border border-white/5 flex flex-col h-full">
+<div class="mb-8">
+<span class="text-sm font-mono text-zinc-500 uppercase tracking-widest block mb-2">Free</span>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-black">$0</span>
+<span class="text-zinc-500">/mo</span>
+</div>
+</div>
+<ul class="space-y-4 mb-12 flex-grow">
+<li class="flex items-center gap-3 text-sm text-zinc-300">
+<span class="material-symbols-outlined text-zinc-600 text-sm" data-icon="check">check</span> 10 AI Scans per day
+                        </li>
+<li class="flex items-center gap-3 text-sm text-zinc-300">
+<span class="material-symbols-outlined text-zinc-600 text-sm" data-icon="check">check</span> Manual logging &amp; search
+                        </li>
+<li class="flex items-center gap-3 text-sm text-zinc-300">
+<span class="material-symbols-outlined text-zinc-600 text-sm" data-icon="check">check</span> Basic trend tracking
+                        </li>
+</ul>
+<button class="w-full py-4 rounded-xl border border-outline-variant text-white font-bold hover:bg-white/5 transition-all">Get Started</button>
+</div>
+<!-- Pro Tier -->
+<div class="bg-[#1A1A1A] p-10 rounded-3xl border-2 border-primary-container shadow-[0_0_40px_rgba(0,255,136,0.1)] flex flex-col h-full relative overflow-hidden">
+<div class="absolute top-4 right-4 bg-primary-container text-on-primary text-[10px] font-black uppercase px-3 py-1 rounded-full">Most Popular</div>
+<div class="mb-8">
+<span class="text-sm font-mono text-primary-container uppercase tracking-widest block mb-2">Pro</span>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-black">$2.49</span>
+<span class="text-zinc-500">/mo</span>
+</div>
+</div>
+<ul class="space-y-4 mb-12 flex-grow">
+<li class="flex items-center gap-3 text-sm text-zinc-300">
+<span class="material-symbols-outlined text-primary-container text-sm" data-icon="check">check</span> Unlimited AI Photo Scans
+                        </li>
+<li class="flex items-center gap-3 text-sm text-zinc-300">
+<span class="material-symbols-outlined text-primary-container text-sm" data-icon="check">check</span> Custom macro goals
+                        </li>
+<li class="flex items-center gap-3 text-sm text-zinc-300">
+<span class="material-symbols-outlined text-primary-container text-sm" data-icon="check">check</span> Data export &amp; Apple Health sync
+                        </li>
+</ul>
+<button class="w-full py-4 rounded-xl bg-primary-container text-on-primary font-bold hover:scale-[0.98] transition-all">Go Pro</button>
+</div>
+</div>
+<p class="text-center mt-10 text-xs font-mono text-zinc-600 uppercase tracking-widest">No credit card required to start</p>
+</section>
+<!-- Final CTA -->
+<section class="py-32 text-center relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="text-5xl md:text-6xl font-black tracking-tight mb-6">Track smarter. Eat better.</h2>
+<p class="text-xl text-zinc-400 mb-12 max-w-xl mx-auto">Join thousands who've ditched the manual database and reclaimed their time.</p>
+<button class="bg-primary-container text-on-primary font-bold text-lg px-10 py-5 rounded-2xl shadow-[0_0_30px_rgba(0,255,136,0.25)] hover:scale-[0.98] transition-all">Download Free on iOS</button>
+</div>
+<!-- Abstract background shape -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-10 pointer-events-none">
+<svg class="w-full h-full text-primary-container" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="40" stroke="currentColor" stroke-width="0.1"></circle>
+<circle cx="50" cy="50" fill="none" r="30" stroke="currentColor" stroke-width="0.1"></circle>
+</svg>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-6 border-t border-zinc-900/50 bg-[#0A0A0A]">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="text-lg font-black text-white">Yapper</div>
+<div class="flex gap-8">
+<a class="text-zinc-500 hover:text-primary-container transition-colors font-mono text-[10px] tracking-tight" href="#">Privacy Policy</a>
+<a class="text-zinc-500 hover:text-primary-container transition-colors font-mono text-[10px] tracking-tight" href="#">Terms</a>
+<a class="text-zinc-500 hover:text-primary-container transition-colors font-mono text-[10px] tracking-tight" href="#">Contact</a>
+</div>
+<div class="text-zinc-500 font-mono text-[10px] tracking-tight">
+                © 2026 Yapper. Built with AI for humans who eat food.
+            </div>
+</div>
+</footer>
+</body></html>

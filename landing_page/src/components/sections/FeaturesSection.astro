@@ -1,0 +1,25 @@
+---
+import { features } from "../../data/landing";
+import Icon from "../ui/Icon.astro";
+import SectionLabel from "../ui/SectionLabel.astro";
+---
+<section class="section" id="features">
+  <div class="section-heading section-heading--offset">
+    <SectionLabel>Capabilities</SectionLabel>
+    <h2>Purpose-built tools for fast logging.</h2>
+  </div>
+  <div class="feature-grid">
+    {
+      features.map((feature) => (
+        <article class="feature-card">
+          <div class="feature-card__icon-wrap">
+            <Icon name={feature.icon} class="feature-card__icon" />
+          </div>
+          <p class="feature-card__eyebrow">{feature.eyebrow}</p>
+          <h3>{feature.title}</h3>
+          <p>{feature.body}</p>
+        </article>
+      ))
+    }
+  </div>
+</section>

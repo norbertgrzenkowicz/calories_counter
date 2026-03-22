@@ -1,0 +1,16 @@
+---
+import { siteConfig } from "../../data/site";
+---
+<footer class="site-footer">
+  <div class="shell site-footer__inner">
+    <a href="/" class="wordmark wordmark--small">{siteConfig.name}</a>
+    <nav class="site-footer__nav" aria-label="Footer">
+      <a href={siteConfig.privacyPath}>Privacy</a>
+      <a href={siteConfig.termsPath}>Terms</a>
+      <a href={siteConfig.contactPath}>Contact</a>
+    </nav>
+    <p class="site-footer__copy">
+      © 2026 {siteConfig.name}. {siteConfig.footerTagline}
+    </p>
+  </div>
+</footer>

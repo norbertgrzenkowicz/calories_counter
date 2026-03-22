@@ -1,0 +1,38 @@
+---
+import { pricing } from "../../data/landing";
+import Icon from "../ui/Icon.astro";
+import SectionLabel from "../ui/SectionLabel.astro";
+---
+<section class="section" id="pricing">
+  <div class="section-heading section-heading--center">
+    <SectionLabel>Simple Pricing</SectionLabel>
+    <h2>Invest in accuracy, not subscription fatigue.</h2>
+  </div>
+  <div class="pricing-grid">
+    {
+      pricing.map((plan) => (
+        <article class:list={["pricing-card", plan.emphasis === "highlight" && "pricing-card--highlight"]}>
+          {plan.badge && <span class="pricing-card__badge">{plan.badge}</span>}
+          <p class="pricing-card__name">{plan.name}</p>
+          <div class="pricing-card__price-block">
+            <strong>{plan.price}</strong>
+            {plan.cadence && <span>{plan.cadence}</span>}
+          </div>
+          <p class="pricing-card__note">{plan.note}</p>
+          <ul class="pricing-card__list">
+            {plan.features.map((feature) => (
+              <li>
+                <Icon name="check" class="pricing-card__check" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+          <a href="#" class:list={["pricing-card__cta", plan.emphasis === "highlight" && "pricing-card__cta--highlight"]}>
+            {plan.cta}
+          </a>
+        </article>
+      ))
+    }
+  </div>
+  <p class="pricing-footnote">No credit card required to start.</p>
+</section>
