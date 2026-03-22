@@ -1,0 +1,11 @@
+---
+import { finalCta } from "../../data/landing";
+import ButtonLink from "../ui/ButtonLink.astro";
+---
+<section class="section section--final-cta">
+  <div class="final-cta">
+    <h2>{finalCta.title}</h2>
+    <p>{finalCta.body}</p>
+    <ButtonLink href={finalCta.href}>{finalCta.label}</ButtonLink>
+  </div>
+</section>

@@ -1,0 +1,24 @@
+---
+import { contactContent } from "../data/legal/contact";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+<BaseLayout title={contactContent.title} pathname="/contact">
+  <section class="legal-page">
+    <p class="section-label">Contact</p>
+    <h1>{contactContent.title}</h1>
+    <p class="legal-page__lede">{contactContent.intro}</p>
+    <p class="legal-page__updated">Updated {contactContent.updatedAt}</p>
+    <div class="contact-grid">
+      {
+        contactContent.channels.map((channel) => (
+          <article class="legal-card">
+            <p class="feature-card__eyebrow">{channel.label}</p>
+            <a href={channel.href} class="contact-link">
+              {channel.value}
+            </a>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>

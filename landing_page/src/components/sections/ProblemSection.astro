@@ -1,0 +1,22 @@
+---
+import { problems } from "../../data/landing";
+import Icon from "../ui/Icon.astro";
+import SectionLabel from "../ui/SectionLabel.astro";
+---
+<section class="section" id="problem">
+  <div class="section-heading section-heading--offset">
+    <SectionLabel>The Problem</SectionLabel>
+    <h2>Logging should not feel like admin.</h2>
+  </div>
+  <div class="problem-grid">
+    {
+      problems.map((problem) => (
+        <article class="problem-card">
+          <Icon name={problem.icon} class="problem-card__icon" />
+          <h3>{problem.title}</h3>
+          <p>{problem.body}</p>
+        </article>
+      ))
+    }
+  </div>
+</section>
