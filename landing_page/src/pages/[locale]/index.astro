@@ -1,0 +1,28 @@
+---
+import FeaturesSection from "../../components/sections/FeaturesSection.astro";
+import FinalCtaSection from "../../components/sections/FinalCtaSection.astro";
+import HeroSection from "../../components/sections/HeroSection.astro";
+import HowItWorksSection from "../../components/sections/HowItWorksSection.astro";
+import PricingSection from "../../components/sections/PricingSection.astro";
+import ProblemSection from "../../components/sections/ProblemSection.astro";
+import { getLandingContent } from "../../data/landing";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { DEFAULT_LOCALE, isLocale, SUPPORTED_LOCALES } from "../../lib/i18n";
+
+export function getStaticPaths() {
+  return SUPPORTED_LOCALES.map((locale) => ({
+    params: { locale }
+  }));
+}
+
+const locale = isLocale(Astro.params.locale) ? Astro.params.locale : DEFAULT_LOCALE;
+const landing = getLandingContent(locale);
+---
+<BaseLayout locale={locale} routeKey="home" navItems={landing.navItems}>
+  <HeroSection content={landing.hero} />
+  <ProblemSection content={landing.problemSection} />
+  <HowItWorksSection content={landing.howItWorksSection} />
+  <FeaturesSection content={landing.featuresSection} />
+  <PricingSection content={landing.pricingSection} />
+  <FinalCtaSection content={landing.finalCta} />
+</BaseLayout>

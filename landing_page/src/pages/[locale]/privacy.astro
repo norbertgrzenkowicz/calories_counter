@@ -1,0 +1,42 @@
+---
+import { getLandingContent } from "../../data/landing";
+import { getPrivacyContent } from "../../data/legal/privacy";
+import { getSiteCopy } from "../../data/site";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { DEFAULT_LOCALE, isLocale, SUPPORTED_LOCALES } from "../../lib/i18n";
+
+export function getStaticPaths() {
+  return SUPPORTED_LOCALES.map((locale) => ({
+    params: { locale }
+  }));
+}
+
+const locale = isLocale(Astro.params.locale) ? Astro.params.locale : DEFAULT_LOCALE;
+const landing = getLandingContent(locale);
+const privacyContent = getPrivacyContent(locale);
+const siteCopy = getSiteCopy(locale);
+---
+<BaseLayout
+  locale={locale}
+  routeKey="privacy"
+  navItems={landing.navItems}
+  title={privacyContent.title}
+  description={privacyContent.description}
+>
+  <section class="legal-page">
+    <p class="section-label">{privacyContent.eyebrow}</p>
+    <h1>{privacyContent.title}</h1>
+    <p class="legal-page__lede">{privacyContent.intro}</p>
+    <p class="legal-page__updated">{siteCopy.updatedLabel} {privacyContent.updatedAt}</p>
+    <div class="legal-page__sections">
+      {
+        privacyContent.sections.map((section) => (
+          <article class="legal-card">
+            <h2>{section.heading}</h2>
+            <p>{section.body}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>

@@ -1,16 +1,22 @@
 ---
-import { problems } from "../../data/landing";
+import type { LandingContent } from "../../data/landing";
 import Icon from "../ui/Icon.astro";
 import SectionLabel from "../ui/SectionLabel.astro";
+
+interface Props {
+  content: LandingContent["problemSection"];
+}
+
+const { content } = Astro.props;
 ---
 <section class="section" id="problem">
   <div class="section-heading section-heading--offset">
-    <SectionLabel>The Problem</SectionLabel>
-    <h2>Logging should not feel like admin.</h2>
+    <SectionLabel>{content.label}</SectionLabel>
+    <h2>{content.title}</h2>
   </div>
   <div class="problem-grid">
     {
-      problems.map((problem) => (
+      content.items.map((problem) => (
         <article class="problem-card">
           <Icon name={problem.icon} class="problem-card__icon" />
           <h3>{problem.title}</h3>
