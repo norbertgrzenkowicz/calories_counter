@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 import os
 import re
@@ -8,12 +9,35 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Type, TypeVar
 
 from pydantic import BaseModel, Field
 
+try:
+    from PIL import Image as _PILImage
+    _PILLOW_AVAILABLE = True
+except ImportError:
+    _PILLOW_AVAILABLE = False
 
 IMAGE_MODEL_ENV = "OPENAI_FOOD_IMAGE_MODEL"
 TEXT_MODEL_ENV = "OPENAI_FOOD_TEXT_MODEL"
 DEFAULT_IMAGE_MODEL = "gpt-5-mini"
 DEFAULT_TEXT_MODEL = "gpt-5-nano"
 MAX_ITEMS = 6
+_MAX_IMAGE_PX = 1024
+
+
+def resize_for_api(image_b64: str, max_px: int = _MAX_IMAGE_PX) -> str:
+    """Resize a base64-encoded image so its longest side ≤ max_px.
+    Returns a (possibly re-encoded) base64 JPEG string.
+    Falls back to the original if Pillow is unavailable.
+    """
+    if not _PILLOW_AVAILABLE:
+        return image_b64
+    raw = base64.b64decode(image_b64)
+    img = _PILImage.open(io.BytesIO(raw))
+    if max(img.size) <= max_px:
+        return image_b64
+    img.thumbnail((max_px, max_px), _PILImage.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
@@ -133,11 +157,13 @@ def _coerce_float(value: Any) -> float:
 def _normalize_string_list(value: Any) -> List[str]:
     if not isinstance(value, list):
         return []
+    seen: set = set()
     normalized: List[str] = []
     for item in value:
         text = str(item).strip()
-        if text and text not in normalized:
+        if text and text not in seen:
             normalized.append(text)
+            seen.add(text)
     return normalized
 
 
@@ -217,13 +243,36 @@ def _extract_response_text(response: Any) -> str:
     return str(content).strip()
 
 
+def _make_schema_strict(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively patch a JSON schema for OpenAI strict mode:
+    adds additionalProperties:false and required:[all keys] to every object."""
+    if not isinstance(schema, dict):
+        return schema
+    if schema.get("type") == "object" or "properties" in schema:
+        schema.setdefault("additionalProperties", False)
+        if "properties" in schema:
+            schema["required"] = list(schema["properties"].keys())
+            for v in schema["properties"].values():
+                _make_schema_strict(v)
+    for key in ("definitions", "$defs"):
+        if key in schema:
+            for v in schema[key].values():
+                _make_schema_strict(v)
+    if "items" in schema:
+        _make_schema_strict(schema["items"])
+    if "anyOf" in schema:
+        for v in schema["anyOf"]:
+            _make_schema_strict(v)
+    return schema
+
+
 def _build_response_format(model_type: Type[BaseModel], schema_name: str) -> Dict[str, Any]:
     return {
         "type": "json_schema",
         "json_schema": {
             "name": schema_name,
             "strict": True,
-            "schema": _model_schema(model_type),
+            "schema": _make_schema_strict(_model_schema(model_type)),
         },
     }
 
@@ -501,6 +550,9 @@ def analyze_image(
     if not image_data and not image_url:
         raise ValueError("Either image_data or image_url must be provided")
 
+    if image_data:
+        image_data = resize_for_api(image_data)
+
     stage1 = _run_structured_chat_completion(
         client,
         model=get_image_model(),
@@ -517,16 +569,10 @@ def analyze_image(
     )
 
     payload = _model_dump(stage2)
-    payload["status"] = (
-        "complete"
-        if context_text and context_text.strip()
-        else ("needs_clarification" if stage1.needs_clarification else "complete")
-    )
-    payload["clarifying_question"] = (
-        None
-        if context_text and context_text.strip()
-        else stage1.clarifying_question
-    )
+    # Pass stage1 clarification fields through; normalize_food_analysis handles
+    # the context_text override (sets status=complete, clears question if present).
+    payload["status"] = "needs_clarification" if stage1.needs_clarification else "complete"
+    payload["clarifying_question"] = stage1.clarifying_question
     if not payload.get("meal_name") and stage1.meal_name:
         payload["meal_name"] = stage1.meal_name
 

@@ -130,7 +130,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
           // Product not found - show placeholder
           // Sanitize the barcode result before displaying
           final sanitizedBarcode = InputSanitizer.sanitizeBarcode(result);
-          final displayBarcode = sanitizedBarcode;
+          final displayBarcode = sanitizedBarcode ?? 'Invalid';
 
           setState(() {
             _scannedProduct = null;

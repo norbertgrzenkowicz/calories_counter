@@ -549,7 +549,7 @@ without breaking the existing text, audio, barcode, and manual entry flows.
 
 ### Completed: 2026-03-21
 
-All seven steps of the sequential implementation were completed on branch `feature/calories-model-v2`.
+All seven steps of the sequential implementation were completed on branch `codex_calories_model_sequential`.
 
 ### What was done and where
 
