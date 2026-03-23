@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_logger.dart';
 import '../core/environment.dart';
+import '../utils/image_resizer.dart';
 import 'openfoodfacts_service.dart';
 
 class SupabaseService {
@@ -361,10 +362,13 @@ class SupabaseService {
       AppLogger.debug('About to upload photo');
       AppLogger.debug('File exists: ${File(filePath).existsSync()}');
 
+      // Resize before upload — cuts iPhone 4K photos from ~3 MB to ~300 KB
+      final uploadFile = await resizeForStorage(File(filePath));
+
       // Upload file to storage
       await client.storage
           .from('meal-photos')
-          .upload(storagePath, File(filePath));
+          .upload(storagePath, uploadFile);
 
       // Try to get public URL first, fall back to signed URL if needed
       try {
@@ -825,8 +829,11 @@ class SupabaseService {
       AppLogger.debug('Uploading chat media: $storagePath');
       AppLogger.debug('File exists: ${file.existsSync()}');
 
+      // Resize images before upload; audio files are passed through unchanged
+      final uploadFile = await resizeForStorage(file);
+
       // Upload file to storage (reusing meal-photos bucket)
-      await client.storage.from('meal-photos').upload(storagePath, file);
+      await client.storage.from('meal-photos').upload(storagePath, uploadFile);
 
       // Try to get public URL first, fall back to signed URL if needed
       try {
