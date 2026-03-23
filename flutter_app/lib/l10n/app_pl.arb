@@ -1,0 +1,765 @@
+{
+  "@@locale": "pl",
+  "appTitle": "Skaner Jedzenia",
+  "language": "Język",
+  "languageSystemDefault": "Domyślny systemowy",
+  "languageEnglish": "English",
+  "languagePolish": "Polski",
+  "screenSplashLoading": "Ładowanie...",
+  "loginWelcomeBack": "Witaj ponownie!",
+  "loginSubtitle": "Zaloguj się, aby kontynuować swoją drogę.",
+  "email": "E-mail",
+  "password": "Hasło",
+  "confirmPassword": "Potwierdź hasło",
+  "logIn": "Zaloguj się",
+  "register": "Zarejestruj się",
+  "dontHaveAccount": "Nie masz konta?",
+  "alreadyHaveAccount": "Masz już konto?",
+  "registerCreateAccount": "Utwórz konto",
+  "registerSubtitle": "Rozpocznij swoją drogę już dziś.",
+  "validationEnterEmailAndPassword": "Wpisz adres e-mail i hasło",
+  "validationEnterEmail": "Wpisz adres e-mail",
+  "validationValidEmail": "Wpisz poprawny adres e-mail",
+  "validationPasswordMinLength": "Hasło musi mieć co najmniej 6 znaków",
+  "validationPasswordsDoNotMatch": "Hasła nie są takie same",
+  "registerAccountExists": "Konto z tym adresem e-mail już istnieje",
+  "registerSuccessVerifyEmail": "Rejestracja zakończona sukcesem. Sprawdź skrzynkę e-mail, aby potwierdzić konto.",
+  "registerNoUserCreated": "Rejestracja nie powiodła się: konto nie zostało utworzone",
+  "registerFailed": "Rejestracja nie powiodła się: {message}",
+  "@registerFailed": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "genericErrorWithMessage": "Wystąpił błąd: {message}",
+  "@genericErrorWithMessage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "settingsTitle": "Ustawienia",
+  "settingsSubscriptionSection": "Subskrypcja",
+  "settingsManageSubscription": "Zarządzaj subskrypcją",
+  "settingsUpgradeToPremium": "Przejdź na Premium",
+  "settingsDataManagementSection": "Zarządzanie danymi",
+  "settingsExportData": "Eksport danych",
+  "settingsExportDataSubtitle": "Pobierz historię wagi i dane posiłków",
+  "settingsAccountSection": "Konto",
+  "settingsProfileSettings": "Ustawienia profilu",
+  "settingsProfileSettingsSubtitle": "Zarządzaj informacjami profilowymi",
+  "settingsPrivacySecurity": "Prywatność i bezpieczeństwo",
+  "settingsPrivacySecuritySubtitle": "Zarządzaj ustawieniami prywatności",
+  "settingsSupportSection": "Wsparcie",
+  "settingsHelpFaq": "Pomoc i FAQ",
+  "settingsHelpFaqSubtitle": "Znajdź pomoc i odpowiedzi",
+  "settingsSendFeedback": "Wyślij opinię",
+  "settingsSendFeedbackSubtitle": "Pomóż nam ulepszyć aplikację",
+  "settingsLanguageSubtitle": "Wybierz język aplikacji",
+  "settingsSubscriptionPortalUnavailable": "Nie udało się otworzyć panelu subskrypcji",
+  "settingsSubscriptionPortalFailed": "Nie udało się uzyskać dostępu do panelu subskrypcji",
+  "comingSoon": "Wkrótce dostępne!",
+  "subscriptionTitle": "Przejdź na Premium",
+  "subscriptionHeaderTitle": "Odblokuj funkcje Premium",
+  "subscriptionHeaderTrialSubtitle": "Rozpocznij 7-dniowy okres próbny",
+  "subscriptionHeaderChoosePlan": "Wybierz plan",
+  "subscriptionFeatureUnlimitedScanning": "Nielimitowane skanowanie jedzenia",
+  "subscriptionFeatureAiAnalysis": "Analiza wartości odżywczych wspierana przez AI",
+  "subscriptionFeatureMealTracking": "Zaawansowane śledzenie posiłków",
+  "subscriptionFeatureRecommendations": "Spersonalizowane rekomendacje",
+  "subscriptionFeatureExportData": "Eksport danych",
+  "subscriptionFeaturePrioritySupport": "Priorytetowe wsparcie",
+  "subscriptionBestValue": "NAJLEPSZA OPCJA",
+  "subscriptionJustPricePerMonth": "Tylko {price}",
+  "@subscriptionJustPricePerMonth": {
+    "placeholders": {
+      "price": {}
+    }
+  },
+  "subscriptionCheckoutFailed": "Nie udało się rozpocząć zakupu",
+  "subscriptionOpeningCheckout": "Otwieranie Stripe Checkout... Wróć do aplikacji po zakończeniu zakupu.",
+  "subscriptionCouldNotOpenCheckout": "Nie udało się otworzyć płatności",
+  "subscriptionStartFreeTrial": "Rozpocznij darmowy okres próbny",
+  "subscriptionSubscribeNow": "Subskrybuj teraz",
+  "subscriptionTrialTerms": "Anuluj w dowolnym momencie. Opłata nie zostanie pobrana do końca okresu próbnego.",
+  "subscriptionPaidTerms": "Anuluj w dowolnym momencie. Rozliczenie miesięczne lub roczne.",
+  "subscriptionCurrentStatus": "Aktualny status: {status}",
+  "@subscriptionCurrentStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "subscriptionTierLabel": "Plan: {tier}",
+  "@subscriptionTierLabel": {
+    "placeholders": {
+      "tier": {}
+    }
+  },
+  "subscriptionTrialEnds": "Koniec okresu próbnego: {date}",
+  "@subscriptionTrialEnds": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "subscriptionFreeTrialBadge": "7-dniowy okres próbny",
+  "subscriptionStatusActive": "Aktywna",
+  "subscriptionStatusTrial": "Okres próbny",
+  "subscriptionStatusFree": "Darmowa",
+  "subscriptionStatusPastDue": "Zaległa",
+  "subscriptionStatusCanceled": "Anulowana",
+  "subscriptionTierMonthly": "Miesięczna",
+  "subscriptionTierYearly": "Roczna",
+  "subscriptionCancelsInDays": "Anuluje się za {days} dni - {tier}",
+  "@subscriptionCancelsInDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "tier": {}
+    }
+  },
+  "subscriptionCancelsTomorrow": "Anuluje się jutro - {tier}",
+  "@subscriptionCancelsTomorrow": {
+    "placeholders": {
+      "tier": {}
+    }
+  },
+  "subscriptionCancelsToday": "Anuluje się dzisiaj - {tier}",
+  "@subscriptionCancelsToday": {
+    "placeholders": {
+      "tier": {}
+    }
+  },
+  "subscriptionCancelsOnDate": "Anuluje się {date}",
+  "@subscriptionCancelsOnDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "subscriptionTrialDaysRemaining": "Okres próbny - pozostało {days} dni",
+  "@subscriptionTrialDaysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionTrialOneDayRemaining": "Okres próbny - pozostał 1 dzień",
+  "subscriptionTrialHoursRemaining": "Okres próbny - pozostało {hours} godz.",
+  "@subscriptionTrialHoursRemaining": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionTrialTier": "Okres próbny - {tier}",
+  "@subscriptionTrialTier": {
+    "placeholders": {
+      "tier": {}
+    }
+  },
+  "subscriptionStatusWithTier": "{status} - {tier}",
+  "@subscriptionStatusWithTier": {
+    "placeholders": {
+      "status": {},
+      "tier": {}
+    }
+  },
+  "subscriptionUnlockUnlimited": "Odblokuj nielimitowane funkcje",
+  "subscriptionStartTrial": "Rozpocznij 7-dniowy okres próbny",
+  "exportDataTitle": "Eksport danych",
+  "exportDataExportingTitle": "Eksportowanie danych...",
+  "exportDataExportingSubtitle": "To może potrwać chwilę",
+  "exportSectionDataToExport": "Dane do eksportu",
+  "exportSectionDateRange": "Zakres dat",
+  "exportSectionFormat": "Format eksportu",
+  "exportWeightHistory": "Historia wagi",
+  "exportWeightHistorySubtitle": "Wszystkie dane śledzenia wagi",
+  "exportMealHistory": "Historia posiłków",
+  "exportMealHistorySubtitle": "Wkrótce - dane śledzenia posiłków",
+  "exportSelectAllData": "Wybierz wszystkie dane",
+  "exportSelectAllDataSubtitle": "Eksportuj wszystkie dostępne dane z konta",
+  "fromLabel": "Od",
+  "toLabel": "Do",
+  "selectDate": "Wybierz datę",
+  "exportFormatCsvDescription": "Wartości rozdzielone przecinkami, idealne do arkuszy",
+  "exportFormatJsonDescription": "Strukturalny format danych, idealny dla programistów",
+  "exportFormatXmlDescription": "Przyjazny dla firm strukturalny format danych",
+  "exportFormatPdfDescription": "Czytelny raport z wykresami i analizą",
+  "exportButton": "Eksportuj dane",
+  "exportSelectAtLeastOne": "Wybierz co najmniej jeden typ danych do eksportu",
+  "exportSuccess": "Dane zostały wyeksportowane!",
+  "exportFailed": "Eksport nie powiódł się: {message}",
+  "@exportFailed": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "errorPrefix": "Błąd: {message}",
+  "@errorPrefix": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "commonCancel": "Anuluj",
+  "commonDelete": "Usuń",
+  "commonUpdate": "Aktualizuj",
+  "commonRetry": "Spróbuj ponownie",
+  "commonClose": "Zamknij",
+  "commonSave": "Zapisz",
+  "commonSettings": "Ustawienia",
+  "commonProfile": "Profil",
+  "commonLogout": "Wyloguj",
+  "commonCamera": "Aparat",
+  "commonGallery": "Galeria",
+  "commonCalendar": "Kalendarz",
+  "commonPreviousDay": "Poprzedni dzień",
+  "commonNextDay": "Następny dzień",
+  "commonCalories": "Kalorie",
+  "commonProteins": "Białko",
+  "commonCarbs": "Węglowodany",
+  "commonFats": "Tłuszcze",
+  "commonWeight": "Waga",
+  "commonAddMeal": "Dodaj posiłek",
+  "commonMealName": "Nazwa posiłku",
+  "commonMeal": "Posiłek",
+  "commonNoPhoto": "Brak zdjęcia",
+  "commonNoPhotoAvailable": "Brak dostępnego zdjęcia",
+  "commonToday": "Dzisiaj",
+  "dashboardCompleteProfileTitle": "Uzupełnij profil",
+  "dashboardCompleteProfileDescription": "Aby otrzymywać spersonalizowane cele kalorii i makroskładników, uzupełnij profil podstawowymi informacjami.",
+  "dashboardSkipForNow": "Pomiń na razie",
+  "dashboardCompleteProfileCta": "Uzupełnij profil",
+  "dashboardAddedMeal": "Dodano: {mealName}",
+  "@dashboardAddedMeal": {
+    "placeholders": {
+      "mealName": {}
+    }
+  },
+  "dashboardFailedToAddMeal": "Nie udało się dodać posiłku: {message}",
+  "@dashboardFailedToAddMeal": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "dashboardMealDiscarded": "Posiłek „{mealName}” został odrzucony",
+  "@dashboardMealDiscarded": {
+    "placeholders": {
+      "mealName": {}
+    }
+  },
+  "dashboardMealNameCannotBeEmpty": "Nazwa posiłku nie może być pusta",
+  "dashboardFinishCurrentEdit": "Najpierw zakończ bieżącą edycję",
+  "dashboardEditMessageTitle": "Edytuj wiadomość",
+  "dashboardEditMealNotice": "To zaktualizuje posiłek i dzienne sumy odżywcze",
+  "dashboardEditMealConfirm": "To zaktualizuje posiłek i dzienne sumy odżywcze. Kontynuować?",
+  "dashboardEnterFoodDescription": "Wpisz opis jedzenia",
+  "dashboardMessageCannotBeEmpty": "Wiadomość nie może być pusta",
+  "dashboardFailedToEditMessage": "Nie udało się edytować wiadomości: {message}",
+  "@dashboardFailedToEditMessage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "dashboardMessageUpdated": "Wiadomość została zaktualizowana",
+  "dashboardMealUpdated": "Posiłek został zaktualizowany",
+  "dashboardTypeAnswerPrompt": "Wpisz odpowiedź na czacie poniżej i wyślij ją.",
+  "dashboardChatEmptyTitle": "Zacznij śledzić swoje jedzenie!",
+  "dashboardChatEmptySubtitle": "Opisz co zjadłeś lub nagraj audio.\nNasze AI przeanalizuje wartości odżywcze za Ciebie.",
+  "dashboardDailyNutrition": "Dzienne wartości odżywcze",
+  "dashboardPersonalized": "Spersonalizowane",
+  "dashboardGoal": "Cel: {goal}",
+  "@dashboardGoal": {
+    "placeholders": {
+      "goal": {}
+    }
+  },
+  "dashboardNutritionCaloriesLabel": "{current} kcal / {target} kcal",
+  "@dashboardNutritionCaloriesLabel": {
+    "placeholders": {
+      "current": {},
+      "target": {}
+    }
+  },
+  "dashboardNutritionProteinLabel": "{current}g / {target}g białka",
+  "@dashboardNutritionProteinLabel": {
+    "placeholders": {
+      "current": {},
+      "target": {}
+    }
+  },
+  "dashboardNutritionCarbsLabel": "{current}g / {target}g węglowodanów",
+  "@dashboardNutritionCarbsLabel": {
+    "placeholders": {
+      "current": {},
+      "target": {}
+    }
+  },
+  "dashboardNutritionFatLabel": "{current}g / {target}g tłuszczu",
+  "@dashboardNutritionFatLabel": {
+    "placeholders": {
+      "current": {},
+      "target": {}
+    }
+  },
+  "dashboardAmountLeft": "Pozostało {amount}{unit}",
+  "@dashboardAmountLeft": {
+    "placeholders": {
+      "amount": {},
+      "unit": {}
+    }
+  },
+  "dashboardAmountOver": "Przekroczono o {amount}{unit}",
+  "@dashboardAmountOver": {
+    "placeholders": {
+      "amount": {},
+      "unit": {}
+    }
+  },
+  "dashboardPercentOfTarget": "{percent}% celu",
+  "@dashboardPercentOfTarget": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "dashboardNoMealsAddedToday": "Nie dodano dziś żadnych posiłków",
+  "dashboardTapPlusToAddMeal": "Kliknij +, aby dodać pierwszy posiłek",
+  "dashboardDiscardMealTitle": "Odrzuć posiłek",
+  "dashboardDiscardMealPrompt": "Wpisz nazwę dla odrzuconego posiłku:",
+  "dashboardMealNameHint": "np. Pizza",
+  "dashboardDiscard": "Odrzuć",
+  "chatEdited": "edytowano",
+  "chatImage": "Obraz",
+  "chatAudioMessage": "Wiadomość audio",
+  "chatProvisionalAnalysis": "Wstępna analiza",
+  "chatAiAnalysis": "Analiza AI",
+  "chatNeedsClarification": "WYMAGA DOPRECYZOWANIA",
+  "chatAnswerThisQuestion": "Odpowiedz na to pytanie",
+  "chatAddToTodaysMeals": "Dodaj do dzisiejszych posiłków",
+  "chatDiscardedMeal": "Odrzucono: {mealName}",
+  "@chatDiscardedMeal": {
+    "placeholders": {
+      "mealName": {}
+    }
+  },
+  "chatAddedMeal": "Dodano: {mealName}",
+  "@chatAddedMeal": {
+    "placeholders": {
+      "mealName": {}
+    }
+  },
+  "chatDeletedMeal": "Usunięto: {mealName}",
+  "@chatDeletedMeal": {
+    "placeholders": {
+      "mealName": {}
+    }
+  },
+  "chatDeleteMealTitle": "Usunąć posiłek?",
+  "chatDeleteMealPrompt": "To usunie „{mealName}” z dziennika posiłków.",
+  "@chatDeleteMealPrompt": {
+    "placeholders": {
+      "mealName": {}
+    }
+  },
+  "chatMealDeleted": "Posiłek usunięty",
+  "chatFailedToDeleteMeal": "Nie udało się usunąć: {message}",
+  "@chatFailedToDeleteMeal": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "chatNutritionFound": "Znalezione wartości odżywcze:",
+  "chatMacroProtein": "białko",
+  "chatMacroCarbs": "węglowodany",
+  "chatMacroFat": "tłuszcz",
+  "chatMacroSummary": "{calories} kcal • {protein}g białka • {carbs}g węglowodanów • {fats}g tłuszczu",
+  "@chatMacroSummary": {
+    "placeholders": {
+      "calories": {},
+      "protein": {},
+      "carbs": {},
+      "fats": {}
+    }
+  },
+  "chatInputSendPhoto": "Wyślij zdjęcie",
+  "chatInputFailedToPickImage": "Nie udało się wybrać zdjęcia: {message}",
+  "@chatInputFailedToPickImage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "chatInputAudioUnavailable": "Nagrywanie audio jest tymczasowo niedostępne",
+  "chatInputAudioUnavailableTooltip": "Nagrywanie audio niedostępne",
+  "chatInputSendPhotoTooltip": "Wyślij zdjęcie do analizy",
+  "chatInputDescribeFood": "Opisz swoje jedzenie...",
+  "chatInputSend": "Wyślij",
+  "subscriptionBannerDaysLeft": "Pozostało {days} dni darmowego okresu próbnego",
+  "@subscriptionBannerDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionBannerDaysLeftUrgent": "Pozostało tylko {days} dni darmowego okresu próbnego!",
+  "@subscriptionBannerDaysLeftUrgent": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionBannerHoursLeft": "Pozostało tylko {hours} godz. darmowego okresu próbnego!",
+  "@subscriptionBannerHoursLeft": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionBannerSubscribeUnlimited": "Subskrybuj, aby zachować nielimitowany dostęp",
+  "subscriptionBannerSubscribe": "Subskrybuj",
+  "subscriptionBannerTryFree": "Wypróbuj za darmo",
+  "subscriptionBannerUpgrade": "Ulepsz",
+  "subscriptionBannerPaymentFailed": "Płatność nieudana",
+  "subscriptionBannerUpdatePaymentMethod": "Zaktualizuj metodę płatności",
+  "calendarExitToMainMenu": "Wyjdź do menu głównego",
+  "calendarErrorLoadingMeals": "Błąd ładowania posiłków: {message}",
+  "@calendarErrorLoadingMeals": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "calendarCaloriesChartLast30Days": "Wykres kalorii (ostatnie 30 dni)",
+  "dayMealsNoMealsLogged": "Brak zapisanych posiłków tego dnia",
+  "dayMealsDailySummary": "Podsumowanie dnia",
+  "dayMealsMeals": "Posiłki",
+  "dayMealsErrorLoadingMeals": "Błąd ładowania posiłków: {message}",
+  "@dayMealsErrorLoadingMeals": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "barcodeScanTitle": "Skanuj kod kreskowy",
+  "barcodeScanInstructions": "Ustaw kod kreskowy w ramce, aby go zeskanować",
+  "mealDetailUpdatingMeal": "Aktualizowanie posiłku...",
+  "mealDetailUpdated": "Posiłek został zaktualizowany!",
+  "mealDetailFailedToUpdate": "Nie udało się zaktualizować posiłku: {message}",
+  "@mealDetailFailedToUpdate": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "mealDetailDeleteTitle": "Usuń posiłek",
+  "mealDetailDeletePrompt": "Czy na pewno chcesz usunąć ten posiłek? Tej operacji nie można cofnąć.",
+  "mealDetailDeletingMeal": "Usuwanie posiłku...",
+  "mealDetailDeleted": "Posiłek został usunięty!",
+  "mealDetailFailedToDelete": "Nie udało się usunąć posiłku: {message}",
+  "@mealDetailFailedToDelete": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "mealDetailEditMeal": "Edytuj posiłek",
+  "mealDetailTitle": "Szczegóły posiłku",
+  "mealDetailPhoto": "Zdjęcie",
+  "mealDetailMealInformation": "Informacje o posiłku",
+  "mealDetailNutritionInformation": "Informacje o wartościach odżywczych",
+  "mealDetailName": "Nazwa",
+  "mealDetailDate": "Data",
+  "mealDetailCreated": "Utworzono",
+  "mealDetailCreatedAt": "{date} o {time}",
+  "@mealDetailCreatedAt": {
+    "placeholders": {
+      "date": {},
+      "time": {}
+    }
+  },
+  "validationEnterMealName": "Wpisz nazwę posiłku",
+  "validationEnterCalories": "Wpisz kalorie",
+  "validationEnterValidNumber": "Wpisz poprawną liczbę",
+  "validationCaloriesNonNegative": "Kalorie nie mogą być ujemne",
+  "validationEnterProteins": "Wpisz białko",
+  "validationProteinsNonNegative": "Białko nie może być ujemne",
+  "validationEnterFats": "Wpisz tłuszcze",
+  "validationFatsNonNegative": "Tłuszcze nie mogą być ujemne",
+  "validationEnterCarbs": "Wpisz węglowodany",
+  "validationCarbsNonNegative": "Węglowodany nie mogą być ujemne",
+  "addMealLookupProduct": "Wyszukiwanie produktu...",
+  "addMealProductFound": "Znaleziono produkt: {name}",
+  "@addMealProductFound": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "addMealUnknownProduct": "Nieznany produkt ({barcode})",
+  "@addMealUnknownProduct": {
+    "placeholders": {
+      "barcode": {}
+    }
+  },
+  "addMealProductNotFoundManual": "Nie znaleziono produktu w bazie. Możesz wprowadzić wartości odżywcze ręcznie.",
+  "addMealFailedToScanBarcode": "Nie udało się zeskanować kodu kreskowego: {message}",
+  "@addMealFailedToScanBarcode": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "addMealTitle": "Dodaj posiłek - {date}",
+  "@addMealTitle": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "addMealFailedToPickImage": "Nie udało się wybrać zdjęcia: {message}",
+  "@addMealFailedToPickImage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "addMealAnalysisFailed": "Analiza nie powiodła się: {message}",
+  "@addMealAnalysisFailed": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "addMealFilledFromPhotoAnalysis": "Wartości odżywcze zostały uzupełnione na podstawie analizy zdjęcia!",
+  "addMealAcceptedBarcodeNutrition": "Wartości odżywcze produktu zostały zaakceptowane i uzupełnione.",
+  "addMealAddedSuccessfully": "Posiłek został dodany!",
+  "addMealFailedToAdd": "Nie udało się dodać posiłku: {message}",
+  "@addMealFailedToAdd": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "addMealAnalyzing": "Analizowanie...",
+  "addMealChangePhoto": "Zmień zdjęcie",
+  "addMealPhoto": "Dodaj zdjęcie",
+  "addMealAnalyzeWithAi": "Analizuj z AI",
+  "addMealScanning": "Skanowanie...",
+  "addMealScanBarcode": "Skanuj kod kreskowy",
+  "addMealAdding": "Dodawanie...",
+  "addMealSubmit": "Zatwierdź",
+  "addMealAssumptions": "Założenia:",
+  "addMealItems": "Składniki:",
+  "addMealYourAnswer": "Twoja odpowiedź...",
+  "addMealUseCurrentEstimate": "Użyj obecnego oszacowania",
+  "addMealPleaseEnterAnswer": "Wpisz odpowiedź",
+  "addMealRefineEstimate": "Doprecyzuj oszacowanie",
+  "addMealAcceptFillValues": "Zaakceptuj i uzupełnij wartości",
+  "addMealProductFoundLabel": "Znaleziony produkt:",
+  "addMealBarcodeScannedLabel": "Zeskanowany kod kreskowy:",
+  "addMealBarcodeLabel": "Kod kreskowy: {barcode}",
+  "@addMealBarcodeLabel": {
+    "placeholders": {
+      "barcode": {}
+    }
+  },
+  "addMealNutritionPer100g": "Wartości odżywcze na 100 g:",
+  "addMealAcceptFillNutritionValues": "Zaakceptuj i uzupełnij wartości odżywcze",
+  "addMealProductNotFoundOpenFoodFacts": "Nie znaleziono produktu w bazie OpenFoodFacts.\nMożesz wprowadzić wartości odżywcze ręcznie.",
+  "addMealConfidenceHigh": "WYSOKA",
+  "addMealConfidenceMedium": "ŚREDNIA",
+  "addMealConfidenceLow": "NISKA",
+  "profileTitle": "Twój profil",
+  "profilePersonalInformation": "Dane osobowe",
+  "profileFullName": "Imię i nazwisko",
+  "profileEnterName": "Wpisz swoje imię i nazwisko",
+  "profileGender": "Płeć",
+  "profileSelectGender": "Wybierz płeć",
+  "profileGenderMale": "Mężczyzna",
+  "profileGenderFemale": "Kobieta",
+  "profileDateOfBirth": "Data urodzenia",
+  "profileSelectDateOfBirth": "Wybierz datę urodzenia",
+  "profilePleaseSelectDateOfBirth": "Wybierz datę urodzenia",
+  "profileInvalidDateOfBirth": "Podaj prawidłową datę urodzenia",
+  "profilePhysicalCharacteristics": "Parametry fizyczne",
+  "profileHeight": "Wzrost",
+  "profileHeightCm": "Wzrost (cm)",
+  "profileEnterHeight": "Wpisz swój wzrost",
+  "profileInvalidHeight": "Podaj prawidłowy wzrost (100-250 cm)",
+  "profileCurrentWeight": "Aktualna waga",
+  "profileCurrentWeightKg": "Aktualna waga (kg)",
+  "profileEnterCurrentWeight": "Wpisz aktualną wagę",
+  "profileInvalidCurrentWeight": "Podaj prawidłową wagę (30-300 kg)",
+  "profileTargetWeight": "Waga docelowa",
+  "profileTargetWeightOptional": "Waga docelowa (kg) - opcjonalnie",
+  "profileInvalidTargetWeight": "Podaj prawidłową wagę docelową (30-300 kg)",
+  "profileGoalsTargets": "Cele i założenia",
+  "profilePrimaryGoal": "Główny cel",
+  "profileGoalMaintaining": "Utrzymanie wagi",
+  "profileGoalWeightLoss": "Redukcja masy",
+  "profileGoalWeightGain": "Przyrost masy",
+  "profileGoalHypertrophy": "Hipertrofia",
+  "profileWeeklyTarget": "Cel tygodniowy",
+  "profileWeeklyWeightLossTarget": "Tygodniowy cel redukcji (kg)",
+  "profileWeeklyWeightGainTarget": "Tygodniowy cel przyrostu (kg)",
+  "profileWeeklyTargetHelper": "Zalecane: 0,5-1,0 kg/tydzień dla zrównoważonych rezultatów",
+  "profileEnterWeeklyTarget": "Wpisz cel tygodniowy",
+  "profileInvalidWeeklyTarget": "Podaj prawidłowy cel (0,1-2,0 kg/tydzień)",
+  "profileActivityLevel": "Poziom aktywności",
+  "profilePalValue": "PAL: {value}",
+  "@profilePalValue": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "profileActivitySedentary": "Siedzący tryb życia",
+  "profileActivityLightlyActive": "Lekko aktywny",
+  "profileActivityModeratelyActive": "Umiarkowanie aktywny",
+  "profileActivityVeryActive": "Bardzo aktywny",
+  "profileActivityExtremelyActive": "Ekstremalnie aktywny",
+  "profileSubscription": "Subskrypcja",
+  "profileStatus": "Status",
+  "profilePlan": "Plan",
+  "profileMonthly": "Miesięczny",
+  "profileYearly": "Roczny",
+  "profileFree": "Darmowy",
+  "profileFreeTier": "Plan darmowy",
+  "profileLimitedFeatures": "Ograniczone funkcje",
+  "profileTrial": "Okres próbny",
+  "profilePremium": "Premium",
+  "profilePastDue": "Zaległość",
+  "profileCanceled": "Anulowana",
+  "profileTrialEnds": "Koniec okresu próbnego",
+  "profileNextPayment": "Następna płatność",
+  "profileRenewalDate": "Data odnowienia",
+  "profileNotAvailable": "Brak",
+  "profileExpired": "Wygasła",
+  "profileInMonths": "za {count} mies.{plural}",
+  "@profileInMonths": {
+    "placeholders": {
+      "count": {},
+      "plural": {}
+    }
+  },
+  "profileInDays": "za {count} dzień{plural}",
+  "@profileInDays": {
+    "placeholders": {
+      "count": {},
+      "plural": {}
+    }
+  },
+  "profileInHours": "za {count} godz.{plural}",
+  "@profileInHours": {
+    "placeholders": {
+      "count": {},
+      "plural": {}
+    }
+  },
+  "profileLessThanHour": "Mniej niż 1 godzina",
+  "profileUpgradeToPremium": "Przejdź na Premium",
+  "profileLoadingError": "Nie udało się załadować profilu: {error}",
+  "@profileLoadingError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "profileSaved": "Profil został zapisany!",
+  "profileSavingError": "Nie udało się zapisać profilu: {error}",
+  "@profileSavingError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "profileSave": "Zapisz profil",
+  "weightTrackingTitle": "Śledzenie wagi",
+  "weightTrackingLoadingError": "Nie udało się załadować danych: {error}",
+  "@weightTrackingLoadingError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "weightTrackingEnterWeight": "Wpisz swoją wagę",
+  "weightTrackingInvalidWeight": "Podaj prawidłową wagę (1-300 kg)",
+  "weightTrackingAdded": "Wpis wagi został dodany!",
+  "weightTrackingAddError": "Nie udało się dodać wpisu wagi: {error}",
+  "@weightTrackingAddError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "weightTrackingNeedMoreData": "Do analizy potrzebne są co najmniej 2 wpisy wagi i kompletny profil",
+  "weightTrackingProgressAnalysis": "Analiza postępów",
+  "weightTrackingActualWeightChange": "Rzeczywista zmiana wagi",
+  "weightTrackingExpectedWeightChange": "Oczekiwana zmiana wagi",
+  "weightTrackingProgress": "Postęp",
+  "weightTrackingWeeklyActual": "Rzeczywiście tygodniowo",
+  "weightTrackingWeeklyExpected": "Oczekiwane tygodniowo",
+  "weightTrackingStatus": "Status: {status}",
+  "@weightTrackingStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "weightTrackingUnableToAnalyze": "Nie udało się przeanalizować postępów",
+  "weightTrackingDeleteTitle": "Usuń wpis wagi",
+  "weightTrackingDeletePrompt": "Czy na pewno chcesz usunąć wpis wagi z dnia {date}?",
+  "@weightTrackingDeletePrompt": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "weightTrackingDeleteInvalidId": "Nie można usunąć wpisu: nieprawidłowe ID",
+  "weightTrackingDeleted": "Wpis wagi został usunięty",
+  "weightTrackingDeleteError": "Nie udało się usunąć wpisu wagi: {error}",
+  "@weightTrackingDeleteError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "weightTrackingStatusExceeding": "Powyżej celu",
+  "weightTrackingStatusOnTrack": "Zgodnie z planem",
+  "weightTrackingStatusSlowProgress": "Powolny postęp",
+  "weightTrackingStatusMinimalProgress": "Minimalny postęp",
+  "weightTrackingStatusUnknown": "Nieznany",
+  "weightTrackingChartTitle": "Wykres wagi",
+  "weightTrackingChartEmpty": "Dodaj wpisy wagi, aby zobaczyć wykres postępów",
+  "weightTrackingProgressTitle": "Postęp wagi",
+  "weightTrackingAnalysisEmpty": "Dodaj co najmniej 2 wpisy wagi, aby zobaczyć analizę postępów",
+  "weightTrackingUnknownError": "Nieznany błąd",
+  "weightTrackingAddEntry": "Dodaj wpis wagi",
+  "weightTrackingWeightKg": "Waga (kg)",
+  "weightTrackingWeightHint": "np. 70,5 lub 70.5",
+  "weightTrackingDate": "Data",
+  "weightTrackingMeasurementTime": "Pora pomiaru",
+  "weightTrackingMorning": "Rano",
+  "weightTrackingAfternoon": "Po południu",
+  "weightTrackingEvening": "Wieczorem",
+  "weightTrackingNotesOptional": "Notatki (opcjonalnie)",
+  "weightTrackingNotesHint": "np. po treningu, przed śniadaniem",
+  "weightTrackingHistory": "Historia wagi",
+  "weightTrackingNoEntries": "Brak wpisów wagi",
+  "weightTrackingNoEntriesSubtitle": "Dodaj pierwszy wpis powyżej, aby zacząć śledzić postępy",
+  "weightTrackingDeleteEntry": "Usuń wpis",
+  "weightTrackingInitialPhase": "Faza początkowa",
+  "dashboardAnalysisFoodSuccess": "Analiza jedzenia zakończona powodzeniem",
+  "dashboardAnalysisFoodFailed": "Nie udało się przeanalizować jedzenia: {error}",
+  "@dashboardAnalysisFoodFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dashboardAnalysisAudioSuccess": "Jedzenie zostało przeanalizowane z nagrania audio",
+  "dashboardAnalysisAudioFailed": "Nie udało się przeanalizować audio: {error}",
+  "@dashboardAnalysisAudioFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dashboardAnalysisImageSuccess": "Jedzenie zostało przeanalizowane ze zdjęcia",
+  "dashboardAnalysisImageFailed": "Nie udało się przeanalizować zdjęcia: {error}",
+  "@dashboardAnalysisImageFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dashboardAnalysisRefinedSuccess": "Analiza jedzenia została doprecyzowana",
+  "dashboardAnalysisRefinedFailed": "Nie udało się doprecyzować analizy: {error}",
+  "@dashboardAnalysisRefinedFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dashboardUpdatedMealFallback": "Zaktualizowany posiłek"
+}
