@@ -1,35 +1,41 @@
 ---
-import { hero } from "../../data/landing";
+import type { LandingContent } from "../../data/landing";
 import ButtonLink from "../ui/ButtonLink.astro";
+
+interface Props {
+  content: LandingContent["hero"];
+}
+
+const { content } = Astro.props;
 ---
 <section class="hero section section--hero">
   <div class="hero__copy">
-    <p class="hero__eyebrow">{hero.eyebrow}</p>
-    <h1>{hero.title}</h1>
-    <p class="hero__body">{hero.description}</p>
+    <p class="hero__eyebrow">{content.eyebrow}</p>
+    <h1>{content.title}</h1>
+    <p class="hero__body">{content.description}</p>
     <div class="hero__actions">
-      <ButtonLink href={hero.primaryCta.href}>{hero.primaryCta.label}</ButtonLink>
-      <ButtonLink href={hero.secondaryCta.href} variant="secondary">
-        {hero.secondaryCta.label}
+      <ButtonLink href={content.primaryCta.href}>{content.primaryCta.label}</ButtonLink>
+      <ButtonLink href={content.secondaryCta.href} variant="secondary">
+        {content.secondaryCta.label}
       </ButtonLink>
     </div>
-    <p class="hero__proof">{hero.proof}</p>
+    <p class="hero__proof">{content.proof}</p>
   </div>
   <div class="hero__visual">
     <div class="device-card">
       <div class="device-card__topline">
-        <span>Today</span>
+        <span>{content.topLineLabel}</span>
         <span>09:41</span>
       </div>
       <div class="device-ring">
         <div class="device-ring__inner">
-          <strong>{hero.metrics[0].value}</strong>
-          <span>{hero.metrics[0].label}</span>
+          <strong>{content.metrics[0].value}</strong>
+          <span>{content.metrics[0].label}</span>
         </div>
       </div>
       <div class="device-stats">
         {
-          hero.metrics.slice(1).map((metric) => (
+          content.metrics.slice(1).map((metric) => (
             <div class="device-stat">
               <span>{metric.label}</span>
               <strong>{metric.value}</strong>

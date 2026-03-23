@@ -1,11 +1,17 @@
 ---
-import { finalCta } from "../../data/landing";
+import type { LandingContent } from "../../data/landing";
 import ButtonLink from "../ui/ButtonLink.astro";
+
+interface Props {
+  content: LandingContent["finalCta"];
+}
+
+const { content } = Astro.props;
 ---
 <section class="section section--final-cta">
   <div class="final-cta">
-    <h2>{finalCta.title}</h2>
-    <p>{finalCta.body}</p>
-    <ButtonLink href={finalCta.href}>{finalCta.label}</ButtonLink>
+    <h2>{content.title}</h2>
+    <p>{content.body}</p>
+    <ButtonLink href={content.href}>{content.label}</ButtonLink>
   </div>
 </section>

@@ -1,17 +1,23 @@
 ---
-import FeaturesSection from "../components/sections/FeaturesSection.astro";
-import FinalCtaSection from "../components/sections/FinalCtaSection.astro";
-import HeroSection from "../components/sections/HeroSection.astro";
-import HowItWorksSection from "../components/sections/HowItWorksSection.astro";
-import PricingSection from "../components/sections/PricingSection.astro";
-import ProblemSection from "../components/sections/ProblemSection.astro";
-import BaseLayout from "../layouts/BaseLayout.astro";
+import { getSiteCopy, siteConfig } from "../data/site";
+import { DEFAULT_LOCALE, getLocalizedPath } from "../lib/i18n";
+
+const redirectTarget = getLocalizedPath(DEFAULT_LOCALE, "home");
+const siteCopy = getSiteCopy(DEFAULT_LOCALE);
 ---
-<BaseLayout pathname="/">
-  <HeroSection />
-  <ProblemSection />
-  <HowItWorksSection />
-  <FeaturesSection />
-  <PricingSection />
-  <FinalCtaSection />
-</BaseLayout>
+<!doctype html>
+<html lang={siteCopy.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${redirectTarget}`} />
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={new URL(redirectTarget, siteConfig.url).toString()} />
+    <title>{siteCopy.title}</title>
+  </head>
+  <body>
+    <p>{siteCopy.redirectMessage}</p>
+    <p>
+      <a href={redirectTarget}>{siteCopy.redirectCtaLabel}</a>
+    </p>
+  </body>
+</html>

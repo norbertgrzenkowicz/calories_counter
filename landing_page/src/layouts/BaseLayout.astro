@@ -1,21 +1,26 @@
 ---
 import Footer from "../components/layout/Footer.astro";
 import Header from "../components/layout/Header.astro";
-import { siteConfig } from "../data/site";
+import type { LandingContent } from "../data/landing";
+import { getSiteCopy, siteConfig, type Locale, type RouteKey } from "../data/site";
 import { buildMeta } from "../lib/seo";
 import "../styles/tokens.css";
 import "../styles/global.css";
 
 interface Props {
+  locale: Locale;
+  routeKey: RouteKey;
+  navItems: LandingContent["navItems"];
   title?: string;
   description?: string;
-  pathname?: string;
 }
 
-const meta = buildMeta(Astro.props);
+const { locale, routeKey, navItems, title, description } = Astro.props;
+const meta = buildMeta({ locale, routeKey, title, description });
+const siteCopy = getSiteCopy(locale);
 ---
 <!doctype html>
-<html lang="en">
+<html lang={siteCopy.lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -23,6 +28,12 @@ const meta = buildMeta(Astro.props);
     <meta name="description" content={meta.description} />
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={meta.canonical} />
+    {
+      meta.alternates.map((alternate) => (
+        <link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={meta.xDefault} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -42,11 +53,11 @@ const meta = buildMeta(Astro.props);
   </head>
   <body>
     <div class="page-frame">
-      <Header />
+      <Header locale={locale} routeKey={routeKey} navItems={navItems} />
       <main class="shell page-content">
         <slot />
       </main>
-      <Footer />
+      <Footer locale={locale} />
     </div>
   </body>
 </html>

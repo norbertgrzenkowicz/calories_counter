@@ -1,0 +1,44 @@
+---
+import { getLandingContent } from "../../data/landing";
+import { getContactContent } from "../../data/legal/contact";
+import { getSiteCopy } from "../../data/site";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { DEFAULT_LOCALE, isLocale, SUPPORTED_LOCALES } from "../../lib/i18n";
+
+export function getStaticPaths() {
+  return SUPPORTED_LOCALES.map((locale) => ({
+    params: { locale }
+  }));
+}
+
+const locale = isLocale(Astro.params.locale) ? Astro.params.locale : DEFAULT_LOCALE;
+const landing = getLandingContent(locale);
+const contactContent = getContactContent(locale);
+const siteCopy = getSiteCopy(locale);
+---
+<BaseLayout
+  locale={locale}
+  routeKey="contact"
+  navItems={landing.navItems}
+  title={contactContent.title}
+  description={contactContent.description}
+>
+  <section class="legal-page">
+    <p class="section-label">{contactContent.eyebrow}</p>
+    <h1>{contactContent.title}</h1>
+    <p class="legal-page__lede">{contactContent.intro}</p>
+    <p class="legal-page__updated">{siteCopy.updatedLabel} {contactContent.updatedAt}</p>
+    <div class="contact-grid">
+      {
+        contactContent.channels.map((channel) => (
+          <article class="legal-card">
+            <p class="feature-card__eyebrow">{channel.label}</p>
+            <a href={channel.href} class="contact-link">
+              {channel.value}
+            </a>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>
