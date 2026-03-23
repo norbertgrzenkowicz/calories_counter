@@ -1,16 +1,22 @@
 ---
-import { pricing } from "../../data/landing";
+import type { LandingContent } from "../../data/landing";
 import Icon from "../ui/Icon.astro";
 import SectionLabel from "../ui/SectionLabel.astro";
+
+interface Props {
+  content: LandingContent["pricingSection"];
+}
+
+const { content } = Astro.props;
 ---
 <section class="section" id="pricing">
   <div class="section-heading section-heading--center">
-    <SectionLabel>Simple Pricing</SectionLabel>
-    <h2>Invest in accuracy, not subscription fatigue.</h2>
+    <SectionLabel>{content.label}</SectionLabel>
+    <h2>{content.title}</h2>
   </div>
   <div class="pricing-grid">
     {
-      pricing.map((plan) => (
+      content.plans.map((plan) => (
         <article class:list={["pricing-card", plan.emphasis === "highlight" && "pricing-card--highlight"]}>
           {plan.badge && <span class="pricing-card__badge">{plan.badge}</span>}
           <p class="pricing-card__name">{plan.name}</p>
@@ -34,5 +40,5 @@ import SectionLabel from "../ui/SectionLabel.astro";
       ))
     }
   </div>
-  <p class="pricing-footnote">No credit card required to start.</p>
+  <p class="pricing-footnote">{content.footnote}</p>
 </section>

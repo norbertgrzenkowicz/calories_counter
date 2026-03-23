@@ -1,16 +1,22 @@
 ---
-import { steps } from "../../data/landing";
+import type { LandingContent } from "../../data/landing";
 import Icon from "../ui/Icon.astro";
 import SectionLabel from "../ui/SectionLabel.astro";
+
+interface Props {
+  content: LandingContent["howItWorksSection"];
+}
+
+const { content } = Astro.props;
 ---
 <section class="section" id="how-it-works">
   <div class="section-heading section-heading--center">
-    <SectionLabel>How Yapper Works</SectionLabel>
-    <h2>Zero to logged in three beats.</h2>
+    <SectionLabel>{content.label}</SectionLabel>
+    <h2>{content.title}</h2>
   </div>
   <div class="steps">
     {
-      steps.map((step) => (
+      content.steps.map((step) => (
         <article class="step-card">
           <div class="step-card__number">{step.number}</div>
           <Icon name={step.icon} class="step-card__icon" />
