@@ -316,10 +316,13 @@ class UserProfile {
       'activity_level': activityLevel,
       'bmr_calories': bmrCalories,
       'tdee_calories': tdeeCalories,
-      'target_calories': targetCalories,
-      'target_protein_g': macros['protein'],
-      'target_carbs_g': macros['carbs'],
-      'target_fats_g': macros['fat'],
+      // Use manually-adjusted override when present; fall back to formula result.
+      // profile_screen.dart always creates UserProfile without targetCalories,
+      // so formula recalculates on normal saves. Only applyAdjustment sets these.
+      'target_calories': this.targetCalories ?? targetCalories,
+      'target_protein_g': this.targetProteinG ?? macros['protein'],
+      'target_carbs_g': this.targetCarbsG ?? macros['carbs'],
+      'target_fats_g': this.targetFatsG ?? macros['fat'],
       'weight_loss_start_date':
           weightLossStartDate?.toIso8601String().split('T')[0],
       'initial_weight_kg': initialWeightKg,

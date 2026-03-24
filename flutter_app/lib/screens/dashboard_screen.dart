@@ -8,8 +8,11 @@ import '../models/meal.dart';
 import '../models/user_profile.dart';
 import '../models/chat_message.dart';
 import '../models/food_analysis_result.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/profile_service.dart';
 import '../services/nutrition_calculator_service.dart';
+import '../services/calorie_adjustment_service.dart';
+import '../widgets/calorie_adjustment_dialog.dart';
 import '../services/chat_service.dart';
 import '../utils/app_page_route.dart';
 import '../utils/app_snackbar.dart';
@@ -56,6 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   DateTime _lastCheckedDate = DateTime.now();
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
+  bool _hasCheckedCalorieAdjustment = false;
 
   // Chat-related state
   final List<ChatMessage> _chatMessages = [];
@@ -115,9 +119,65 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (profile == null && mounted) {
         _showProfilePrompt();
       }
+
+      if (profile != null && mounted && !_hasCheckedCalorieAdjustment) {
+        _hasCheckedCalorieAdjustment = true;
+        _checkCalorieAdjustment(profile);
+      }
     } catch (e) {
       setState(() => _isLoadingProfile = false);
       // Error loading user profile, continue with default behavior
+    }
+  }
+
+  void _checkCalorieAdjustment(UserProfile profile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final service = CalorieAdjustmentService();
+      final suggestion = await service.evaluateAdjustment(
+        profile: profile,
+        prefs: prefs,
+      );
+
+      if (suggestion == null || !mounted) return;
+
+      // Record before showing — all outcomes (Apply/Later/Snooze) reset the 7-day clock.
+      await service.recordShown(prefs);
+
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => CalorieAdjustmentDialog(
+          suggestion: suggestion,
+          onApply: () async {
+            Navigator.of(context).pop();
+            try {
+              final updated = await service.applyAdjustment(
+                profile: profile,
+                adjustmentAmount: suggestion.adjustmentAmount,
+              );
+              if (mounted) {
+                setState(() => _userProfile = updated);
+                AppSnackbar.success(
+                  context,
+                  'Calorie target updated to ${suggestion.suggestedCalories} kcal',
+                );
+              }
+            } catch (_) {
+              if (mounted) {
+                AppSnackbar.error(context, 'Failed to apply adjustment');
+              }
+            }
+          },
+          onLater: () => Navigator.of(context).pop(),
+          onSnooze: () async {
+            Navigator.of(context).pop();
+            await service.recordSnooze(prefs);
+          },
+        ),
+      );
+    } catch (_) {
+      // Popup is non-critical — fail silently.
     }
   }
 
