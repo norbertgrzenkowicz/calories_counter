@@ -746,24 +746,65 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
         title: Text(
-          'Add Meal - ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}',
+          '${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}',
+          style: const TextStyle(
+            fontFamily: 'SpaceGrotesk',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textSecondary,
+            letterSpacing: 0.08,
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const SizedBox(height: 8),
+
+                // --- Meal name: prominent, silent style ---
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Meal Name',
-                    border: OutlineInputBorder(),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                    letterSpacing: -0.44,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Meal name',
+                    hintStyle: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textTertiary,
+                      letterSpacing: -0.44,
+                    ),
+                    border: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: AppTheme.borderColor.withOpacity(0.15),
+                        width: 1,
+                      ),
+                    ),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: AppTheme.borderColor.withOpacity(0.15),
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: AppTheme.neonGreen,
+                        width: 1.5,
+                      ),
+                    ),
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -772,176 +813,108 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _caloriesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Calories',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter calories';
-                    }
-                    final parsed = int.tryParse(value);
-                    if (parsed == null) {
-                      return 'Please enter a valid number';
-                    }
-                    if (parsed < 0) {
-                      return 'Calories cannot be negative';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _proteinsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Proteins (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter proteins';
-                    }
-                    final parsed = double.tryParse(value);
-                    if (parsed == null) {
-                      return 'Please enter a valid number';
-                    }
-                    if (parsed < 0) {
-                      return 'Proteins cannot be negative';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _fatsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Fats (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter fats';
-                    }
-                    final parsed = double.tryParse(value);
-                    if (parsed == null) {
-                      return 'Please enter a valid number';
-                    }
-                    if (parsed < 0) {
-                      return 'Fats cannot be negative';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _carbsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Carbs (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter carbs';
-                    }
-                    final parsed = double.tryParse(value);
-                    if (parsed == null) {
-                      return 'Please enter a valid number';
-                    }
-                    if (parsed < 0) {
-                      return 'Carbs cannot be negative';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Photo preview
-                if (_photoPath != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(_photoPath!),
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                // Add Photo button
-                OutlinedButton.icon(
-                  onPressed: _isAnalyzing ? null : _addPhoto,
-                  icon: _isAnalyzing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.camera_alt),
-                  label: Text(
-                    _isAnalyzing
-                        ? 'Analyzing...'
-                        : (_photoPath != null ? 'Change Photo' : 'Add Photo'),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                  ),
-                ),
-                if (_photoPath != null && !_hasAnalyzedPhoto) ...[
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: _isAnalyzing ? null : _analyzePhoto,
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Analyze with AI'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      foregroundColor: AppTheme.neonGreen,
-                      side: const BorderSide(color: AppTheme.neonGreen),
-                    ),
-                  ),
-                ],
-                // AI analysis results
-                if (_hasAnalyzedPhoto && _analysisResult != null) ...[
-                  const SizedBox(height: 16),
-                  _buildAnalysisCard(),
-                ],
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: _isScanningBarcode ? null : _scanBarcode,
-                  icon: _isScanningBarcode
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.qr_code_scanner),
-                  label: Text(
-                    _isScanningBarcode ? 'Scanning...' : 'Scan Barcode',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                  ),
-                ),
-                if (_scannedBarcode != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _scannedProduct != null
-                          ? Colors.green.shade50
-                          : Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _scannedProduct != null
-                            ? Colors.green.shade200
-                            : Colors.orange.shade200,
+
+                const SizedBox(height: 28),
+
+                // --- Action chips row: photo / barcode / AI ---
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _ActionChip(
+                        icon: _isAnalyzing
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.camera_alt,
+                                size: 14,
+                                color: AppTheme.textPrimary,
+                              ),
+                        label: _isAnalyzing
+                            ? 'Analyzing...'
+                            : (_photoPath != null ? 'Change Photo' : 'Add Photo'),
+                        onTap: _isAnalyzing ? null : _addPhoto,
                       ),
+                      const SizedBox(width: 8),
+                      _ActionChip(
+                        icon: _isScanningBarcode
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.qr_code_scanner,
+                                size: 14,
+                                color: AppTheme.textPrimary,
+                              ),
+                        label: _isScanningBarcode ? 'Scanning...' : 'Scan Barcode',
+                        onTap: _isScanningBarcode ? null : _scanBarcode,
+                      ),
+                      if (_photoPath != null && !_hasAnalyzedPhoto) ...[
+                        const SizedBox(width: 8),
+                        _ActionChip(
+                          icon: const Icon(
+                            Icons.auto_awesome,
+                            size: 14,
+                            color: AppTheme.neonGreen,
+                          ),
+                          label: 'Analyze with AI',
+                          onTap: _isAnalyzing ? null : _analyzePhoto,
+                          accentColor: AppTheme.neonGreen,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // --- Photo preview ---
+                if (_photoPath != null) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: AppTheme.neonGreen.withOpacity(0.25),
+                        width: 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.file(
+                        File(_photoPath!),
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // --- AI analysis results ---
+                if (_hasAnalyzedPhoto && _analysisResult != null) ...[
+                  _buildAnalysisCard(),
+                  const SizedBox(height: 20),
+                ],
+
+                // --- Barcode result card ---
+                if (_scannedBarcode != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -951,27 +924,27 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                             Icon(
                               Icons.qr_code,
                               color: _scannedProduct != null
-                                  ? Colors.green.shade700
-                                  : Colors.orange.shade700,
+                                  ? AppTheme.neonGreen
+                                  : AppTheme.neonOrange,
+                              size: 18,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 _scannedProduct != null
-                                    ? 'Product Found:'
-                                    : 'Barcode Scanned:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: _scannedProduct != null
-                                      ? Colors.green.shade700
-                                      : Colors.orange.shade700,
+                                    ? 'Product Found'
+                                    : 'Barcode Scanned',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimary,
+                                  letterSpacing: -0.3,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Text(
                           _scannedProduct != null
                               ? _scannedProduct!.displayName
@@ -979,104 +952,414 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
+                            color: AppTheme.textSecondary,
                           ),
                         ),
                         if (_scannedProduct != null &&
                             _scannedProduct!.hasBasicNutrition) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Text(
-                            'Nutrition per 100g:',
+                            'PER 100G',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
+                              fontFamily: 'SpaceGrotesk',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textTertiary,
+                              letterSpacing: 1.2,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
+                          const SizedBox(height: 6),
+                          Text(
+                            [
                               if (_scannedProduct!.caloriesPer100g != null)
-                                Text(
-                                  '${_scannedProduct!.caloriesPer100g!.round()} kcal  ',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
+                                '${_scannedProduct!.caloriesPer100g!.round()} kcal',
                               if (_scannedProduct!.proteinPer100g != null)
-                                Text(
-                                  'P: ${_scannedProduct!.proteinPer100g!.toStringAsFixed(1)}g  ',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
+                                'P ${_scannedProduct!.proteinPer100g!.toStringAsFixed(1)}g',
                               if (_scannedProduct!.carbsPer100g != null)
-                                Text(
-                                  'C: ${_scannedProduct!.carbsPer100g!.toStringAsFixed(1)}g  ',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
+                                'C ${_scannedProduct!.carbsPer100g!.toStringAsFixed(1)}g',
                               if (_scannedProduct!.fatPer100g != null)
-                                Text(
-                                  'F: ${_scannedProduct!.fatPer100g!.toStringAsFixed(1)}g',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                            ],
+                                'F ${_scannedProduct!.fatPer100g!.toStringAsFixed(1)}g',
+                            ].join('  ·  '),
+                            style: TextStyle(
+                              fontFamily: 'SpaceGrotesk',
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                            ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _acceptBarcodeNutrition,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: AppTheme.neonGlowShadow(),
                               ),
-                              child: const Text(
-                                'Accept & Fill Nutrition Values',
+                              child: ElevatedButton(
+                                onPressed: _acceptBarcodeNutrition,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.neonGreen,
+                                  foregroundColor: const Color(0xFF003919),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  'Accept & Fill Nutrition Values',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
                               ),
                             ),
                           ),
                         ] else if (_scannedProduct == null) ...[
                           const SizedBox(height: 8),
-                          Text(
-                            'Product not found in OpenFoodFacts database.\nYou can enter nutrition information manually.',
+                          const Text(
+                            'Product not found in OpenFoodFacts database.\nEnter nutrition manually below.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.orange.shade700,
+                              color: AppTheme.textTertiary,
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
+                  const SizedBox(height: 20),
                 ],
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        _isSubmitting ? Colors.grey : AppTheme.neonGreen,
-                    foregroundColor: AppTheme.darkBackground,
-                    padding: const EdgeInsets.all(16),
+
+                // --- Nutrition fields grouped in a surface card ---
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  child: _isSubmitting
-                      ? const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'NUTRITION',
+                        style: TextStyle(
+                          fontFamily: 'SpaceGrotesk',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textTertiary,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Calories - full width
+                      TextFormField(
+                        controller: _caloriesController,
+                        style: TextStyle(
+                          fontFamily: 'SpaceGrotesk',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Calories (kcal)',
+                          labelStyle: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 13,
+                          ),
+                          border: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AppTheme.borderColor.withOpacity(0.15),
+                            ),
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AppTheme.borderColor.withOpacity(0.15),
+                            ),
+                          ),
+                          focusedBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AppTheme.neonGreen,
+                              width: 1.5,
+                            ),
+                          ),
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter calories';
+                          }
+                          final parsed = int.tryParse(value);
+                          if (parsed == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (parsed < 0) {
+                            return 'Calories cannot be negative';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Protein + Carbs row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _proteinsController,
+                              style: TextStyle(
+                                fontFamily: 'SpaceGrotesk',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Protein (g)',
+                                labelStyle: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 13,
+                                ),
+                                border: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: AppTheme.borderColor.withOpacity(0.15),
+                                  ),
+                                ),
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: AppTheme.borderColor.withOpacity(0.15),
+                                  ),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: AppTheme.neonGreen,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                filled: false,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                              keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                final parsed = double.tryParse(value);
+                                if (parsed == null) return 'Invalid';
+                                if (parsed < 0) return 'Cannot be negative';
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _carbsController,
+                              style: TextStyle(
+                                fontFamily: 'SpaceGrotesk',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Carbs (g)',
+                                labelStyle: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 13,
+                                ),
+                                border: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: AppTheme.borderColor.withOpacity(0.15),
+                                  ),
+                                ),
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: AppTheme.borderColor.withOpacity(0.15),
+                                  ),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: AppTheme.neonGreen,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                filled: false,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                              keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                final parsed = double.tryParse(value);
+                                if (parsed == null) return 'Invalid';
+                                if (parsed < 0) return 'Cannot be negative';
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Fats - single row (could expand later)
+                      TextFormField(
+                        controller: _fatsController,
+                        style: TextStyle(
+                          fontFamily: 'SpaceGrotesk',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textPrimary,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Fats (g)',
+                          labelStyle: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 13,
+                          ),
+                          border: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AppTheme.borderColor.withOpacity(0.15),
+                            ),
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AppTheme.borderColor.withOpacity(0.15),
+                            ),
+                          ),
+                          focusedBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AppTheme.neonGreen,
+                              width: 1.5,
+                            ),
+                          ),
+                          filled: false,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter fats';
+                          }
+                          final parsed = double.tryParse(value);
+                          if (parsed == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (parsed < 0) {
+                            return 'Fats cannot be negative';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                // --- Submit button: neon green with glow ---
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: _isSubmitting ? [] : AppTheme.neonGlowShadow(),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          _isSubmitting ? AppTheme.surfaceContainerHigh : AppTheme.neonGreen,
+                      foregroundColor: _isSubmitting
+                          ? AppTheme.textSecondary
+                          : const Color(0xFF003919),
+                      padding: const EdgeInsets.all(18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    child: _isSubmitting
+                        ? const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppTheme.textSecondary,
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: 8),
-                            Text('Adding...'),
-                          ],
-                        )
-                      : const Text('Submit'),
+                              SizedBox(width: 10),
+                              Text('Adding...'),
+                            ],
+                          )
+                        : const Text('Add Meal'),
+                  ),
                 ),
+
+                const SizedBox(height: 32),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact icon+label chip for the action row in AddMealScreen.
+class _ActionChip extends StatelessWidget {
+  final Widget icon;
+  final String label;
+  final VoidCallback? onTap;
+  final Color? accentColor;
+
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accentColor ?? AppTheme.textPrimary;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            icon,
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );

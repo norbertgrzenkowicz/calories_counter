@@ -1455,57 +1455,46 @@ class _DashboardScreenState extends State<DashboardScreen>
         elevation: 0,
         leading: IconButton(
           onPressed: _goToPreviousDay,
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 18),
           tooltip: 'Previous Day',
         ),
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: _isToday()
-                ? AppTheme.neonGreen.withOpacity(0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: _isToday()
-                  ? AppTheme.neonGreen.withOpacity(0.3)
-                  : Colors.transparent,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isToday())
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.neonGreen,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              Text(
-                _getFormattedDate(),
-                style: TextStyle(
-                  color: _isToday() ? AppTheme.neonGreen : AppTheme.textPrimary,
-                  fontWeight: _isToday() ? FontWeight.w600 : FontWeight.normal,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_isToday()) ...[
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppTheme.neonGreen,
+                  shape: BoxShape.circle,
                 ),
               ),
+              const SizedBox(width: 8),
             ],
-          ),
+            Text(
+              _getFormattedDate().toUpperCase(),
+              style: TextStyle(
+                fontFamily: 'SpaceGrotesk',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _isToday() ? AppTheme.neonGreen : AppTheme.textPrimary,
+                letterSpacing: 0.08,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         actions: [
           if (!_isToday())
             IconButton(
               onPressed: _goToNextDay,
-              icon: const Icon(Icons.arrow_forward_ios),
+              icon: const Icon(Icons.arrow_forward_ios, size: 18),
               tooltip: 'Next Day',
             ),
           IconButton(
             onPressed: _openCalendar,
-            icon: const Icon(Icons.calendar_today),
+            icon: const Icon(Icons.calendar_today, size: 20),
             tooltip: 'Calendar',
           ),
           PopupMenuButton<String>(
@@ -1539,9 +1528,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: Text('Logout'),
               ),
             ],
-            child: const Icon(Icons.settings),
+            child: const Icon(Icons.more_vert, size: 20),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
         ],
       ),
       body: Listener(
@@ -1553,18 +1542,26 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             // Subscription banner
             const SubscriptionBanner(),
-            // Chat messages area
-            Expanded(child: _buildChatMessages()),
-            // Compact nutrition bars at bottom
-            FutureBuilder<List<Meal>>(
-              future: _getMealsForSelectedDate(),
-              builder: (context, snapshot) {
-                final meals = snapshot.data ?? [];
-                return CompactNutritionBars(
-                  meals: meals,
-                  userProfile: _userProfile,
-                );
-              },
+            // Chat messages area - void background
+            Expanded(
+              child: Container(
+                color: AppTheme.darkBackground,
+                child: _buildChatMessages(),
+              ),
+            ),
+            // Compact nutrition bars - surface background creates separation
+            Container(
+              color: AppTheme.surface,
+              child: FutureBuilder<List<Meal>>(
+                future: _getMealsForSelectedDate(),
+                builder: (context, snapshot) {
+                  final meals = snapshot.data ?? [];
+                  return CompactNutritionBars(
+                    meals: meals,
+                    userProfile: _userProfile,
+                  );
+                },
+              ),
             ),
             // Chat input bar
             ChatInputBar(
@@ -1597,33 +1594,35 @@ class _DashboardScreenState extends State<DashboardScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppTheme.neonGreen.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: AppTheme.neonGreen,
+                      // Abstract geometry: concentric rings
+                      SizedBox(
+                        width: 120,
+                        height: 120,
+                        child: CustomPaint(
+                          painter: _ConcentricRingsPainter(
+                            color: AppTheme.neonGreen,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
+                      // Large display word - editorial
                       Text(
-                        'Start tracking your food!',
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                        textAlign: TextAlign.center,
+                        'TRACK',
+                        style: TextStyle(
+                          fontFamily: 'SpaceGrotesk',
+                          fontSize: 48,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.neonGreen,
+                          letterSpacing: -0.96,
+                          height: 1.0,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Describe what you ate or record audio.\nOur AI will analyze the nutrition for you.',
+                        'Describe what you ate or record audio.\nAI analyzes nutrition instantly.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.textSecondary,
+                          height: 1.6,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -2341,4 +2340,35 @@ class _DiscardMealDialogState extends State<_DiscardMealDialog> {
       ],
     );
   }
+}
+
+/// Paints concentric thin rings as abstract geometry decoration.
+class _ConcentricRingsPainter extends CustomPainter {
+  final Color color;
+
+  const _ConcentricRingsPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()
+      ..color = color.withOpacity(0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final radii = [20.0, 34.0, 48.0, 56.0];
+    for (final r in radii) {
+      canvas.drawCircle(center, r, paint);
+    }
+
+    // Center dot
+    final dotPaint = Paint()
+      ..color = color.withOpacity(0.6)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 4, dotPaint);
+  }
+
+  @override
+  bool shouldRepaint(_ConcentricRingsPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

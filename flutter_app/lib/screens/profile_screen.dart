@@ -202,128 +202,127 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final subscription = subscriptionState.subscription;
 
     if (subscriptionState.isLoading) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Subscription',
-                style: Theme.of(context).textTheme.headlineSmall,
+      return Container(
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'SUBSCRIPTION',
+              style: TextStyle(
+                fontFamily: 'SpaceGrotesk',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textTertiary,
+                letterSpacing: 1.5,
               ),
-              const SizedBox(height: 20),
-              const Center(child: CircularProgressIndicator()),
-            ],
-          ),
+            ),
+            const SizedBox(height: 20),
+            const Center(
+              child: CircularProgressIndicator(color: AppTheme.neonGreen),
+            ),
+          ],
         ),
       );
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Subscription',
-                  style: Theme.of(context).textTheme.headlineSmall,
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'SUBSCRIPTION',
+                style: TextStyle(
+                  fontFamily: 'SpaceGrotesk',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textTertiary,
+                  letterSpacing: 1.5,
                 ),
-                _buildStatusBadge(subscription),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildSubscriptionDetails(subscription),
-          ],
-        ),
+              ),
+              _buildStatusBadge(subscription),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildSubscriptionDetails(subscription),
+        ],
       ),
     );
   }
 
   Widget _buildStatusBadge(Subscription? subscription) {
-    if (subscription == null ||
-        subscription.status == SubscriptionStatus.free) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.star_border, size: 16, color: Colors.grey.shade600),
-            const SizedBox(width: 4),
-            Text(
-              'Free',
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     Color badgeColor;
     Color textColor;
     IconData icon;
     String statusText;
 
-    switch (subscription.status) {
-      case SubscriptionStatus.trialing:
-        badgeColor = Colors.blue.shade50;
-        textColor = Colors.blue.shade700;
-        icon = Icons.access_time;
-        statusText = 'Trial';
-        break;
-      case SubscriptionStatus.active:
-        badgeColor = AppTheme.neonGreen.withOpacity(0.1);
-        textColor = AppTheme.neonGreen;
-        icon = Icons.check_circle;
-        statusText = 'Premium';
-        break;
-      case SubscriptionStatus.pastDue:
-        badgeColor = Colors.orange.shade50;
-        textColor = Colors.orange.shade700;
-        icon = Icons.warning_amber;
-        statusText = 'Past Due';
-        break;
-      case SubscriptionStatus.canceled:
-        badgeColor = Colors.red.shade50;
-        textColor = Colors.red.shade700;
-        icon = Icons.cancel;
-        statusText = 'Canceled';
-        break;
-      default:
-        badgeColor = Colors.grey.shade100;
-        textColor = Colors.grey.shade700;
-        icon = Icons.star_border;
-        statusText = 'Free';
+    if (subscription == null ||
+        subscription.status == SubscriptionStatus.free) {
+      badgeColor = AppTheme.surfaceContainerHigh;
+      textColor = AppTheme.textSecondary;
+      icon = Icons.star_border;
+      statusText = 'Free';
+    } else {
+      switch (subscription.status) {
+        case SubscriptionStatus.trialing:
+          badgeColor = AppTheme.neonBlue.withOpacity(0.12);
+          textColor = AppTheme.neonBlue;
+          icon = Icons.access_time;
+          statusText = 'Trial';
+          break;
+        case SubscriptionStatus.active:
+          badgeColor = AppTheme.neonGreen.withOpacity(0.12);
+          textColor = AppTheme.neonGreen;
+          icon = Icons.check_circle;
+          statusText = 'Premium';
+          break;
+        case SubscriptionStatus.pastDue:
+          badgeColor = AppTheme.neonOrange.withOpacity(0.12);
+          textColor = AppTheme.neonOrange;
+          icon = Icons.warning_amber;
+          statusText = 'Past Due';
+          break;
+        case SubscriptionStatus.canceled:
+          badgeColor = AppTheme.neonRed.withOpacity(0.12);
+          textColor = AppTheme.neonRed;
+          icon = Icons.cancel;
+          statusText = 'Canceled';
+          break;
+        default:
+          badgeColor = AppTheme.surfaceContainerHigh;
+          textColor = AppTheme.textSecondary;
+          icon = Icons.star_border;
+          statusText = 'Free';
+      }
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: badgeColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: textColor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: textColor),
+          Icon(icon, size: 14, color: textColor),
           const SizedBox(width: 4),
           Text(
             statusText,
             style: TextStyle(
+              fontFamily: 'SpaceGrotesk',
               color: textColor,
               fontWeight: FontWeight.w600,
               fontSize: 12,
@@ -344,14 +343,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             icon: Icons.info_outline,
             label: 'Status',
             value: 'Free Tier',
-            valueColor: Colors.grey.shade600,
+            valueColor: AppTheme.textTertiary,
           ),
           const SizedBox(height: 12),
           _buildDetailRow(
             icon: Icons.star_border,
             label: 'Plan',
             value: 'Limited features',
-            valueColor: Colors.grey.shade600,
+            valueColor: AppTheme.textTertiary,
           ),
           const SizedBox(height: 16),
           Center(
@@ -490,9 +489,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final difference = date.difference(DateTime.now());
 
     if (difference.inDays <= 1) {
-      return Colors.red.shade700;
+      return AppTheme.neonRed;
     } else if (difference.inDays <= 3) {
-      return Colors.orange.shade700;
+      return AppTheme.neonOrange;
     }
 
     return AppTheme.textPrimary;
@@ -505,32 +504,90 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     ]);
   }
 
+  // Silent input decoration helper for profile fields
+  InputDecoration _silentInput({
+    required String label,
+    String? suffixText,
+    Widget? suffixIcon,
+    String? hintText,
+    Widget? prefixIcon,
+    String? helperText,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+      floatingLabelStyle: const TextStyle(color: AppTheme.neonGreen, fontSize: 12),
+      hintText: hintText,
+      hintStyle: const TextStyle(color: AppTheme.textTertiary, fontSize: 14),
+      suffixText: suffixText,
+      suffixStyle: const TextStyle(color: AppTheme.textTertiary, fontSize: 13),
+      suffixIcon: suffixIcon,
+      prefixIcon: prefixIcon != null
+          ? IconTheme(
+              data: const IconThemeData(color: AppTheme.textTertiary, size: 18),
+              child: prefixIcon,
+            )
+          : null,
+      helperText: helperText,
+      helperStyle: const TextStyle(color: AppTheme.textTertiary, fontSize: 11),
+      border: UnderlineInputBorder(
+        borderSide: BorderSide(color: AppTheme.borderColor.withOpacity(0.15), width: 1),
+      ),
+      enabledBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: AppTheme.borderColor.withOpacity(0.15), width: 1),
+      ),
+      focusedBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: AppTheme.neonGreen, width: 1.5),
+      ),
+      errorBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: AppTheme.neonRed.withOpacity(0.6), width: 1),
+      ),
+      focusedErrorBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: AppTheme.neonRed, width: 1.5),
+      ),
+      filled: false,
+      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoadingProfile) {
       return Scaffold(
         backgroundColor: AppTheme.darkBackground,
         appBar: AppBar(
-          title: const Text('Your Profile'),
+          title: const Text('YOUR PROFILE'),
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppTheme.neonGreen),
+        ),
       );
     }
 
     return Scaffold(
       backgroundColor: AppTheme.darkBackground,
       appBar: AppBar(
-        title: const Text('Your Profile'),
+        title: const Text(
+          'YOUR PROFILE',
+          style: TextStyle(
+            fontFamily: 'SpaceGrotesk',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.08,
+            color: AppTheme.textPrimary,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         color: AppTheme.neonGreen,
+        backgroundColor: AppTheme.surfaceContainerLow,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -538,400 +595,483 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Personal Information Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Personal Information',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Full Name',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.person),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your name';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          DropdownButtonFormField<String>(
-                            value: _selectedGender,
-                            decoration: const InputDecoration(
-                              labelText: 'Gender',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.wc),
-                            ),
-                            items: _genders.map((gender) {
-                              return DropdownMenuItem(
-                                value: gender,
-                                child: Text(gender.capitalize()),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() => _selectedGender = value!);
-                            },
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please select your gender';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'Date of Birth',
-                              border: const OutlineInputBorder(),
-                              prefixIcon: const Icon(Icons.cake),
-                              suffixIcon: const Icon(Icons.calendar_today),
-                              hintText: _dateOfBirth != null
-                                  ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
-                                  : 'Select date of birth',
-                            ),
-                            onTap: _selectDateOfBirth,
-                            validator: (value) {
-                              if (_dateOfBirth == null) {
-                                return 'Please select your date of birth';
-                              }
-                              final age =
-                                  DateTime.now().year - _dateOfBirth!.year;
-                              if (age < 13 || age > 100) {
-                                return 'Please enter a valid date of birth';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
+                  const SizedBox(height: 8),
+
+                  // --- Personal Information ---
+                  Container(
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Subscription Status Card
-                  _buildSubscriptionCard(),
-
-                  const SizedBox(height: 20),
-
-                  // Physical Characteristics Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Physical Characteristics',
-                            style: Theme.of(context).textTheme.headlineSmall,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'PERSONAL',
+                          style: TextStyle(
+                            fontFamily: 'SpaceGrotesk',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textTertiary,
+                            letterSpacing: 1.5,
                           ),
-                          const SizedBox(height: 20),
-                          KeyboardToolbar(
-                            focusNode: _heightFocusNode,
-                            label: 'Height',
-                            child: TextFormField(
-                              controller: _heightController,
-                              focusNode: _heightFocusNode,
-                              decoration: const InputDecoration(
-                                labelText: 'Height (cm)',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.height),
-                                suffixText: 'cm',
-                              ),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your height';
-                                }
-                                final height = InputSanitizer.parseDouble(value);
-                                if (height == null ||
-                                    height < 100 ||
-                                    height > 250) {
-                                  return 'Please enter a valid height (100-250 cm)';
-                                }
-                                return null;
-                              },
-                            ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _nameController,
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 15,
                           ),
-                          const SizedBox(height: 16),
-                          KeyboardToolbar(
-                            focusNode: _weightFocusNode,
-                            label: 'Current Weight',
-                            child: TextFormField(
-                              controller: _weightController,
-                              focusNode: _weightFocusNode,
-                              decoration: const InputDecoration(
-                                labelText: 'Current Weight (kg)',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.monitor_weight),
-                                suffixText: 'kg',
-                              ),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your current weight';
-                                }
-                                final weight = InputSanitizer.parseDouble(value);
-                                if (weight == null ||
-                                    weight < 30 ||
-                                    weight > 300) {
-                                  return 'Please enter a valid weight (30-300 kg)';
-                                }
-                                return null;
-                              },
-                            ),
+                          decoration: _silentInput(
+                            label: 'Full Name',
+                            prefixIcon: const Icon(Icons.person),
                           ),
-                          const SizedBox(height: 16),
-                          KeyboardToolbar(
-                            focusNode: _targetWeightFocusNode,
-                            label: 'Target Weight',
-                            child: TextFormField(
-                              controller: _targetWeightController,
-                              focusNode: _targetWeightFocusNode,
-                              decoration: const InputDecoration(
-                                labelText: 'Target Weight (kg) - Optional',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.flag),
-                                suffixText: 'kg',
-                              ),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              validator: (value) {
-                                if (value != null && value.isNotEmpty) {
-                                  final weight = InputSanitizer.parseDouble(value);
-                                  if (weight == null ||
-                                      weight < 30 ||
-                                      weight > 300) {
-                                    return 'Please enter a valid target weight (30-300 kg)';
-                                  }
-                                }
-                                return null;
-                              },
-                            ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _selectedGender,
+                          dropdownColor: AppTheme.surfaceContainerLow,
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 15,
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Goals Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Goals & Targets',
-                            style: Theme.of(context).textTheme.headlineSmall,
+                          iconEnabledColor: AppTheme.textTertiary,
+                          decoration: _silentInput(
+                            label: 'Gender',
+                            prefixIcon: const Icon(Icons.wc),
                           ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'Primary Goal',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _goals.map((goal) {
-                              final isSelected = _selectedGoal == goal;
-                              return ChoiceChip(
-                                label: Text(_getGoalDisplayName(goal)),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  setState(() => _selectedGoal = goal);
-                                },
-                                selectedColor: AppTheme.neonGreen,
-                                backgroundColor: AppTheme.borderColor,
-                                labelStyle: TextStyle(
-                                  color: isSelected
-                                      ? AppTheme.darkBackground
-                                      : AppTheme.textPrimary,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                          if (_selectedGoal == 'weight_loss' ||
-                              _selectedGoal == 'weight_gain') ...[
-                            const SizedBox(height: 20),
-                            KeyboardToolbar(
-                              focusNode: _weeklyTargetFocusNode,
-                              label: 'Weekly Target',
-                              child: TextFormField(
-                                controller: _weeklyTargetController,
-                                focusNode: _weeklyTargetFocusNode,
-                                decoration: InputDecoration(
-                                  labelText: _selectedGoal == 'weight_loss'
-                                      ? 'Weekly Weight Loss Target (kg)'
-                                      : 'Weekly Weight Gain Target (kg)',
-                                  border: const OutlineInputBorder(),
-                                  prefixIcon: const Icon(Icons.trending_down),
-                                  suffixText: 'kg/week',
-                                  helperText:
-                                      'Recommended: 0.5-1.0 kg/week for sustainable results',
-                                ),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                        decimal: true),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter weekly target';
-                                  }
-                                  final target = InputSanitizer.parseDouble(value);
-                                  if (target == null ||
-                                      target <= 0 ||
-                                      target > 2.0) {
-                                    return 'Please enter a valid target (0.1-2.0 kg/week)';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Activity Level Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Activity Level',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 20),
-                          ...NutritionCalculatorService.activityLevels.entries
-                              .map((entry) {
-                            final isSelected =
-                                _selectedActivityKey == entry.key;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: InkWell(
-                                onTap: () => setState(
-                                    () => _selectedActivityKey = entry.key),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? AppTheme.neonGreen.withOpacity(0.1)
-                                        : Colors.transparent,
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? AppTheme.neonGreen
-                                          : AppTheme.borderColor,
-                                      width: isSelected ? 2 : 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Radio<String>(
-                                        value: entry.key,
-                                        groupValue: _selectedActivityKey,
-                                        onChanged: (value) => setState(() =>
-                                            _selectedActivityKey = value!),
-                                        activeColor: AppTheme.neonGreen,
-                                      ),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              NutritionCalculatorService
-                                                      .activityDescriptions[
-                                                  entry.key]!,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge
-                                                  ?.copyWith(
-                                                    fontWeight: isSelected
-                                                        ? FontWeight.w600
-                                                        : FontWeight.normal,
-                                                  ),
-                                            ),
-                                            Text(
-                                              'PAL: ${entry.value}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                          items: _genders.map((gender) {
+                            return DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender.capitalize()),
                             );
                           }).toList(),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Save Button
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _saveProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.neonGreen,
-                      foregroundColor: AppTheme.darkBackground,
-                      padding: const EdgeInsets.all(16),
-                      disabledBackgroundColor: Colors.grey.shade400,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                              strokeWidth: 2,
+                          onChanged: (value) {
+                            setState(() => _selectedGender = value!);
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select your gender';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          readOnly: true,
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 15,
+                          ),
+                          decoration: _silentInput(
+                            label: 'Date of Birth',
+                            prefixIcon: const Icon(Icons.cake),
+                            suffixIcon: const Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color: AppTheme.textTertiary,
                             ),
-                          )
-                        : const Text('Save Profile'),
+                            hintText: _dateOfBirth != null
+                                ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
+                                : 'Select date of birth',
+                          ),
+                          onTap: _selectDateOfBirth,
+                          validator: (value) {
+                            if (_dateOfBirth == null) {
+                              return 'Please select your date of birth';
+                            }
+                            final age = DateTime.now().year - _dateOfBirth!.year;
+                            if (age < 13 || age > 100) {
+                              return 'Please enter a valid date of birth';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // --- Subscription Status ---
+                  _buildSubscriptionCard(),
+
+                  const SizedBox(height: 16),
+
+                  // --- Physical Characteristics ---
+                  Container(
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'BODY',
+                          style: TextStyle(
+                            fontFamily: 'SpaceGrotesk',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textTertiary,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        KeyboardToolbar(
+                          focusNode: _heightFocusNode,
+                          label: 'Height',
+                          child: TextFormField(
+                            controller: _heightController,
+                            focusNode: _heightFocusNode,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 15,
+                            ),
+                            decoration: _silentInput(
+                              label: 'Height',
+                              prefixIcon: const Icon(Icons.height),
+                              suffixText: 'cm',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your height';
+                              }
+                              final height = InputSanitizer.parseDouble(value);
+                              if (height == null || height < 100 || height > 250) {
+                                return 'Please enter a valid height (100-250 cm)';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        KeyboardToolbar(
+                          focusNode: _weightFocusNode,
+                          label: 'Current Weight',
+                          child: TextFormField(
+                            controller: _weightController,
+                            focusNode: _weightFocusNode,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 15,
+                            ),
+                            decoration: _silentInput(
+                              label: 'Current Weight',
+                              prefixIcon: const Icon(Icons.monitor_weight),
+                              suffixText: 'kg',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your current weight';
+                              }
+                              final weight = InputSanitizer.parseDouble(value);
+                              if (weight == null || weight < 30 || weight > 300) {
+                                return 'Please enter a valid weight (30-300 kg)';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        KeyboardToolbar(
+                          focusNode: _targetWeightFocusNode,
+                          label: 'Target Weight',
+                          child: TextFormField(
+                            controller: _targetWeightController,
+                            focusNode: _targetWeightFocusNode,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 15,
+                            ),
+                            decoration: _silentInput(
+                              label: 'Target Weight — Optional',
+                              prefixIcon: const Icon(Icons.flag),
+                              suffixText: 'kg',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            validator: (value) {
+                              if (value != null && value.isNotEmpty) {
+                                final weight = InputSanitizer.parseDouble(value);
+                                if (weight == null || weight < 30 || weight > 300) {
+                                  return 'Please enter a valid target weight (30-300 kg)';
+                                }
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // --- Goals & Targets ---
+                  Container(
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'GOALS',
+                          style: TextStyle(
+                            fontFamily: 'SpaceGrotesk',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textTertiary,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'Primary Goal',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textSecondary,
+                            letterSpacing: -0.26,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _goals.map((goal) {
+                            final isSelected = _selectedGoal == goal;
+                            return ChoiceChip(
+                              label: Text(_getGoalDisplayName(goal)),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() => _selectedGoal = goal);
+                              },
+                              selectedColor: AppTheme.neonGreen,
+                              backgroundColor: AppTheme.surfaceContainerHigh,
+                              showCheckmark: false,
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? const Color(0xFF003919)
+                                    : AppTheme.textSecondary,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                                side: BorderSide.none,
+                              ),
+                              side: BorderSide.none,
+                            );
+                          }).toList(),
+                        ),
+                        if (_selectedGoal == 'weight_loss' ||
+                            _selectedGoal == 'weight_gain') ...[
+                          const SizedBox(height: 20),
+                          KeyboardToolbar(
+                            focusNode: _weeklyTargetFocusNode,
+                            label: 'Weekly Target',
+                            child: TextFormField(
+                              controller: _weeklyTargetController,
+                              focusNode: _weeklyTargetFocusNode,
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 15,
+                              ),
+                              decoration: _silentInput(
+                                label: _selectedGoal == 'weight_loss'
+                                    ? 'Weekly Weight Loss Target'
+                                    : 'Weekly Weight Gain Target',
+                                prefixIcon: const Icon(Icons.trending_down),
+                                suffixText: 'kg/week',
+                                helperText:
+                                    'Recommended: 0.5-1.0 kg/week for sustainable results',
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter weekly target';
+                                }
+                                final target =
+                                    InputSanitizer.parseDouble(value);
+                                if (target == null ||
+                                    target <= 0 ||
+                                    target > 2.0) {
+                                  return 'Please enter a valid target (0.1-2.0 kg/week)';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // --- Activity Level ---
+                  Container(
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'ACTIVITY',
+                          style: TextStyle(
+                            fontFamily: 'SpaceGrotesk',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textTertiary,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...NutritionCalculatorService.activityLevels.entries
+                            .map((entry) {
+                          final isSelected = _selectedActivityKey == entry.key;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 6.0),
+                            child: InkWell(
+                              onTap: () => setState(
+                                  () => _selectedActivityKey = entry.key),
+                              borderRadius: BorderRadius.circular(12),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppTheme.surfaceContainerHigh
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Radio<String>(
+                                      value: entry.key,
+                                      groupValue: _selectedActivityKey,
+                                      onChanged: (value) => setState(() =>
+                                          _selectedActivityKey = value!),
+                                      activeColor: AppTheme.neonGreen,
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            NutritionCalculatorService
+                                                    .activityDescriptions[
+                                                entry.key]!,
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? AppTheme.textPrimary
+                                                  : AppTheme.textSecondary,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w400,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          Text(
+                                            'PAL: ${entry.value}',
+                                            style: const TextStyle(
+                                              color: AppTheme.textTertiary,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // --- Save Button: neon green with glow ---
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: _isLoading ? [] : AppTheme.neonGlowShadow(),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isLoading
+                            ? AppTheme.surfaceContainerHigh
+                            : AppTheme.neonGreen,
+                        foregroundColor: _isLoading
+                            ? AppTheme.textSecondary
+                            : const Color(0xFF003919),
+                        padding: const EdgeInsets.all(18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppTheme.textSecondary,
+                                ),
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text('Save Profile'),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
           ),
-        ), // Closes Padding
-      ), // Closes RefreshIndicator
-    ); // Closes Scaffold
+        ),
+      ),
+    );
   }
 }
 
