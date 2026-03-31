@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS public.users CASCADE;
 CREATE TABLE public.users (
 id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
 email text,
+name text,
 full_name text,
 avatar_url text,
 website text,

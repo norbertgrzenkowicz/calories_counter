@@ -212,9 +212,48 @@ class ProfileService {
 
       developer.log('Fetched ${response.length} weight entries',
           name: 'ProfileService');
-      return response
+
+      // Sort oldest-first to compute sequential metrics
+      final rawList = response
           .map<WeightHistory>((data) => WeightHistory.fromSupabase(data))
-          .toList();
+          .toList()
+        ..sort((a, b) => a.recordedDate.compareTo(b.recordedDate));
+
+      final computed = <WeightHistory>[];
+      for (int i = 0; i < rawList.length; i++) {
+        final entry = rawList[i];
+
+        final double? weightChange =
+            i > 0 ? entry.weightKg - rawList[i - 1].weightKg : null;
+
+        final sevenDaysAgo = entry.recordedDate.subtract(const Duration(days: 6));
+        final weekEntries = rawList
+            .sublist(0, i + 1)
+            .where((e) => !e.recordedDate.isBefore(sevenDaysAgo));
+        final weekAvg = weekEntries.isEmpty
+            ? null
+            : weekEntries.map((e) => e.weightKg).reduce((a, b) => a + b) /
+                weekEntries.length;
+
+        final thirtyDaysAgo =
+            entry.recordedDate.subtract(const Duration(days: 29));
+        final monthEntries = rawList
+            .sublist(0, i + 1)
+            .where((e) => !e.recordedDate.isBefore(thirtyDaysAgo));
+        final monthAvg = monthEntries.isEmpty
+            ? null
+            : monthEntries.map((e) => e.weightKg).reduce((a, b) => a + b) /
+                monthEntries.length;
+
+        computed.add(entry.copyWith(
+          weightChangeKg: weightChange,
+          weeklyAverageKg: weekAvg,
+          monthlyAverageKg: monthAvg,
+        ));
+      }
+
+      // Return newest-first (original order)
+      return computed.reversed.toList();
     } catch (e) {
       developer.log('Failed to fetch weight history: $e',
           name: 'ProfileService');

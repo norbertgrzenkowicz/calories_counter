@@ -286,15 +286,11 @@ class UserProfile {
   Map<String, dynamic> toSupabase() {
     // Only calculate macros if we have the required data
     Map<String, double> macros = {'protein': 0.0, 'carbs': 0.0, 'fat': 0.0};
-    int bmrCalories = 0;
-    int tdeeCalories = 0;
     int targetCalories = 0;
 
     if (hasRequiredDataForCalculations) {
       try {
         macros = calculateTargetMacros();
-        bmrCalories = calculateBMR();
-        tdeeCalories = calculateTDEE();
         targetCalories = calculateTargetCalories();
       } catch (e) {
         AppLogger.error('Error calculating nutrition values: $e');
@@ -314,8 +310,6 @@ class UserProfile {
       'target_weight_kg': targetWeightKg,
       'goal': goal,
       'activity_level': activityLevel,
-      'bmr_calories': bmrCalories,
-      'tdee_calories': tdeeCalories,
       // Use manually-adjusted override when present; fall back to formula result.
       // profile_screen.dart always creates UserProfile without targetCalories,
       // so formula recalculates on normal saves. Only applyAdjustment sets these.

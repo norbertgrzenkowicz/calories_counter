@@ -36,10 +36,7 @@ class WeightHistoryFreezed with _$WeightHistoryFreezed {
     /// User's goal at the time of measurement
     String? goalAtTime,
 
-    /// Number of days since goal started
-    @Default(0) int daysSinceGoalStart,
-
-    // Calculated Fields
+    // Computed client-side after fetch (not stored in DB)
     /// Change from previous measurement
     double? weightChangeKg,
 
@@ -50,11 +47,8 @@ class WeightHistoryFreezed with _$WeightHistoryFreezed {
     double? monthlyAverageKg,
 
     // Weight Loss Phase Tracking
-    /// Whether this is in the initial weight loss phase
-    @Default(false) bool isInitialPhase,
-
     /// Current phase of weight loss journey
-    @Default('steady_state') String phase, // 'initial' or 'steady_state'
+    @Default('initial') String phase, // 'initial' or 'steady_state'
 
     // Timestamps
     /// Entry creation timestamp
@@ -78,18 +72,7 @@ class WeightHistoryFreezed with _$WeightHistoryFreezed {
       measurementTime: data['measurement_time'] as String? ?? 'morning',
       notes: data['notes'] as String?,
       goalAtTime: data['goal_at_time'] as String?,
-      daysSinceGoalStart: data['days_since_goal_start'] as int? ?? 0,
-      weightChangeKg: data['weight_change_kg'] != null
-          ? _safeParseDouble(data['weight_change_kg'])
-          : null,
-      weeklyAverageKg: data['weekly_average_kg'] != null
-          ? _safeParseDouble(data['weekly_average_kg'])
-          : null,
-      monthlyAverageKg: data['monthly_average_kg'] != null
-          ? _safeParseDouble(data['monthly_average_kg'])
-          : null,
-      isInitialPhase: data['is_initial_phase'] as bool? ?? false,
-      phase: data['phase'] as String? ?? 'steady_state',
+      phase: data['phase'] as String? ?? 'initial',
       createdAt: _parseDate(data['created_at']),
       updatedAt: _parseDate(data['updated_at']),
     );
@@ -103,15 +86,10 @@ extension WeightHistoryFreezedExtension on WeightHistoryFreezed {
     return {
       'uid': uid,
       'weight_kg': weightKg,
-      'recorded_date': recordedDate.toIso8601String(),
+      'recorded_date': recordedDate.toIso8601String().split('T')[0],
       'measurement_time': measurementTime,
       'notes': notes,
       'goal_at_time': goalAtTime,
-      'days_since_goal_start': daysSinceGoalStart,
-      'weight_change_kg': weightChangeKg,
-      'weekly_average_kg': weeklyAverageKg,
-      'monthly_average_kg': monthlyAverageKg,
-      'is_initial_phase': isInitialPhase,
       'phase': phase,
       'updated_at': DateTime.now().toIso8601String(),
     };

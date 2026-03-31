@@ -156,7 +156,7 @@ class Meal {
       'fats': fats,
       'carbs': carbs,
       'photo_url': photoUrl,
-      'date': date.toIso8601String(),
+      'date': date.toIso8601String().split('T')[0],
     };
   }
 

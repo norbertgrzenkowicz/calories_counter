@@ -972,7 +972,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                                           ),
                                         ),
                                       ],
-                                      if (entry.isInitialPhase) ...[
+                                      if (entry.phase == 'initial') ...[
                                         const SizedBox(height: 4),
                                         Container(
                                           padding: const EdgeInsets.symmetric(

@@ -12,15 +12,13 @@ class WeightHistory {
 
   // Goal Tracking
   final String? goalAtTime;
-  final int daysSinceGoalStart;
 
-  // Calculated Fields
+  // Computed client-side after fetch (not stored in DB)
   final double? weightChangeKg;
   final double? weeklyAverageKg;
   final double? monthlyAverageKg;
 
   // Weight Loss Phase Tracking
-  final bool isInitialPhase;
   final String phase; // 'initial' or 'steady_state'
 
   // Timestamps
@@ -35,11 +33,9 @@ class WeightHistory {
     this.measurementTime = 'morning',
     this.notes,
     this.goalAtTime,
-    this.daysSinceGoalStart = 0,
     this.weightChangeKg,
     this.weeklyAverageKg,
     this.monthlyAverageKg,
-    this.isInitialPhase = true,
     this.phase = 'initial',
     this.createdAt,
     this.updatedAt,
@@ -134,11 +130,9 @@ class WeightHistory {
     String? measurementTime,
     String? notes,
     String? goalAtTime,
-    int? daysSinceGoalStart,
     double? weightChangeKg,
     double? weeklyAverageKg,
     double? monthlyAverageKg,
-    bool? isInitialPhase,
     String? phase,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -151,11 +145,9 @@ class WeightHistory {
       measurementTime: measurementTime ?? this.measurementTime,
       notes: notes ?? this.notes,
       goalAtTime: goalAtTime ?? this.goalAtTime,
-      daysSinceGoalStart: daysSinceGoalStart ?? this.daysSinceGoalStart,
       weightChangeKg: weightChangeKg ?? this.weightChangeKg,
       weeklyAverageKg: weeklyAverageKg ?? this.weeklyAverageKg,
       monthlyAverageKg: monthlyAverageKg ?? this.monthlyAverageKg,
-      isInitialPhase: isInitialPhase ?? this.isInitialPhase,
       phase: phase ?? this.phase,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -167,16 +159,10 @@ class WeightHistory {
     return {
       'uid': uid,
       'weight_kg': weightKg,
-      'recorded_date':
-          recordedDate.toIso8601String().split('T')[0], // Date only
+      'recorded_date': recordedDate.toIso8601String().split('T')[0],
       'measurement_time': measurementTime,
       'notes': notes,
       'goal_at_time': goalAtTime,
-      'days_since_goal_start': daysSinceGoalStart,
-      'weight_change_kg': weightChangeKg,
-      'weekly_average_kg': weeklyAverageKg,
-      'monthly_average_kg': monthlyAverageKg,
-      'is_initial_phase': isInitialPhase,
       'phase': phase,
     };
   }
@@ -192,11 +178,6 @@ class WeightHistory {
       measurementTime: (data['measurement_time'] as String?) ?? 'morning',
       notes: data['notes'] as String?,
       goalAtTime: data['goal_at_time'] as String?,
-      daysSinceGoalStart: (data['days_since_goal_start'] as int?) ?? 0,
-      weightChangeKg: (data['weight_change_kg'] as num?)?.toDouble(),
-      weeklyAverageKg: (data['weekly_average_kg'] as num?)?.toDouble(),
-      monthlyAverageKg: (data['monthly_average_kg'] as num?)?.toDouble(),
-      isInitialPhase: (data['is_initial_phase'] as bool?) ?? true,
       phase: (data['phase'] as String?) ?? 'initial',
       createdAt: data['created_at'] != null
           ? DateTime.parse(data['created_at'] as String)

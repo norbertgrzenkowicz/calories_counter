@@ -90,7 +90,7 @@ class DataExportService {
     
     // CSV Header
     csvContent.writeln(
-      'Date,Weight (kg),Measurement Time,Notes,Goal,Days Since Goal Start,Weight Change (kg),Weekly Average (kg),Monthly Average (kg),Phase'
+      'Date,Weight (kg),Measurement Time,Notes,Goal,Weight Change (kg),Weekly Average (kg),Monthly Average (kg),Phase'
     );
 
     // CSV Data
@@ -101,7 +101,6 @@ class DataExportService {
         entry.measurementTime,
         '"${entry.notes?.replaceAll('"', '""') ?? ''}"',
         entry.goalDisplayName,
-        entry.daysSinceGoalStart,
         entry.weightChangeKg?.toStringAsFixed(2) ?? '',
         entry.weeklyAverageKg?.toStringAsFixed(2) ?? '',
         entry.monthlyAverageKg?.toStringAsFixed(2) ?? '',
@@ -141,13 +140,11 @@ class DataExportService {
         'notes': entry.notes,
         'goal_at_time': entry.goalAtTime,
         'goal_display_name': entry.goalDisplayName,
-        'days_since_goal_start': entry.daysSinceGoalStart,
         'weight_change_kg': entry.weightChangeKg,
         'weekly_average_kg': entry.weeklyAverageKg,
         'monthly_average_kg': entry.monthlyAverageKg,
         'phase': entry.phase,
         'phase_display_name': entry.phaseDisplayName,
-        'is_initial_phase': entry.isInitialPhase,
         'created_at': entry.createdAt?.toIso8601String(),
         'updated_at': entry.updatedAt?.toIso8601String(),
       }).toList(),
@@ -191,13 +188,11 @@ class DataExportService {
       xmlContent.writeln('      <notes><![CDATA[${entry.notes ?? ''}]]></notes>');
       xmlContent.writeln('      <goal_at_time>${entry.goalAtTime ?? ''}</goal_at_time>');
       xmlContent.writeln('      <goal_display_name>${entry.goalDisplayName}</goal_display_name>');
-      xmlContent.writeln('      <days_since_goal_start>${entry.daysSinceGoalStart}</days_since_goal_start>');
       xmlContent.writeln('      <weight_change_kg>${entry.weightChangeKg ?? ''}</weight_change_kg>');
       xmlContent.writeln('      <weekly_average_kg>${entry.weeklyAverageKg ?? ''}</weekly_average_kg>');
       xmlContent.writeln('      <monthly_average_kg>${entry.monthlyAverageKg ?? ''}</monthly_average_kg>');
       xmlContent.writeln('      <phase>${entry.phase}</phase>');
       xmlContent.writeln('      <phase_display_name>${entry.phaseDisplayName}</phase_display_name>');
-      xmlContent.writeln('      <is_initial_phase>${entry.isInitialPhase}</is_initial_phase>');
       xmlContent.writeln('      <created_at>${entry.createdAt?.toIso8601String() ?? ''}</created_at>');
       xmlContent.writeln('      <updated_at>${entry.updatedAt?.toIso8601String() ?? ''}</updated_at>');
       xmlContent.writeln('    </entry>');

@@ -82,7 +82,7 @@ class CalorieAdjustmentService {
 
     // Gate 5: initial phase check
     if (goal == 'weight_loss' || goal == 'weight_gain') {
-      final tdee = profile.tdeeCalories ?? 0;
+      final tdee = profile.calculateTDEE();
       final target = profile.targetCalories!;
       final dailyDeficit = (goal == 'weight_loss') ? tdee - target : target - tdee;
       final analysis = NutritionCalculatorService.analyzeWeightProgress(
@@ -143,7 +143,7 @@ class CalorieAdjustmentService {
     }
     switch (progressStatus) {
       case 'exceeding':
-        return _make(currentCalories, +100, weeklyActualChange,
+        return _make(currentCalories, 100, weeklyActualChange,
             "You're losing faster than planned — protect muscle");
       case 'on_track':
         return null;
@@ -164,7 +164,7 @@ class CalorieAdjustmentService {
     required int currentCalories,
   }) {
     if (weeklyActualChange < -0.05) {
-      return _make(currentCalories, +300, weeklyActualChange,
+      return _make(currentCalories, 300, weeklyActualChange,
           "You're losing weight on a gain plan");
     }
     if (weeklyExpectedChange <= 0) return null;
@@ -176,10 +176,10 @@ class CalorieAdjustmentService {
     }
     if (ratio >= 0.8) return null;
     if (ratio >= 0.5) {
-      return _make(currentCalories, +100, weeklyActualChange,
+      return _make(currentCalories, 100, weeklyActualChange,
           "Gaining slower than expected");
     }
-    return _make(currentCalories, +200, weeklyActualChange,
+    return _make(currentCalories, 200, weeklyActualChange,
         "Very little gain — increase your surplus");
   }
 
@@ -188,7 +188,7 @@ class CalorieAdjustmentService {
     required int currentCalories,
   }) {
     if (weeklyActualChange < -0.3) {
-      return _make(currentCalories, +150, weeklyActualChange,
+      return _make(currentCalories, 150, weeklyActualChange,
           "Your weight is dropping — adjust to maintain");
     }
     if (weeklyActualChange > 0.3) {
@@ -203,11 +203,11 @@ class CalorieAdjustmentService {
     required int currentCalories,
   }) {
     if (weeklyActualChange < 0) {
-      return _make(currentCalories, +200, weeklyActualChange,
+      return _make(currentCalories, 200, weeklyActualChange,
           "You're losing weight — increase calories for muscle");
     }
     if (weeklyActualChange < 0.1) {
-      return _make(currentCalories, +100, weeklyActualChange,
+      return _make(currentCalories, 100, weeklyActualChange,
           "Lean bulk stalled — a bit more fuel needed");
     }
     if (weeklyActualChange <= 0.5) return null;
