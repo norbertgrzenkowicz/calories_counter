@@ -55,9 +55,18 @@ export type LandingContent = {
       href: string;
       label: string;
     };
+    waitlist: {
+      inputLabel: string;
+      placeholder: string;
+      submitLabel: string;
+      loadingLabel: string;
+      successMessage: string;
+      duplicateMessage: string;
+      invalidMessage: string;
+      errorMessage: string;
+      unavailableMessage: string;
+    };
     proof: string;
-    topLineLabel: string;
-    metrics: Metric[];
   };
   problemSection: {
     label: string;
@@ -108,14 +117,18 @@ const landingContent: Record<Locale, LandingContent> = {
         href: "#how-it-works",
         label: "See How It Works"
       },
-      proof: "★★★★★ 4.8 · Used by 2,400+ users · Free to start",
-      topLineLabel: "Today",
-      metrics: [
-        { label: "Kcal left", value: "1,420" },
-        { label: "Protein", value: "82 / 150g" },
-        { label: "Carbs", value: "128 / 210g" },
-        { label: "Fat", value: "41 / 70g" }
-      ]
+      waitlist: {
+        inputLabel: "Email address",
+        placeholder: "Enter your email",
+        submitLabel: "Join Waitlist",
+        loadingLabel: "Joining...",
+        successMessage: "Thanks for joining our waitlist!",
+        duplicateMessage: "You're already on the waitlist.",
+        invalidMessage: "Please enter a valid email address.",
+        errorMessage: "Something went wrong. Please try again.",
+        unavailableMessage: "Waitlist is unavailable right now. Please try again later."
+      },
+      proof: "★★★★★ 4.8 · Used by 2,400+ users · Free to start"
     },
     problemSection: {
       label: "The Problem",
@@ -243,10 +256,10 @@ const landingContent: Record<Locale, LandingContent> = {
       { href: "#pricing", label: "Cennik" }
     ],
     hero: {
-      eyebrow: "AI do liczenia jedzenia na iOS",
-      title: "Zrób zdjęcie. Ogarnij makro.",
+      eyebrow: "Liczenie kalorii na iOS",
+      title: "Dokładne mierzenie twojego celu sylwetkowego",
       description:
-        "Yapper rozpoznaje, co masz na talerzu w kilka sekund, a gdy trzeba, pozwala dodać posiłek głosem, tekstem albo skanem kodu kreskowego.",
+        "Yapper liczy kalorie ze zdjęć, tekstu, głosem albo skanująć kod kreskowy.",
       primaryCta: {
         href: "#",
         label: "Pobierz w App Store"
@@ -255,63 +268,67 @@ const landingContent: Record<Locale, LandingContent> = {
         href: "#how-it-works",
         label: "Zobacz, jak to działa"
       },
-      proof: "★★★★★ 4.8 · Ponad 2 400 użytkowników · Zacznij za darmo",
-      topLineLabel: "Dzisiaj",
-      metrics: [
-        { label: "Kcal zostało", value: "1,420" },
-        { label: "Białko", value: "82 / 150g" },
-        { label: "Węglowodany", value: "128 / 210g" },
-        { label: "Tłuszcz", value: "41 / 70g" }
-      ]
+      waitlist: {
+        inputLabel: "Adres e-mail",
+        placeholder: "Wpisz swój e-mail",
+        submitLabel: "Dołącz do waitlisty",
+        loadingLabel: "Dołączanie...",
+        successMessage: "Dzięki za dołączenie do waitlisty!",
+        duplicateMessage: "Ten adres jest już na waitliście.",
+        invalidMessage: "Wpisz poprawny adres e-mail.",
+        errorMessage: "Coś poszło nie tak. Spróbuj ponownie.",
+        unavailableMessage: "Waitlista jest chwilowo niedostępna. Spróbuj później."
+      },
+      proof: "★★★★★ 4.8 · Ponad 2 000 użytkowników · Zacznij za darmo",
     },
     problemSection: {
       label: "Problem",
-      title: "Logowanie posiłków nie powinno przypominać roboty biurowej.",
+      title: "Dlaczego Yapper?",
       items: [
         {
           icon: "search",
           title: "Przekopywanie się przez bazy zabija chęci",
-          body: "Setki wariantów i kiepskie wyszukiwarki sprawiają, że liczenie kalorii bardziej męczy, niż pomaga trzymać rytm."
+          body: "Setki wariantów i kiepskie wyszukiwarki sprawiają, że liczenie kalorii bardziej męczy, niż pomaga w trzymaniu michy."
         },
         {
           icon: "timer",
           title: "Ręczne wpisywanie kradnie czas",
-          body: "Każdy posiłek to kolejne minuty stukania w telefon, chociaż chcesz po prostu szybko dodać jedzenie i wrócić do dnia."
+          body: "Każdy posiłek to kolejne minuty stukania w telefon, chociaż chcesz po prostu szybko dodać jedzenie i wyjść."
         },
         {
           icon: "layers",
           title: "Większość aplikacji jest niepotrzebnie przekombinowana",
-          body: "Feedy, reklamy i przeładowane dashboardy tylko przeszkadzają. Yapper skupia się na tym, co naprawdę ma znaczenie."
+          body: "Feedy, reklamy i przeładowane dashboardy tylko przeszkadzają. Yapper eliminuje to co niepotrzebne."
         }
       ]
     },
     howItWorksSection: {
       label: "Jak działa Yapper",
-      title: "Od zdjęcia do wpisu w trzech prostych krokach.",
+      title: "Załatw sprawę w trzech prostych krokach.",
       steps: [
         {
           number: "01",
           icon: "camera",
-          title: "Zrób zdjęcie posiłku",
-          body: "Po prostu zrób zdjęcie talerza, bez wybierania składników i zgadywania porcji na starcie."
+          title: "Daj znać co zjadłeś",
+          body: "Napisz, zrób zdjęcie, zeskanuj kod kreskowy lub powiedz co jest na talerzu."
         },
         {
           number: "02",
           icon: "brain",
           title: "AI rozpoznaje składniki i porcje",
-          body: "Yapper zamienia obraz w sensowne dane żywieniowe i skraca cały proces do minimum."
+          body: "Yapper zamienia opis/zdjęcie posiłku w sensowne dane żywieniowe i skraca cały proces do minimum."
         },
         {
           number: "03",
           icon: "spark",
-          title: "Kalorie i makro zapisują się od razu",
-          body: "Twój dzienny bilans aktualizuje się natychmiast, więc aplikacja pomaga ogarniać jedzenie, a nie dokłada pracy."
+          title: "Zapisz, edytuj lub odrzuć swój wpis",
+          body: "I tyle do następnego posiłku."
         }
       ]
     },
     featuresSection: {
       label: "Możliwości",
-      title: "Funkcje stworzone po to, żeby logować szybciej.",
+      title: "Funkcje, żeby zwiększyć masę mięsniową.",
       items: [
         {
           eyebrow: "Obraz",
@@ -320,16 +337,16 @@ const landingContent: Record<Locale, LandingContent> = {
           body: "Dodawaj posiłki ze zdjęcia bez przekopywania bazy produktów i ręcznego składania całego talerza."
         },
         {
+          eyebrow: "Naturalny input",
+          icon: "voice",
+          title: "Dodawanie głosem i tekstem",
+          body: "Powiedz albo wpisz, co zjadłeś, a Yapper załatwi resztę w tle."
+        },
+        {
           eyebrow: "Kod kreskowy",
           icon: "barcode",
           title: "Skaner kodów",
           body: "W przypadku produktów paczkowanych wystarczy szybki skan i gotowe."
-        },
-        {
-          eyebrow: "Naturalny input",
-          icon: "voice",
-          title: "Logowanie głosem i tekstem",
-          body: "Powiedz albo wpisz, co zjadłeś, a Yapper ogarnie resztę w tle."
         },
         {
           eyebrow: "Postęp",
@@ -341,44 +358,42 @@ const landingContent: Record<Locale, LandingContent> = {
     },
     pricingSection: {
       label: "Prosty cennik",
-      title: "Płać za wygodę, nie za kolejną zbędną subskrypcję.",
+      title: "AI jest drogie, Yapper przeciwnie.",
       footnote: "Na start nie potrzebujesz karty.",
       plans: [
         {
           name: "Free",
-          price: "Darmowy na stałe",
+          price: "Darmowy na 7 dni",
           cadence: "",
           note: "Wejdź bez zobowiązań.",
           emphasis: "standard",
           cta: "Zacznij",
           features: [
-            "Dodawanie zdjęciem",
-            "Ręczne wpisywanie",
-            "Podstawowa historia",
-            "Śledzenie wagi"
+            "Wszystko co w Pro",
+            "Przypomnienie o końcu wersji próbnej"
           ]
         },
         {
           name: "Pro",
-          price: "$2.49",
-          cadence: "/miesiąc lub $29.99/rok",
-          note: "Najlepsza opcja, jeśli logujesz regularnie.",
+          price: "10 PLN",
+          cadence: "/miesiąc lub 100 PLN/rok",
+          note: "Najlepsza oferta na wsparcie swoich celów sylwetkowych.",
           badge: "Najczęściej wybierany",
           emphasis: "highlight",
-          cta: "Przejdź na Pro",
+          cta: "Dołącz do Pro",
           features: [
             "Pełna analiza AI",
             "Skanowanie kodów kreskowych",
-            "Logowanie głosem i tekstem",
-            "Eksport danych",
-            "Priorytetowe wsparcie"
+            "Zdjęcia, głos i tekst",
+            "Automatyczna aktualizacja kalorii",
+            "Eksport danych"
           ]
         }
       ]
     },
     finalCta: {
-      title: "Licz sprytniej. Jedz świadomiej.",
-      body: "Dołącz do tysięcy osób, które porzuciły ręczne wyszukiwanie i w końcu zaczęły logować posiłki bez tarcia.",
+      title: "Licz szybciej. Zwiększ swoją masę automatycznie.",
+      body: "Dołącz do tysięcy osób, które porzuciły ręczne wyszukiwanie i zaczęły osiągać swoje cele na autopilocie.",
       href: "#",
       label: "Pobierz za darmo na iOS"
     }
