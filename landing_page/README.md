@@ -34,6 +34,8 @@ bun run dev
 bun run build
 ```
 
+Set `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` before building if you want the hero waitlist form to submit into Supabase.
+
 ## Docker
 
 ```bash
