@@ -1,0 +1,44 @@
+---
+import type { LandingContent } from "../../data/landing";
+
+interface Props {
+  waitlist: LandingContent["hero"]["waitlist"];
+  idPrefix: string;
+  variant?: "inline" | "stacked";
+}
+
+const { waitlist, idPrefix, variant = "inline" } = Astro.props;
+const inputId = `${idPrefix}-email`;
+---
+<form
+  class:list={["waitlist-form", `waitlist-form--${variant}`]}
+  data-waitlist-form
+  data-invalid-message={waitlist.invalidMessage}
+  data-success-message={waitlist.successMessage}
+  data-duplicate-message={waitlist.duplicateMessage}
+  data-error-message={waitlist.errorMessage}
+  data-unavailable-message={waitlist.unavailableMessage}
+  novalidate
+>
+  <label class="sr-only" for={inputId}>{waitlist.inputLabel}</label>
+  <div class="waitlist-form__fields">
+    <input
+      id={inputId}
+      class="waitlist-form__input"
+      type="email"
+      name="email"
+      placeholder={waitlist.placeholder}
+      autocomplete="email"
+      required
+    />
+    <button
+      class="waitlist-form__button"
+      type="submit"
+      data-idle-label={waitlist.submitLabel}
+      data-loading-label={waitlist.loadingLabel}
+    >
+      {waitlist.submitLabel}
+    </button>
+  </div>
+  <p class="waitlist-form__message" data-waitlist-message aria-live="polite"></p>
+</form>

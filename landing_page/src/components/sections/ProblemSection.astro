@@ -5,25 +5,49 @@ import SectionLabel from "../ui/SectionLabel.astro";
 
 interface Props {
   content: LandingContent["problemSection"];
+  sectionId?: string;
 }
 
-const { content } = Astro.props;
+const { content, sectionId = "problem" } = Astro.props;
 ---
-<section class="section" id="problem">
-  <div class="section-heading section-heading--center section-heading--problem">
-    <SectionLabel>{content.label}</SectionLabel>
-    <h2 class="section-heading__title--nowrap">{content.title}</h2>
+<section class="section" id={sectionId}>
+  <div class="only-desktop">
+    <div class="section-heading section-heading--center section-heading--problem">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2 class="section-heading__title--nowrap">{content.title}</h2>
+    </div>
+    <div class="problem-grid">
+      {
+        content.items.map((problem) => (
+          <article class="problem-card">
+            <Icon name={problem.icon} class="problem-card__icon" />
+            <h3>{problem.title}</h3>
+            <p>{problem.body}</p>
+          </article>
+        ))
+      }
+    </div>
   </div>
-  <div class="problem-grid">
-    {
-      content.items.map((problem) => (
-        <article class="problem-card">
-          <Icon name={problem.icon} class="problem-card__icon" />
-          <h3>{problem.title}</h3>
-          <p>{problem.body}</p>
-        </article>
-      ))
-    }
+
+  <div class="problem-mobile only-mobile">
+    <div class="section-heading section-heading--center">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2>{content.title}</h2>
+    </div>
+    <div class="problem-mobile__list">
+      {
+        content.items.map((problem, index) => (
+          <article class="problem-mobile__card">
+            <div class="problem-mobile__meta">
+              <span class="problem-mobile__index">{String(index + 1).padStart(2, "0")}</span>
+              <Icon name={problem.icon} class="problem-mobile__icon" />
+            </div>
+            <h3>{problem.title}</h3>
+            <p>{problem.body}</p>
+          </article>
+        ))
+      }
+    </div>
   </div>
 </section>
 

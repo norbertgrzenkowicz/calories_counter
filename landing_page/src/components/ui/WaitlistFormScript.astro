@@ -1,0 +1,80 @@
+---
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? "";
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? "";
+---
+<script is:inline define:vars={{ supabaseUrl, supabaseAnonKey }}>
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  for (const form of document.querySelectorAll("[data-waitlist-form]")) {
+    const input = form.querySelector("input[name='email']");
+    const button = form.querySelector("button[type='submit']");
+    const message = form.querySelector("[data-waitlist-message]");
+
+    if (!(input instanceof HTMLInputElement) || !(button instanceof HTMLButtonElement) || !(message instanceof HTMLElement)) {
+      continue;
+    }
+
+    const setMessage = (status, text) => {
+      message.dataset.status = status;
+      message.textContent = text;
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const email = input.value.trim().toLowerCase();
+
+      if (!emailPattern.test(email)) {
+        setMessage("error", form.dataset.invalidMessage ?? "Invalid email address.");
+        return;
+      }
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        setMessage("error", form.dataset.unavailableMessage ?? "Waitlist is unavailable right now.");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = button.dataset.loadingLabel ?? button.textContent;
+      setMessage("pending", "");
+
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+            Prefer: "return=minimal"
+          },
+          body: JSON.stringify([{ email }])
+        });
+
+        let payload = null;
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+
+        if (response.ok) {
+          form.reset();
+          setMessage("success", form.dataset.successMessage ?? "Success.");
+          return;
+        }
+
+        if (response.status === 409 || payload?.code === "23505") {
+          setMessage("success", form.dataset.duplicateMessage ?? "Already joined.");
+          return;
+        }
+
+        setMessage("error", payload?.message ?? payload?.error ?? form.dataset.errorMessage ?? "Something went wrong.");
+      } catch {
+        setMessage("error", form.dataset.errorMessage ?? "Something went wrong.");
+      } finally {
+        button.disabled = false;
+        button.textContent = button.dataset.idleLabel ?? button.textContent;
+      }
+    });
+  }
+</script>

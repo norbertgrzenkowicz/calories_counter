@@ -1,140 +1,62 @@
 ---
 import type { LandingContent } from "../../data/landing";
+import ButtonLink from "../ui/ButtonLink.astro";
+import WaitlistForm from "../ui/WaitlistForm.astro";
 
 interface Props {
   content: LandingContent["hero"];
 }
 
 const { content } = Astro.props;
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? "";
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? "";
 ---
-<section class="hero section section--hero">
-  <div class="hero__copy">
-    <p class="hero__eyebrow">{content.eyebrow}</p>
-    <h1>{content.title}</h1>
-    <p class="hero__body">{content.description}</p>
-    <div class="hero__waitlist">
-      <form
-        class="hero__waitlist-form"
-        data-waitlist-form
-        data-invalid-message={content.waitlist.invalidMessage}
-        data-success-message={content.waitlist.successMessage}
-        data-duplicate-message={content.waitlist.duplicateMessage}
-        data-error-message={content.waitlist.errorMessage}
-        data-unavailable-message={content.waitlist.unavailableMessage}
-        novalidate
-      >
-        <label class="sr-only" for="hero-waitlist-email">{content.waitlist.inputLabel}</label>
-        <div class="hero__waitlist-fields">
-          <input
-            id="hero-waitlist-email"
-            class="hero__waitlist-input"
-            type="email"
-            name="email"
-            placeholder={content.waitlist.placeholder}
-            autocomplete="email"
-            required
-          />
-          <button
-            class="hero__waitlist-button"
-            type="submit"
-            data-idle-label={content.waitlist.submitLabel}
-            data-loading-label={content.waitlist.loadingLabel}
-          >
-            {content.waitlist.submitLabel}
-          </button>
-        </div>
-        <p class="hero__waitlist-message" data-waitlist-message aria-live="polite"></p>
-      </form>
+<section class="section section--hero">
+  <div class="hero only-desktop">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">{content.eyebrow}</p>
+      <h1>{content.title}</h1>
+      <p class="hero__body">{content.description}</p>
+      <div class="hero__waitlist">
+        <WaitlistForm waitlist={content.waitlist} idPrefix="hero-desktop" />
+      </div>
+      <p class="hero__proof">{content.proof}</p>
     </div>
-    <p class="hero__proof">{content.proof}</p>
+    <div class="hero__visual">
+      <div class="device-card">
+        <img
+          src="/images/app-screenshot.jpg"
+          alt="Yapper app screenshot showing meal analysis, nutrition breakdown, and daily tracking."
+          class="device-card__screenshot"
+          loading="eager"
+        />
+      </div>
+    </div>
   </div>
-  <div class="hero__visual">
-    <div class="device-card">
-      <img
-        src="/images/app-screenshot.jpg"
-        alt="Yapper app screenshot showing meal analysis, nutrition breakdown, and daily tracking."
-        class="device-card__screenshot"
-        loading="eager"
-      />
+
+  <div class="hero-mobile only-mobile">
+    <div class="hero-mobile__copy">
+      <p class="hero-mobile__eyebrow">{content.eyebrow}</p>
+      <h1 class="hero-mobile__title">{content.title}</h1>
+      <p class="hero-mobile__body">{content.description}</p>
+      <div class="hero-mobile__actions">
+        <ButtonLink href={content.primaryCta.href}>{content.primaryCta.label}</ButtonLink>
+        <ButtonLink href={content.secondaryCta.href} variant="secondary">
+          {content.secondaryCta.label}
+        </ButtonLink>
+      </div>
+      <WaitlistForm waitlist={content.waitlist} idPrefix="hero-mobile" variant="stacked" />
+      <p class="hero-mobile__proof">{content.proof}</p>
+    </div>
+    <div class="hero-mobile__visual-wrap">
+      <div class="hero-mobile__visual">
+        <div class="device-card device-card--mobile">
+          <img
+            src="/images/app-screenshot.jpg"
+            alt="Yapper app screenshot showing meal analysis, nutrition breakdown, and daily tracking."
+            class="device-card__screenshot"
+            loading="eager"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </section>
-
-<script is:inline define:vars={{ supabaseUrl, supabaseAnonKey }}>
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  for (const form of document.querySelectorAll("[data-waitlist-form]")) {
-    const input = form.querySelector("input[name='email']");
-    const button = form.querySelector("button[type='submit']");
-    const message = form.querySelector("[data-waitlist-message]");
-
-    if (!(input instanceof HTMLInputElement) || !(button instanceof HTMLButtonElement) || !(message instanceof HTMLElement)) {
-      continue;
-    }
-
-    const setMessage = (status, text) => {
-      message.dataset.status = status;
-      message.textContent = text;
-    };
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const email = input.value.trim().toLowerCase();
-
-      if (!emailPattern.test(email)) {
-        setMessage("error", form.dataset.invalidMessage ?? "Invalid email address.");
-        return;
-      }
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        setMessage("error", form.dataset.unavailableMessage ?? "Waitlist is unavailable right now.");
-        return;
-      }
-
-      button.disabled = true;
-      button.textContent = button.dataset.loadingLabel ?? button.textContent;
-      setMessage("pending", "");
-
-      try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: supabaseAnonKey,
-            Authorization: `Bearer ${supabaseAnonKey}`,
-            Prefer: "return=minimal"
-          },
-          body: JSON.stringify([{ email }])
-        });
-
-        let payload = null;
-        try {
-          payload = await response.json();
-        } catch {
-          payload = null;
-        }
-
-        if (response.ok) {
-          form.reset();
-          setMessage("success", form.dataset.successMessage ?? "Success.");
-          return;
-        }
-
-        if (response.status === 409 || payload?.code === "23505") {
-          setMessage("success", form.dataset.duplicateMessage ?? "Already joined.");
-          return;
-        }
-
-        setMessage("error", payload?.message ?? payload?.error ?? form.dataset.errorMessage ?? "Something went wrong.");
-      } catch {
-        setMessage("error", form.dataset.errorMessage ?? "Something went wrong.");
-      } finally {
-        button.disabled = false;
-        button.textContent = button.dataset.idleLabel ?? button.textContent;
-      }
-    });
-  }
-</script>

@@ -5,40 +5,88 @@ import SectionLabel from "../ui/SectionLabel.astro";
 
 interface Props {
   content: LandingContent["pricingSection"];
+  sectionId?: string;
 }
 
-const { content } = Astro.props;
+const { content, sectionId = "pricing" } = Astro.props;
 ---
-<section class="section" id="pricing">
-  <div class="section-heading section-heading--center">
-    <SectionLabel>{content.label}</SectionLabel>
-    <h2>{content.title}</h2>
+<section class="section" id={sectionId}>
+  <div class="only-desktop">
+    <div class="section-heading section-heading--center">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2>{content.title}</h2>
+    </div>
+    <div class="pricing-grid">
+      {
+        content.plans.map((plan) => (
+          <article class:list={["pricing-card", plan.emphasis === "highlight" && "pricing-card--highlight"]}>
+            {plan.badge && <span class="pricing-card__badge">{plan.badge}</span>}
+            <p class="pricing-card__name">{plan.name}</p>
+            <div class="pricing-card__price-block">
+              <strong>{plan.price}</strong>
+              {plan.cadence && <span>{plan.cadence}</span>}
+            </div>
+            <p class="pricing-card__note">{plan.note}</p>
+            <ul class="pricing-card__list">
+              {plan.features.map((feature) => (
+                <li>
+                  <Icon name="check" class="pricing-card__check" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <a href="#" class:list={["pricing-card__cta", plan.emphasis === "highlight" && "pricing-card__cta--highlight"]}>
+              {plan.cta}
+            </a>
+          </article>
+        ))
+      }
+    </div>
+    <p class="pricing-footnote">{content.footnote}</p>
   </div>
-  <div class="pricing-grid">
-    {
-      content.plans.map((plan) => (
-        <article class:list={["pricing-card", plan.emphasis === "highlight" && "pricing-card--highlight"]}>
-          {plan.badge && <span class="pricing-card__badge">{plan.badge}</span>}
-          <p class="pricing-card__name">{plan.name}</p>
-          <div class="pricing-card__price-block">
-            <strong>{plan.price}</strong>
-            {plan.cadence && <span>{plan.cadence}</span>}
-          </div>
-          <p class="pricing-card__note">{plan.note}</p>
-          <ul class="pricing-card__list">
-            {plan.features.map((feature) => (
-              <li>
-                <Icon name="check" class="pricing-card__check" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-          <a href="#" class:list={["pricing-card__cta", plan.emphasis === "highlight" && "pricing-card__cta--highlight"]}>
-            {plan.cta}
-          </a>
-        </article>
-      ))
-    }
+
+  <div class="pricing-mobile only-mobile">
+    <div class="section-heading section-heading--center">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2>{content.title}</h2>
+    </div>
+    <div class="pricing-mobile__list">
+      {
+        content.plans.map((plan) => (
+          <article class:list={["pricing-mobile__card", plan.emphasis === "highlight" && "pricing-mobile__card--highlight"]}>
+            <div class="pricing-mobile__top">
+              <div>
+                <p class="pricing-card__name">{plan.name}</p>
+                <div class="pricing-mobile__price">
+                  <strong>{plan.price}</strong>
+                  {plan.cadence && <span>{plan.cadence}</span>}
+                </div>
+              </div>
+              {plan.badge && <span class="pricing-mobile__badge">{plan.badge}</span>}
+            </div>
+            <p class="pricing-card__note">{plan.note}</p>
+            <ul class="pricing-mobile__features">
+              {plan.features.map((feature) => (
+                <li>
+                  <Icon name="check" class="pricing-card__check" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <a
+              href="#"
+              class:list={[
+                "pricing-card__cta",
+                "pricing-mobile__cta",
+                plan.emphasis === "highlight" && "pricing-card__cta--highlight"
+              ]}
+            >
+              {plan.cta}
+            </a>
+          </article>
+        ))
+      }
+    </div>
+    <p class="pricing-footnote">{content.footnote}</p>
   </div>
-  <p class="pricing-footnote">{content.footnote}</p>
 </section>

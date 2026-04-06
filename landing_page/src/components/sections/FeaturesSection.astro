@@ -5,27 +5,55 @@ import SectionLabel from "../ui/SectionLabel.astro";
 
 interface Props {
   content: LandingContent["featuresSection"];
+  sectionId?: string;
 }
 
-const { content } = Astro.props;
+const { content, sectionId = "features" } = Astro.props;
 ---
-<section class="section" id="features">
-  <div class="section-heading section-heading--center">
-    <SectionLabel>{content.label}</SectionLabel>
-    <h2>{content.title}</h2>
+<section class="section" id={sectionId}>
+  <div class="only-desktop">
+    <div class="section-heading section-heading--center">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2>{content.title}</h2>
+    </div>
+    <div class="feature-grid">
+      {
+        content.items.map((feature) => (
+          <article class="feature-card">
+            <div class="feature-card__icon-wrap">
+              <Icon name={feature.icon} class="feature-card__icon" />
+            </div>
+            <p class="feature-card__eyebrow">{feature.eyebrow}</p>
+            <h3>{feature.title}</h3>
+            <p>{feature.body}</p>
+          </article>
+        ))
+      }
+    </div>
   </div>
-  <div class="feature-grid">
-    {
-      content.items.map((feature) => (
-        <article class="feature-card">
-          <div class="feature-card__icon-wrap">
-            <Icon name={feature.icon} class="feature-card__icon" />
-          </div>
-          <p class="feature-card__eyebrow">{feature.eyebrow}</p>
-          <h3>{feature.title}</h3>
-          <p>{feature.body}</p>
-        </article>
-      ))
-    }
+
+  <div class="feature-mobile only-mobile">
+    <div class="section-heading section-heading--center">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2>{content.title}</h2>
+    </div>
+    <div class="feature-mobile__list">
+      {
+        content.items.map((feature) => (
+          <article class="feature-mobile__card">
+            <div class="feature-mobile__header">
+              <div class="feature-mobile__icon-wrap">
+                <Icon name={feature.icon} class="feature-card__icon" />
+              </div>
+              <div>
+                <p class="feature-card__eyebrow">{feature.eyebrow}</p>
+                <h3>{feature.title}</h3>
+              </div>
+            </div>
+            <p>{feature.body}</p>
+          </article>
+        ))
+      }
+    </div>
   </div>
 </section>

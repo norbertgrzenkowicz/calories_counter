@@ -15,35 +15,85 @@ const siteCopy = getSiteCopy(locale);
 const otherLocale = getOtherLocale(locale);
 ---
 <header class="site-header">
-  <div class="shell site-header__inner">
-    <a href={getLocalizedPath(locale, "home")} class="wordmark">{siteConfig.name}</a>
-    <nav class="site-nav" aria-label={siteCopy.navAriaLabel}>
-      {
-        navItems.map((item) => (
-          <a href={getHomeAnchorPath(locale, item.href)} class="site-nav__link">
-            {item.label}
+  <div class="shell site-header__desktop only-desktop">
+    <div class="site-header__inner">
+      <a href={getLocalizedPath(locale, "home")} class="wordmark">{siteConfig.name}</a>
+      <nav class="site-nav" aria-label={siteCopy.navAriaLabel}>
+        {
+          navItems.map((item) => (
+            <a href={getHomeAnchorPath(locale, item.href)} class="site-nav__link">
+              {item.label}
+            </a>
+          ))
+        }
+        <div class="locale-switcher" aria-label={siteCopy.localeNavAriaLabel}>
+          <span class="locale-switcher__label">{siteCopy.languageSwitcherLabel}</span>
+          <a
+            href={getLocalizedPath(locale, routeKey)}
+            class:list={["locale-switcher__link", "locale-switcher__link--active"]}
+            hreflang={locale}
+            aria-current="true"
+          >
+            {siteCopy.localeLabel}
           </a>
-        ))
-      }
-      <div class="locale-switcher" aria-label={siteCopy.localeNavAriaLabel}>
-        <span class="locale-switcher__label">{siteCopy.languageSwitcherLabel}</span>
-        <a
-          href={getLocalizedPath(locale, routeKey)}
-          class:list={["locale-switcher__link", "locale-switcher__link--active"]}
-          hreflang={locale}
-          aria-current="true"
-        >
-          {siteCopy.localeLabel}
-        </a>
-        <a
-          href={getLocalizedPath(otherLocale, routeKey)}
-          class="locale-switcher__link"
-          hreflang={otherLocale}
-        >
-          {getSiteCopy(otherLocale).localeLabel}
-        </a>
-      </div>
-      <ButtonLink href={siteConfig.appStoreUrl}>{siteCopy.headerCtaLabel}</ButtonLink>
-    </nav>
+          <a
+            href={getLocalizedPath(otherLocale, routeKey)}
+            class="locale-switcher__link"
+            hreflang={otherLocale}
+          >
+            {getSiteCopy(otherLocale).localeLabel}
+          </a>
+        </div>
+        <ButtonLink href={siteConfig.appStoreUrl}>{siteCopy.headerCtaLabel}</ButtonLink>
+      </nav>
+    </div>
+  </div>
+
+  <div class="shell site-header__mobile only-mobile">
+    <div class="site-header__mobile-bar">
+      <a href={getLocalizedPath(locale, "home")} class="wordmark">{siteConfig.name}</a>
+      <details class="mobile-menu">
+        <summary class="mobile-menu__toggle" aria-label={siteCopy.navAriaLabel}>
+          <span class="mobile-menu__label">{siteCopy.menuLabel}</span>
+          <span class="mobile-menu__icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </summary>
+        <div class="mobile-menu__panel">
+          <nav class="mobile-menu__nav" aria-label={siteCopy.navAriaLabel}>
+            {
+              navItems.map((item) => (
+                <a href={getHomeAnchorPath(locale, item.href)} class="mobile-menu__link">
+                  {item.label}
+                </a>
+              ))
+            }
+          </nav>
+          <div class="mobile-menu__footer">
+            <div class="locale-switcher locale-switcher--mobile" aria-label={siteCopy.localeNavAriaLabel}>
+              <span class="locale-switcher__label">{siteCopy.languageSwitcherLabel}</span>
+              <a
+                href={getLocalizedPath(locale, routeKey)}
+                class:list={["locale-switcher__link", "locale-switcher__link--active"]}
+                hreflang={locale}
+                aria-current="true"
+              >
+                {siteCopy.localeLabel}
+              </a>
+              <a
+                href={getLocalizedPath(otherLocale, routeKey)}
+                class="locale-switcher__link"
+                hreflang={otherLocale}
+              >
+                {getSiteCopy(otherLocale).localeLabel}
+              </a>
+            </div>
+            <ButtonLink href={siteConfig.appStoreUrl}>{siteCopy.headerCtaLabel}</ButtonLink>
+          </div>
+        </div>
+      </details>
+    </div>
   </div>
 </header>

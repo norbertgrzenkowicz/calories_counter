@@ -5,25 +5,49 @@ import SectionLabel from "../ui/SectionLabel.astro";
 
 interface Props {
   content: LandingContent["howItWorksSection"];
+  sectionId?: string;
 }
 
-const { content } = Astro.props;
+const { content, sectionId = "how-it-works" } = Astro.props;
 ---
-<section class="section section--how-it-works" id="how-it-works">
-  <div class="section-heading section-heading--center">
-    <SectionLabel>{content.label}</SectionLabel>
-    <h2>{content.title}</h2>
+<section class="section section--how-it-works" id={sectionId}>
+  <div class="only-desktop">
+    <div class="section-heading section-heading--center">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2>{content.title}</h2>
+    </div>
+    <div class="steps">
+      {
+        content.steps.map((step) => (
+          <article class="step-card">
+            <div class="step-card__number">{step.number}</div>
+            <Icon name={step.icon} class="step-card__icon" />
+            <h3>{step.title}</h3>
+            <p>{step.body}</p>
+          </article>
+        ))
+      }
+    </div>
   </div>
-  <div class="steps">
-    {
-      content.steps.map((step) => (
-        <article class="step-card">
-          <div class="step-card__number">{step.number}</div>
-          <Icon name={step.icon} class="step-card__icon" />
-          <h3>{step.title}</h3>
-          <p>{step.body}</p>
-        </article>
-      ))
-    }
+
+  <div class="steps-mobile only-mobile">
+    <div class="section-heading section-heading--center">
+      <SectionLabel>{content.label}</SectionLabel>
+      <h2>{content.title}</h2>
+    </div>
+    <div class="steps-mobile__list">
+      {
+        content.steps.map((step) => (
+          <article class="steps-mobile__card">
+            <div class="steps-mobile__badge">
+              <span class="steps-mobile__number">{step.number}</span>
+              <Icon name={step.icon} class="steps-mobile__icon" />
+            </div>
+            <h3>{step.title}</h3>
+            <p>{step.body}</p>
+          </article>
+        ))
+      }
+    </div>
   </div>
 </section>

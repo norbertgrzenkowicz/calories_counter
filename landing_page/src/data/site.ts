@@ -22,6 +22,7 @@ export type LocaleSiteCopy = {
   navAriaLabel: string;
   footerAriaLabel: string;
   localeNavAriaLabel: string;
+  menuLabel: string;
   redirectMessage: string;
   redirectCtaLabel: string;
 };
@@ -60,6 +61,7 @@ export const siteCopy: Record<Locale, LocaleSiteCopy> = {
     navAriaLabel: "Primary",
     footerAriaLabel: "Footer",
     localeNavAriaLabel: "Language switcher",
+    menuLabel: "Menu",
     redirectMessage: "Redirecting to the English site.",
     redirectCtaLabel: "Continue to English"
   },
@@ -83,6 +85,7 @@ export const siteCopy: Record<Locale, LocaleSiteCopy> = {
     navAriaLabel: "Nawigacja główna",
     footerAriaLabel: "Stopka",
     localeNavAriaLabel: "Przełącznik języka",
+    menuLabel: "Menu",
     redirectMessage: "Przekierowujemy do angielskiej wersji strony.",
     redirectCtaLabel: "Przejdź do wersji angielskiej"
   }

@@ -5,6 +5,7 @@ import HeroSection from "../../components/sections/HeroSection.astro";
 import HowItWorksSection from "../../components/sections/HowItWorksSection.astro";
 import PricingSection from "../../components/sections/PricingSection.astro";
 import ProblemSection from "../../components/sections/ProblemSection.astro";
+import WaitlistFormScript from "../../components/ui/WaitlistFormScript.astro";
 import { getLandingContent } from "../../data/landing";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { DEFAULT_LOCALE, isLocale, SUPPORTED_LOCALES } from "../../lib/i18n";
@@ -25,4 +26,5 @@ const landing = getLandingContent(locale);
   <FeaturesSection content={landing.featuresSection} />
   <PricingSection content={landing.pricingSection} />
   <FinalCtaSection content={landing.finalCta} />
+  <WaitlistFormScript />
 </BaseLayout>
