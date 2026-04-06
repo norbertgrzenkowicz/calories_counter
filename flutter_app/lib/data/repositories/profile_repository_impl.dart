@@ -1,4 +1,3 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/result.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../../models/user_profile.dart';

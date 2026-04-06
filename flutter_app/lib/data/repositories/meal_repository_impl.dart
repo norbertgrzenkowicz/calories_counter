@@ -476,19 +476,19 @@ class MealRepositoryImpl implements MealRepository {
 
         final dayTotals = dailyTotals[date]!;
         dayTotals['calories'] =
-            (dayTotals['calories']! as num) + ((meal['calories'] as num?) ?? 0);
+            dayTotals['calories']! + ((meal['calories'] as num?) ?? 0);
         dayTotals['proteins'] =
-            (dayTotals['proteins']! as num) + ((meal['proteins'] as num?) ?? 0);
+            dayTotals['proteins']! + ((meal['proteins'] as num?) ?? 0);
         dayTotals['carbs'] =
-            (dayTotals['carbs']! as num) + ((meal['carbs'] as num?) ?? 0);
+            dayTotals['carbs']! + ((meal['carbs'] as num?) ?? 0);
         dayTotals['fats'] =
-            (dayTotals['fats']! as num) + ((meal['fats'] as num?) ?? 0);
+            dayTotals['fats']! + ((meal['fats'] as num?) ?? 0);
         dayTotals['sugars'] =
-            (dayTotals['sugars']! as num) + ((meal['sugars'] as num?) ?? 0);
+            dayTotals['sugars']! + ((meal['sugars'] as num?) ?? 0);
         dayTotals['fiber'] =
-            (dayTotals['fiber']! as num) + ((meal['fiber'] as num?) ?? 0);
+            dayTotals['fiber']! + ((meal['fiber'] as num?) ?? 0);
         dayTotals['sodium'] =
-            (dayTotals['sodium']! as num) + ((meal['sodium'] as num?) ?? 0);
+            dayTotals['sodium']! + ((meal['sodium'] as num?) ?? 0);
       }
 
       AppLogger.debug(

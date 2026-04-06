@@ -10,9 +10,9 @@ interface Props {
 const { content } = Astro.props;
 ---
 <section class="section" id="problem">
-  <div class="section-heading section-heading--offset">
+  <div class="section-heading section-heading--center section-heading--problem">
     <SectionLabel>{content.label}</SectionLabel>
-    <h2>{content.title}</h2>
+    <h2 class="section-heading__title--nowrap">{content.title}</h2>
   </div>
   <div class="problem-grid">
     {
@@ -26,3 +26,15 @@ const { content } = Astro.props;
     }
   </div>
 </section>
+
+<style>
+  .section-heading__title--nowrap {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 900px) {
+    .section-heading--problem .section-heading__title--nowrap {
+      white-space: normal;
+    }
+  }
+</style>
