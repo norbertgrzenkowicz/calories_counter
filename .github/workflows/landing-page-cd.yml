@@ -16,6 +16,9 @@ jobs:
     defaults:
       run:
         working-directory: landing_page
+    env:
+      PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
     steps:
       - uses: actions/checkout@v4
