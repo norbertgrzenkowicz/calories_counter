@@ -216,16 +216,29 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> deleteAccount() async {
     try {
-      AppLogger.info('Attempting account deletion');
+      AppLogger.info('Attempting GDPR account deletion via edge function');
 
-      // Note: Supabase doesn't have a built-in deleteUser method in the client
-      // This would typically require an admin API call or edge function
-      // For now, we'll sign out the user and let them contact support
-      await signOut();
+      final response = await _supabaseService.client.functions.invoke(
+        'delete-account',
+        method: HttpMethod.post,
+      );
 
-      AppLogger.warning('Account deletion requires manual process');
-      return const Result.failure(
-        AppError.server('Account deletion requires contacting support'),
+      if (response.status != 200) {
+        final body = response.data as Map<String, dynamic>?;
+        final message = body?['error'] as String? ?? 'Account deletion failed';
+        AppLogger.error('Account deletion edge function returned ${response.status}: $message');
+        return Result.failure(AppError.server(message));
+      }
+
+      // Sign out locally — auth user is gone on the server side
+      await _supabaseService.signOut();
+
+      AppLogger.info('Account deleted successfully');
+      return const Result.success(null);
+    } on FunctionException catch (e) {
+      AppLogger.error('Edge function error during account deletion', e);
+      return Result.failure(
+        AppError.server('Account deletion failed: ${e.details}'),
       );
     } catch (e) {
       AppLogger.error('Account deletion failed', e);

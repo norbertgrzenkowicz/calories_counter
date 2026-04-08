@@ -124,6 +124,30 @@ class AuthNotifier extends _$AuthNotifier {
     );
   }
 
+  /// Delete account and all associated user data (GDPR)
+  Future<bool> deleteAccount() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    final authRepository = ref.read(authRepositoryProvider);
+    final result = await authRepository.deleteAccount();
+
+    return result.when(
+      success: (_) {
+        state = const AuthState(isAuthenticated: false);
+        AppLogger.info('Account deleted successfully');
+        return true;
+      },
+      failure: (error) {
+        AppLogger.error('Account deletion failed: ${error.toString()}');
+        state = state.copyWith(
+          isLoading: false,
+          error: _getErrorMessage(error),
+        );
+        return false;
+      },
+    );
+  }
+
   /// Clear any error state
   void clearError() {
     state = state.copyWith(error: null);
