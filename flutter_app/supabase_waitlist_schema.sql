@@ -15,3 +15,10 @@ ALTER TABLE public.waitlist ENABLE ROW LEVEL SECURITY;
 GRANT ALL ON TABLE public.waitlist TO anon;
 GRANT ALL ON TABLE public.waitlist TO authenticated;
 GRANT ALL ON TABLE public.waitlist TO service_role;
+
+-- Required: RLS is enabled above, so grants alone are not enough.
+-- Explicit policies are needed or all operations are denied by default.
+CREATE POLICY "anon_insert_waitlist"
+    ON public.waitlist FOR INSERT
+    TO anon
+    WITH CHECK (true);
